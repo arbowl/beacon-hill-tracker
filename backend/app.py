@@ -412,10 +412,18 @@ def create_app():
         """
         Ingest endpoint for cache data.
         Expects cache.json structure with bill_parsers, committee_contacts, etc.
+        Requires HMAC signature authentication.
         """
         try:
+            # Verify signature
+            is_valid, error_msg, key_record = verify_ingest_signature(request)
+            if not is_valid:
+                return jsonify({
+                    "status": "error",
+                    "message": f"Authentication failed: {error_msg}"
+                }), 401
+            
             data = request.get_json()
-
             if not data:
                 return jsonify({
                     "status": "error",
@@ -424,6 +432,9 @@ def create_app():
 
             result = import_cache_data(data)
             if result['status'] == 'success':
+                # Log successful ingestion
+                user_id = key_record[1] if key_record else None
+                result['authenticated_user_id'] = user_id
                 return jsonify(result), 200
             return jsonify(result), 500
 
@@ -436,10 +447,18 @@ def create_app():
         Ingest endpoint for basic/compliance reports.
         Expects: {"committee_id": "XXX", "run_id": "...", "items": [...]}
         Also accepts "bills" instead of "items" for backwards compatibility.
+        Requires HMAC signature authentication.
         """
         try:
+            # Verify signature
+            is_valid, error_msg, key_record = verify_ingest_signature(request)
+            if not is_valid:
+                return jsonify({
+                    "status": "error",
+                    "message": f"Authentication failed: {error_msg}"
+                }), 401
+            
             data = request.get_json()
-
             if not data:
                 return jsonify({
                     "status": "error",
@@ -470,6 +489,9 @@ def create_app():
 
             result = import_compliance_report(committee_id, items)
             if result['status'] == 'success':
+                # Log successful ingestion
+                user_id = key_record[1] if key_record else None
+                result['authenticated_user_id'] = user_id
                 return jsonify(result), 200
             return jsonify(result), 500
 
@@ -477,6 +499,90 @@ def create_app():
             return jsonify({"status": "error", "message": str(exc)}), 500
 
     return flask_app
+
+# ========================================================================
+# Signature Verification for Ingestion Endpoints
+# ========================================================================
+
+import hashlib
+import hmac
+import time
+import json
+
+def verify_ingest_signature(request):
+    """
+    Verify HMAC signature for ingestion endpoints.
+    Returns (is_valid, error_message, signing_key_record)
+    """
+    try:
+        # Get signature headers
+        key_id = request.headers.get('X-Ingest-Key-Id')
+        timestamp = request.headers.get('X-Ingest-Timestamp')
+        signature = request.headers.get('X-Ingest-Signature')
+        
+        if not all([key_id, timestamp, signature]):
+            return False, "Missing required signature headers (X-Ingest-Key-Id, X-Ingest-Timestamp, X-Ingest-Signature)", None
+        
+        # Check timestamp (reject requests older than 5 minutes)
+        try:
+            request_time = int(timestamp)
+            current_time = int(time.time())
+            if abs(current_time - request_time) > 300:  # 5 minutes
+                return False, "Request timestamp too old or too far in future", None
+        except ValueError:
+            return False, "Invalid timestamp format", None
+        
+        # Look up the signing key in the database
+        from auth_models import get_auth_db_connection
+        conn = get_auth_db_connection()
+        cursor = conn.cursor()
+        
+        cursor.execute(
+            'SELECT id, user_id, key_id, secret, revoked_at FROM signing_keys WHERE key_id = ?',
+            (key_id,)
+        )
+        key_record = cursor.fetchone()
+        conn.close()
+        
+        if not key_record:
+            return False, "Invalid signing key ID", None
+        
+        if key_record[4]:  # revoked_at is not None
+            return False, "Signing key has been revoked", None
+        
+        # Get the secret
+        secret = key_record[2]  # secret column
+        
+        # Reconstruct the message that should have been signed
+        method = request.method.upper()
+        path = request.path
+        
+        # Get request body and compute hash
+        body = request.get_json()
+        if body is None:
+            body = {}
+        
+        body_json = json.dumps(body, separators=(",", ":"), ensure_ascii=False)
+        body_hash = hashlib.sha256(body_json.encode("utf-8")).hexdigest()
+        
+        # Create message to verify: timestamp.METHOD.path.body_hash
+        message = f"{timestamp}.{method}.{path}.{body_hash}"
+        
+        # Compute expected signature
+        expected_sig = hmac.new(
+            secret.encode("utf-8"),
+            message.encode("utf-8"),
+            hashlib.sha256
+        ).hexdigest()
+        
+        # Compare signatures (timing-safe comparison)
+        if not hmac.compare_digest(signature, expected_sig):
+            return False, "Invalid signature", None
+        
+        return True, None, key_record
+        
+    except Exception as e:
+        return False, f"Signature verification error: {str(e)}", None
 
 # ========================================================================
 # Data Import Functions
