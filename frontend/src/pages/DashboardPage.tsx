@@ -371,7 +371,7 @@ const DashboardPage: React.FC = () => {
   return (
     <div className="space-y-8">
       {/* Header */}
-      <div className="flex justify-between items-start">
+      <div className="flex flex-col lg:flex-row lg:justify-between lg:items-start gap-4">
         <div>
           <h1 className="text-3xl font-bold">Compliance Dashboard</h1>
           <p className="text-base-content/70">
@@ -379,9 +379,9 @@ const DashboardPage: React.FC = () => {
           </p>
         </div>
         
-        <div className="flex space-x-2">
+        <div className="flex flex-col sm:flex-row gap-2 w-full lg:w-auto">
           <button 
-            className={`btn btn-primary ${isExporting ? 'loading' : ''}`}
+            className={`btn btn-primary w-full sm:w-auto ${isExporting ? 'loading' : ''}`}
             onClick={handleExportCSV}
             disabled={!billsData || isExporting}
           >
@@ -392,8 +392,8 @@ const DashboardPage: React.FC = () => {
             <>
               {/* Saved Views Dropdown */}
               {savedViews.length > 0 && (
-                <div className="dropdown dropdown-end">
-                  <div tabIndex={0} role="button" className="btn btn-outline">
+                <div className="dropdown dropdown-end w-full sm:w-auto">
+                  <div tabIndex={0} role="button" className="btn btn-outline w-full sm:w-auto">
                     📁 Load View
                   </div>
                   <ul tabIndex={0} className="dropdown-content z-[1] menu p-2 shadow bg-base-100 rounded-box w-64 max-h-64 overflow-y-auto">
@@ -423,7 +423,7 @@ const DashboardPage: React.FC = () => {
               )}
               
               <button 
-                className="btn btn-secondary"
+                className="btn btn-secondary w-full sm:w-auto"
                 onClick={() => setShowSaveModal(true)}
               >
                 💾 Save View
@@ -434,7 +434,7 @@ const DashboardPage: React.FC = () => {
       </div>
 
       {/* Accuracy Notice Banner */}
-      <div className="bg-base-200/50 border border-base-300 rounded-lg p-4 flex items-center justify-between">
+      <div className="bg-base-200/50 border border-base-300 rounded-lg p-4">
         <div className="flex items-center space-x-3">
           <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" className="stroke-base-content/60 shrink-0 w-5 h-5">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
@@ -443,7 +443,7 @@ const DashboardPage: React.FC = () => {
             <span className="font-medium">Notice an error? Accuracy is important!</span> Shoot us an email, or submit a pull request on GitHub.
           </div>
         </div>
-        <div className="flex items-center space-x-2">
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 w-full sm:w-auto mt-2">
           <a href="/contact" className="btn btn-xs btn-outline">
             Contact Us
           </a>

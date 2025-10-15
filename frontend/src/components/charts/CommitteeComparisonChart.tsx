@@ -74,17 +74,16 @@ const CommitteeComparisonChart: React.FC<CommitteeComparisonChartProps> = ({
   switch (viewMode) {
     case 'top_performers':
       displayData = sortedData.slice(0, limit)
-      chartTitle = `Top ${Math.min(limit, sortedData.length)} Committee${Math.min(limit, sortedData.length) !== 1 ? 's' : ''} by Performance`
-      break
+      chartTitle = ``
       
     case 'all_committees':
       displayData = sortedData
-      chartTitle = `All ${sortedData.length} Committee${sortedData.length !== 1 ? 's' : ''} with Bills`
+      chartTitle = ``
       break
       
     default:
       displayData = sortedData.slice(0, limit)
-      chartTitle = `Top ${Math.min(limit, sortedData.length)} Committee${Math.min(limit, sortedData.length) !== 1 ? 's' : ''} by Performance`
+      chartTitle = ``
   }
 
   const names = displayData.map(d => d.name.length > 30 ? d.name.substring(0, 30) + '...' : d.name)

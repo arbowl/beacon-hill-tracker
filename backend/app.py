@@ -533,25 +533,13 @@ def verify_ingest_signature(request):
             return False, "Invalid timestamp format", None
         
         # Look up the signing key in the database
-        from auth_models import get_auth_db_connection
-        conn = get_auth_db_connection()
-        cursor = conn.cursor()
-        
-        cursor.execute(
-            'SELECT id, user_id, key_id, secret, revoked_at FROM signing_keys WHERE key_id = ?',
-            (key_id,)
-        )
-        key_record = cursor.fetchone()
-        conn.close()
-        
-        if not key_record:
+        from auth_models import SigningKey
+        signing_key = SigningKey.query.filter_by(key_id=key_id).first()
+        if not signing_key:
             return False, "Invalid signing key ID", None
-        
-        if key_record[4]:  # revoked_at is not None
+        if signing_key.revoked_at:
             return False, "Signing key has been revoked", None
-        
-        # Get the secret
-        secret = key_record[2]  # secret column
+        secret = signing_key.secret
         
         # Reconstruct the message that should have been signed
         method = request.method.upper()
@@ -578,6 +566,8 @@ def verify_ingest_signature(request):
         # Compare signatures (timing-safe comparison)
         if not hmac.compare_digest(signature, expected_sig):
             return False, "Invalid signature", None
+        
+        key_record = (signing_key.id, signing_key.user_id, signing_key.secret, signing_key.key_id, signing_key.revoked_at)
         
         return True, None, key_record
         

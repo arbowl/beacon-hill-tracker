@@ -85,8 +85,11 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
           </div>
 
           {/* Logo */}
-          <Link to="/" className="btn btn-ghost text-xl font-bold">
+          <Link to="/" className="btn btn-ghost text-xl font-bold hidden sm:inline-flex">
             Beacon Hill Compliance Tracker
+          </Link>
+          <Link to="/" className="btn btn-ghost text-xl font-bold sm:hidden">
+            B • H • C • T
           </Link>
         </div>
 

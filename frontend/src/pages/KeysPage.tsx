@@ -91,7 +91,7 @@ const KeysPage: React.FC = () => {
     <div className="container mx-auto px-4 py-8">
       <div className="space-y-6">
         {/* Header */}
-        <div className="flex justify-between items-start">
+        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-4">
           <div>
             <h1 className="text-3xl font-bold text-base-content">Signing Keys</h1>
             <p className="text-base-content/70 mt-2">
@@ -99,7 +99,7 @@ const KeysPage: React.FC = () => {
             </p>
           </div>
           <button 
-            className={`btn btn-primary ${generating ? 'loading' : ''}`}
+            className={`btn btn-primary w-full sm:w-auto ${generating ? 'loading' : ''}`}
             onClick={generateKey}
             disabled={generating}
           >
@@ -132,15 +132,15 @@ const KeysPage: React.FC = () => {
                   <label className="label">
                     <span className="label-text font-medium">Key ID (for signing_key_id parameter):</span>
                   </label>
-                  <div className="join w-full">
+                  <div className="flex flex-col sm:flex-row gap-2">
                     <input
                       type="text"
-                      className="input input-bordered join-item flex-1 font-mono text-sm"
+                      className="input input-bordered flex-1 font-mono text-sm min-w-0"
                       value={newKeyData.key_id}
                       readOnly
                     />
                     <button
-                      className="btn btn-outline join-item"
+                      className="btn btn-outline w-full sm:w-auto"
                       onClick={() => copyToClipboard(newKeyData.key_id)}
                     >
                       Copy
@@ -152,10 +152,10 @@ const KeysPage: React.FC = () => {
                   <label className="label">
                     <span className="label-text font-medium">Secret (for signing_key_secret parameter):</span>
                   </label>
-                  <div className="join w-full">
+                  <div className="flex flex-col sm:flex-row gap-2">
                     <input
                       type="text"
-                      className="input input-bordered join-item flex-1 font-mono text-sm"
+                      className="input input-bordered flex-1 font-mono text-sm min-w-0"
                       value={newKeyData.secret}
                       readOnly
                     />
@@ -226,13 +226,13 @@ const KeysPage: React.FC = () => {
                 {keys.map((key) => (
                   <div key={key.id} className={`card ${!key.is_revoked ? 'bg-base-200' : 'bg-base-300'} shadow-sm`}>
                     <div className="card-body">
-                      <div className="flex justify-between items-start">
-                        <div className="space-y-2 flex-1">
-                          <div className="flex items-center space-x-2">
-                            <h3 className="font-mono text-sm font-bold">
+                      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-4">
+                        <div className="space-y-2 flex-1 min-w-0">
+                          <div className="flex flex-col sm:flex-row sm:items-center gap-1">
+                            <h3 className="font-mono text-xs font-bold">
                               Key ID: {key.key_id}
                             </h3>
-                            <div className={`badge ${!key.is_revoked ? 'badge-success' : 'badge-error'}`}>
+                            <div className={`badge ${!key.is_revoked ? 'badge-success' : 'badge-error'} self-start sm:self-center`}>
                               {!key.is_revoked ? 'Active' : 'Revoked'}
                             </div>
                           </div>
@@ -248,20 +248,21 @@ const KeysPage: React.FC = () => {
                             <label className="label">
                               <span className="label-text font-medium">Key ID (Public Identifier)</span>
                             </label>
-                            <div className="join">
+                            <div className="flex flex-col sm:flex-row gap-2">
                               <input
                                 type="text"
-                                className="input input-bordered join-item flex-1 font-mono text-xs"
+                                className="input input-bordered flex-1 font-mono text-xs min-w-0"
                                 value={key.key_id}
                                 readOnly
                               />
                               <button
-                                className="btn btn-outline join-item"
+                                className="btn btn-outline w-full sm:w-auto"
                                 onClick={() => copyToClipboard(key.key_id)}
                               >
-                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <svg className="w-4 h-4 sm:mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
                                 </svg>
+                                <span class="hidden sm:inline">Copy</span>
                               </button>
                             </div>
                             <div className="label">
