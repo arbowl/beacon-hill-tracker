@@ -1,0 +1,238 @@
+"""
+Email Service for sending verification and notification emails
+Uses Flask-Mail with configurable SMTP settings
+"""
+
+from flask import current_app, render_template_string
+from flask_mail import Mail, Message
+
+mail = Mail()
+
+# Email templates
+VERIFICATION_EMAIL_TEMPLATE = """
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>Verify Your Email - Beacon Hill Compliance Tracker</title>
+    <style>
+        body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+        .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+        .header { background: #2563eb; color: white; padding: 20px; text-align: center; }
+        .content { padding: 20px; background: #f9fafb; }
+        .button { 
+            display: inline-block; 
+            background: #2563eb; 
+            color: white; 
+            padding: 12px 24px; 
+            text-decoration: none; 
+            border-radius: 6px; 
+            margin: 20px 0; 
+        }
+        .footer { padding: 20px; text-align: center; color: #666; font-size: 14px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Beacon Hill Compliance Tracker</h1>
+        </div>
+        <div class="content">
+            <h2>Verify Your Email Address</h2>
+            <p>Thank you for registering with the Beacon Hill Compliance Tracker!</p>
+            <p>To complete your registration and activate your account, please click the button below:</p>
+            <a href="{{ verification_url }}" class="button">Verify Email Address</a>
+            <p>If the button doesn't work, you can copy and paste this link into your browser:</p>
+            <p><a href="{{ verification_url }}">{{ verification_url }}</a></p>
+            <p><strong>Note:</strong> This verification link will expire in 24 hours.</p>
+        </div>
+        <div class="footer">
+            <p>If you didn't create an account, you can safely ignore this email.</p>
+            <p>This is an automated message, please do not reply.</p>
+        </div>
+    </div>
+</body>
+</html>
+"""
+
+ROLE_UPDATE_EMAIL_TEMPLATE = """
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>Account Role Updated - Beacon Hill Compliance Tracker</title>
+    <style>
+        body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+        .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+        .header { background: #2563eb; color: white; padding: 20px; text-align: center; }
+        .content { padding: 20px; background: #f9fafb; }
+        .footer { padding: 20px; text-align: center; color: #666; font-size: 14px; }
+        .role-badge { 
+            display: inline-block; 
+            background: #10b981; 
+            color: white; 
+            padding: 4px 12px; 
+            border-radius: 20px; 
+            font-size: 14px; 
+            font-weight: bold; 
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Beacon Hill Compliance Tracker</h1>
+        </div>
+        <div class="content">
+            <h2>Your Account Role Has Been Updated</h2>
+            <p>Your account role has been updated by an administrator.</p>
+            <p><strong>New Role:</strong> <span class="role-badge">{{ new_role.title() }}</span></p>
+            {% if new_role == 'privileged' %}
+            <p>You now have access to:</p>
+            <ul>
+                <li>Generate signing keys for data submission</li>
+                <li>Manage your signing keys</li>
+                <li>All previous user permissions</li>
+            </ul>
+            {% elif new_role == 'admin' %}
+            <p>You now have access to:</p>
+            <ul>
+                <li>Manage user roles</li>
+                <li>View all signing keys</li>
+                <li>Access admin panel</li>
+                <li>All previous permissions</li>
+            </ul>
+            {% endif %}
+            <p>Log in to your account to access your new features.</p>
+        </div>
+        <div class="footer">
+            <p>This is an automated message, please do not reply.</p>
+        </div>
+    </div>
+</body>
+</html>
+"""
+
+
+def init_mail(app):
+    """Initialize Flask-Mail with the application"""
+    mail.init_app(app)
+
+
+def send_verification_email(email, verification_url):
+    """Send email verification message to user"""
+    try:
+        subject = "Verify Your Email - Beacon Hill Compliance Tracker"
+        
+        # Render HTML template
+        html_body = render_template_string(
+            VERIFICATION_EMAIL_TEMPLATE,
+            verification_url=verification_url
+        )
+        
+        # Create plain text version
+        text_body = f"""
+Beacon Hill Compliance Tracker - Email Verification
+
+Thank you for registering!
+
+To complete your registration and activate your account, please visit:
+{verification_url}
+
+This verification link will expire in 24 hours.
+
+If you didn't create an account, you can safely ignore this email.
+        """.strip()
+        
+        # Send email
+        msg = Message(
+            subject=subject,
+            recipients=[email],
+            html=html_body,
+            body=text_body
+        )
+        
+        mail.send(msg)
+        current_app.logger.info(f"Verification email sent to {email}")
+        
+    except Exception as e:
+        current_app.logger.error(f"Failed to send verification email to {email}: {e}")
+        raise
+
+
+def send_role_update_email(email, new_role, old_role=None):
+    """Send notification when user role is updated"""
+    try:
+        subject = "Account Role Updated - Beacon Hill Compliance Tracker"
+        
+        # Render HTML template
+        html_body = render_template_string(
+            ROLE_UPDATE_EMAIL_TEMPLATE,
+            new_role=new_role,
+            old_role=old_role
+        )
+        
+        # Create plain text version
+        text_body = f"""
+Beacon Hill Compliance Tracker - Role Updated
+
+Your account role has been updated by an administrator.
+
+New Role: {new_role.title()}
+
+Log in to your account to access your new features.
+        """.strip()
+        
+        # Send email
+        msg = Message(
+            subject=subject,
+            recipients=[email],
+            html=html_body,
+            body=text_body
+        )
+        
+        mail.send(msg)
+        current_app.logger.info(f"Role update email sent to {email}")
+        
+    except Exception as e:
+        current_app.logger.error(f"Failed to send role update email to {email}: {e}")
+        # Don't raise - this is a notification, not critical
+
+
+def send_key_generated_email(email, key_id):
+    """Send notification when signing key is generated"""
+    try:
+        subject = "New Signing Key Generated - Beacon Hill Compliance Tracker"
+        
+        text_body = f"""
+Beacon Hill Compliance Tracker - New Signing Key
+
+A new signing key has been generated for your account.
+
+Key ID: {key_id}
+
+You can view and manage your signing keys in your account dashboard.
+
+Keep your signing keys secure and do not share them with others.
+        """.strip()
+        
+        # Send email
+        msg = Message(
+            subject=subject,
+            recipients=[email],
+            body=text_body
+        )
+        
+        mail.send(msg)
+        current_app.logger.info(f"Key generation email sent to {email}")
+        
+    except Exception as e:
+        current_app.logger.error(f"Failed to send key generation email to {email}: {e}")
+        # Don't raise - this is a notification, not critical
+
+
+# Export functions
+__all__ = [
+    'mail', 'init_mail', 'send_verification_email', 
+    'send_role_update_email', 'send_key_generated_email'
+]
