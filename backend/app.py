@@ -406,7 +406,216 @@ def create_app():
         except Exception as e:
             return jsonify({'error': str(e)}), 500
 
+    # Data ingestion endpoints
+    @flask_app.route('/ingest/cache', methods=['POST'])
+    def ingest_cache():
+        """
+        Ingest endpoint for cache data.
+        Expects cache.json structure with bill_parsers, committee_contacts, etc.
+        """
+        try:
+            data = request.get_json()
+
+            if not data:
+                return jsonify({
+                    "status": "error",
+                    "message": "No JSON data provided"
+                }), 400
+
+            result = import_cache_data(data)
+            if result['status'] == 'success':
+                return jsonify(result), 200
+            return jsonify(result), 500
+
+        except Exception as exc:
+            return jsonify({"status": "error", "message": str(exc)}), 500
+
+    @flask_app.route('/ingest/basic', methods=['POST'])
+    def ingest_basic():
+        """
+        Ingest endpoint for basic/compliance reports.
+        Expects: {"committee_id": "XXX", "run_id": "...", "items": [...]}
+        Also accepts "bills" instead of "items" for backwards compatibility.
+        """
+        try:
+            data = request.get_json()
+
+            if not data:
+                return jsonify({
+                    "status": "error",
+                    "message": "No JSON data provided"
+                }), 400
+
+            if not isinstance(data, dict):
+                return jsonify({
+                    "status": "error",
+                    "message": "Expected JSON object with committee_id and items"
+                }), 400
+
+            # Extract committee_id (from body or query parameter)
+            committee_id = data.get('committee_id') or request.args.get('committee_id')
+            if not committee_id:
+                return jsonify({
+                    "status": "error",
+                    "message": "committee_id is required"
+                }), 400
+
+            # Extract items/bills array
+            items = data.get('items', data.get('bills', []))
+            if not isinstance(items, list):
+                return jsonify({
+                    "status": "error",
+                    "message": "Expected 'items' or 'bills' to be an array"
+                }), 400
+
+            result = import_compliance_report(committee_id, items)
+            if result['status'] == 'success':
+                return jsonify(result), 200
+            return jsonify(result), 500
+
+        except Exception as exc:
+            return jsonify({"status": "error", "message": str(exc)}), 500
+
     return flask_app
+
+# ========================================================================
+# Data Import Functions
+# ========================================================================
+
+def import_cache_data(cache_data):
+    """Import data from cache.json structure"""
+    conn = sqlite3.connect(DB_PATH)
+    cursor = conn.cursor()
+
+    try:
+        # Import committees
+        if 'committee_contacts' in cache_data:
+            for comm_id, comm_data in cache_data['committee_contacts'].items():
+                cursor.execute(
+                    'INSERT OR REPLACE INTO committees '
+                    'VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, '
+                    '?, ?, ?, ?, ?, ?, ?, ?, ?)',
+                    (
+                        comm_data.get('committee_id', comm_id),
+                        comm_data.get('name', ''),
+                        comm_data.get('chamber', 'Joint'),
+                        comm_data.get('url', ''),
+                        comm_data.get('house_room'),
+                        comm_data.get('house_address'),
+                        comm_data.get('house_phone'),
+                        comm_data.get('senate_room'),
+                        comm_data.get('senate_address'),
+                        comm_data.get('senate_phone'),
+                        comm_data.get('house_chair_name', ''),
+                        comm_data.get('house_chair_email', ''),
+                        comm_data.get('house_vice_chair_name', ''),
+                        comm_data.get('house_vice_chair_email', ''),
+                        comm_data.get('senate_chair_name', ''),
+                        comm_data.get('senate_chair_email', ''),
+                        comm_data.get('senate_vice_chair_name', ''),
+                        comm_data.get('senate_vice_chair_email', ''),
+                        comm_data.get('updated_at', datetime.utcnow().isoformat() + 'Z')
+                    ))
+
+        # Import bills
+        if 'bill_parsers' in cache_data:
+            for bill_id, bill_data in cache_data['bill_parsers'].items():
+                # Insert basic bill info
+                title = bill_data.get('title', {})
+                cursor.execute(
+                    'INSERT OR REPLACE INTO bills '
+                    '(bill_id, bill_title, bill_url, updated_at) '
+                    'VALUES (?, ?, ?, ?)',
+                    (
+                        bill_id,
+                        title.get('value') if isinstance(title, dict) else title,
+                        bill_data.get('bill_url'),
+                        title.get('updated_at') if isinstance(title, dict) else datetime.utcnow().isoformat() + 'Z'
+                    ))
+
+        conn.commit()
+        return {
+            "status": "success",
+            "message": f"Successfully imported cache data"
+        }
+
+    except Exception as e:
+        conn.rollback()
+        return {
+            "status": "error",
+            "message": f"Database error: {str(e)}"
+        }
+    finally:
+        conn.close()
+
+def import_compliance_report(committee_id, bills_data):
+    """Import compliance report data for a specific committee"""
+    conn = sqlite3.connect(DB_PATH)
+    cursor = conn.cursor()
+
+    try:
+        imported_count = 0
+        
+        for bill in bills_data:
+            # Upsert bill basic info
+            cursor.execute(
+                'INSERT OR REPLACE INTO bills '
+                '(bill_id, bill_title, bill_url, updated_at) '
+                'VALUES (?, ?, ?, ?)',
+                (
+                    bill.get('bill_id'),
+                    bill.get('bill_title'),
+                    bill.get('bill_url'),
+                    datetime.utcnow().isoformat() + 'Z'
+                ))
+
+            # Insert compliance record
+            cursor.execute(
+                'INSERT INTO bill_compliance ('
+                'committee_id, bill_id, hearing_date, deadline_60, '
+                'effective_deadline, extension_order_url, extension_date, '
+                'reported_out, summary_present, summary_url, '
+                'votes_present, votes_url, state, reason, '
+                'notice_status, notice_gap_days, announcement_date, '
+                'scheduled_hearing_date, generated_at) '
+                'VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+                (
+                    committee_id,
+                    bill.get('bill_id'),
+                    bill.get('hearing_date'),
+                    bill.get('deadline_60'),
+                    bill.get('effective_deadline'),
+                    bill.get('extension_order_url'),
+                    bill.get('extension_date'),
+                    1 if bill.get('reported_out') else 0,
+                    1 if bill.get('summary_present') else 0,
+                    bill.get('summary_url'),
+                    1 if bill.get('votes_present') else 0,
+                    bill.get('votes_url'),
+                    bill.get('state', 'unknown'),
+                    bill.get('reason', ''),
+                    bill.get('notice_status'),
+                    bill.get('notice_gap_days'),
+                    bill.get('announcement_date'),
+                    bill.get('scheduled_hearing_date'),
+                    datetime.utcnow().isoformat() + 'Z'
+                ))
+            imported_count += 1
+
+        conn.commit()
+        return {
+            "status": "success",
+            "message": f"Successfully imported {imported_count} bills for committee {committee_id}"
+        }
+
+    except Exception as e:
+        conn.rollback()
+        return {
+            "status": "error",
+            "message": f"Database error: {str(e)}"
+        }
+    finally:
+        conn.close()
 
 # ========================================================================
 # Database Initialization (Existing functionality)
