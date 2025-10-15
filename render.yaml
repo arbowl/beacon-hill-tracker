@@ -1,0 +1,70 @@
+services:
+  # Backend API Service
+  - type: web
+    name: beacon-hill-backend
+    env: python
+    buildCommand: "pip install -r backend/requirements.txt"
+    startCommand: "python start_prod.py"
+    envVars:
+      - key: FLASK_ENV
+        value: production
+      - key: FLASK_DEBUG
+        value: false
+      - key: SECRET_KEY
+        generateValue: true
+      - key: JWT_SECRET_KEY
+        generateValue: true
+      - key: JWT_ACCESS_TOKEN_EXPIRES
+        value: "3600"
+      - key: DATABASE_URL
+        value: "sqlite:///compliance_tracker.db"
+      - key: AUTH_DATABASE_URL
+        value: "sqlite:///auth.db"
+      - key: MAIL_SERVER
+        value: "smtp.gmail.com"
+      - key: MAIL_PORT
+        value: "587"
+      - key: MAIL_USE_TLS
+        value: "True"
+      - key: MAIL_USE_SSL
+        value: "False"
+      - key: MAIL_USERNAME
+        sync: false  # Set manually in Render dashboard
+      - key: MAIL_PASSWORD
+        sync: false  # Set manually in Render dashboard
+      - key: MAIL_DEFAULT_SENDER
+        sync: false  # Set manually in Render dashboard
+      - key: FRONTEND_URL
+        value: "https://beacon-hill-frontend.onrender.com"
+      - key: BACKEND_URL
+        value: "https://beacon-hill-backend.onrender.com"
+      - key: BCRYPT_LOG_ROUNDS
+        value: "12"
+      - key: TOKEN_EXPIRATION_HOURS
+        value: "24"
+      - key: RATELIMIT_STORAGE_URL
+        value: "memory://"
+      - key: RATELIMIT_DEFAULT
+        value: "100 per hour"
+      - key: ADMIN_EMAIL
+        sync: false  # Set manually in Render dashboard
+      - key: ADMIN_PASSWORD
+        sync: false  # Set manually in Render dashboard
+      - key: SIGNING_KEY_LENGTH
+        value: "32"
+      - key: SIGNING_KEY_EXPIRATION_DAYS
+        value: "365"
+      - key: TESTING
+        value: "False"
+      - key: WTF_CSRF_ENABLED
+        value: "True"
+
+  # Frontend Static Site
+  - type: static
+    name: beacon-hill-frontend
+    buildCommand: "cd frontend && npm install && npm run build"
+    staticPublishPath: frontend/dist
+    routes:
+      - type: rewrite
+        source: "/*"
+        destination: "/index.html"
