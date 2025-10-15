@@ -126,19 +126,6 @@ const LoginPage: React.FC = () => {
             </form>
           </div>
         </div>
-
-        {/* Demo Account Info */}
-        <div className="card bg-info text-info-content shadow-md mt-4">
-          <div className="card-body py-4">
-            <h3 className="card-title text-sm">Demo Account</h3>
-            <p className="text-sm">
-              <strong>Admin:</strong> admin@example.com / change-this-admin-password
-            </p>
-            <p className="text-xs opacity-70">
-              Use the admin account to test all features including user management and signing keys.
-            </p>
-          </div>
-        </div>
       </div>
     </div>
   )

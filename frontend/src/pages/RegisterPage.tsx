@@ -222,8 +222,7 @@ const RegisterPage: React.FC = () => {
             <ul className="text-sm space-y-1 text-base-content/70">
               <li>• Save custom dashboard views</li>
               <li>• Export filtered compliance data</li>
-              <li>• Access historical reports</li>
-              <li>• Get notified of compliance updates</li>
+              <li>• Submit data <strong>(trusted users only)</strong></li>
             </ul>
           </div>
         </div>

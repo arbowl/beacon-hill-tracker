@@ -15,19 +15,13 @@ const HomePage: React.FC = () => {
         </h1>
         <div className="text-xl text-gray-600 max-w-3xl mx-auto mb-8 space-y-4">
           <p>
-            The Massachusetts Legislature recently adopted new House rules aimed at improving transparency and public access to the lawmaking process. These rules require, among other things, that hearings be announced at least 10 days in advance, that summaries and vote records be posted, and that committees report on bills within 60–90 days of hearings.
+            The Massachusetts Legislature is bound by rules to record votes, post agendas in advance, and make documents available to the public.
           </p>
-          
           <p>
-            This dashboard tracks how well those rules are being followed. It pulls data from official sources for every bill, making it easier for the public, journalists, and civic groups to see where things stand.
+            However, these rules are often ignored or circumvented, leading to a lack of transparency about how decisions are made. When they are posted, the information is often hard to find.
           </p>
-          
           <p>
-            The goal isn't to play politics or take partisan shots. Lack of transparency is a systemic issue — it exists no matter which party holds the gavel. The point here is simple: when the rules are clear, everyone should be able to see whether they're being followed.
-          </p>
-          
-          <p>
-            This tool helps do just that.
+            Lack of transparency is a systemic issue, not a partisan one. My goal is simple: to cast a spotlight on the requirements, and give others the tools to enact change.
           </p>
         </div>
         

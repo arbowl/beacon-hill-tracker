@@ -1161,7 +1161,7 @@ const DashboardPage: React.FC = () => {
                       href={selectedBill.bill_url} 
                       target="_blank" 
                       rel="noopener noreferrer"
-                      className="btn btn-sm btn-outline btn-primary"
+                      className="btn btn-sm btn-primary text-black"
                       title="View bill on Massachusetts Legislature website"
                     >
                       <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
