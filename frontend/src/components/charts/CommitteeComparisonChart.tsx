@@ -86,6 +86,10 @@ const CommitteeComparisonChart: React.FC<CommitteeComparisonChartProps> = ({
       chartTitle = ``
   }
 
+  if (chartType === 'horizontal_bar') {
+    displayData = [...displayData].reverse()
+  }
+
   const names = displayData.map(d => d.name.length > 30 ? d.name.substring(0, 30) + '...' : d.name)
   const compliant = displayData.map(d => d.compliant_count)
   const incomplete = displayData.map(d => d.incomplete_count)
@@ -192,3 +196,4 @@ const CommitteeComparisonChart: React.FC<CommitteeComparisonChartProps> = ({
 }
 
 export default CommitteeComparisonChart
+
