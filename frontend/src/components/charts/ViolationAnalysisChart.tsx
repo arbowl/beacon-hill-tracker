@@ -62,7 +62,7 @@ const ViolationAnalysisChart: React.FC<ViolationAnalysisChartProps> = ({
 
   if (chartType === 'pie') {
     plotData = [{
-      type: 'pie',
+      type: 'pie' as const,
       labels: labels,
       values: values,
       marker: { colors: colors },
@@ -70,15 +70,15 @@ const ViolationAnalysisChart: React.FC<ViolationAnalysisChartProps> = ({
                      'Count: %{value}<br>' +
                      'Percentage: %{percent}<br>' +
                      '<extra></extra>',
-      textinfo: 'label+percent',
-      textposition: 'auto'
+      textinfo: 'label+percent' as const,
+      textposition: 'auto' as const
     }]
     layout.showlegend = true
     layout.legend = { orientation: 'v', x: 1.05, y: 0.5 }
   } else if (chartType === 'horizontal_bar') {
     plotData = [{
-      type: 'bar',
-      orientation: 'h',
+      type: 'bar' as const,
+      orientation: 'h' as const,
       x: values,
       y: labels,
       marker: { color: colors },
@@ -99,7 +99,7 @@ const ViolationAnalysisChart: React.FC<ViolationAnalysisChartProps> = ({
     layout.margin.l = 200
   } else {
     plotData = [{
-      type: 'bar',
+      type: 'bar' as const,
       x: labels,
       y: values,
       marker: { color: colors },
