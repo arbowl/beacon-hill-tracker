@@ -45,3 +45,6 @@ pytest-cov==4.1.0
 
 # Production WSGI server
 gunicorn==21.2.0
+
+# PostgreSQL adapter for production (optional for local SQLite dev)
+psycopg2-binary==2.9.9
