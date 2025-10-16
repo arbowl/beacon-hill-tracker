@@ -99,8 +99,8 @@ const CommitteeComparisonChart: React.FC<CommitteeComparisonChartProps> = ({
 
   const traces = [
     {
-      type: isHorizontal ? 'bar' : 'bar',
-      orientation: isHorizontal ? 'h' : 'v',
+      type: 'bar' as const,
+      orientation: (isHorizontal ? 'h' : 'v') as const,
       x: isHorizontal ? compliant : names,
       y: isHorizontal ? names : compliant,
       name: 'Compliant',
@@ -110,8 +110,8 @@ const CommitteeComparisonChart: React.FC<CommitteeComparisonChartProps> = ({
                      '<extra></extra>',
     },
     {
-      type: isHorizontal ? 'bar' : 'bar',
-      orientation: isHorizontal ? 'h' : 'v',
+      type: 'bar' as const,
+      orientation: (isHorizontal ? 'h' : 'v') as const,
       x: isHorizontal ? incomplete : names,
       y: isHorizontal ? names : incomplete,
       name: 'Incomplete',
@@ -121,8 +121,8 @@ const CommitteeComparisonChart: React.FC<CommitteeComparisonChartProps> = ({
                      '<extra></extra>',
     },
     {
-      type: isHorizontal ? 'bar' : 'bar',
-      orientation: isHorizontal ? 'h' : 'v',
+      type: 'bar' as const,
+      orientation: (isHorizontal ? 'h' : 'v') as const,
       x: isHorizontal ? nonCompliant : names,
       y: isHorizontal ? names : nonCompliant,
       name: 'Non-Compliant',
