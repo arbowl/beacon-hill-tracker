@@ -813,6 +813,7 @@ const DashboardPage: React.FC = () => {
                </div>
                
                <CommitteeComparisonChart 
+                 key={`committee-chart-${committeeViewMode}-${committeeLimit}`}
                  data={committeeStats?.map(committee => ({
                    committee_id: committee.committee_id,
                    name: committee.committee_name,
