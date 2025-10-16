@@ -8,7 +8,6 @@ import os
 from flask import Flask, request, jsonify
 from flask_jwt_extended import JWTManager
 from dotenv import load_dotenv
-import sqlite3
 from datetime import datetime
 from pathlib import Path
 
@@ -19,6 +18,7 @@ from views_routes import views_bp
 from keys_routes import keys_bp
 from email_service import init_mail
 from security import init_security_middleware
+from database import get_db_connection, init_compliance_database
 
 # Load environment variables
 load_dotenv()
@@ -77,7 +77,7 @@ def create_app():
     flask_app.register_blueprint(keys_bp)
 
     # Initialize main database (existing functionality)
-    init_database()
+    init_compliance_database()
 
     # Define API routes within the app context
     @flask_app.route('/health', methods=['GET'])
@@ -94,8 +94,8 @@ def create_app():
     def get_stats():
         """Get global statistics for the dashboard"""
         try:
-            conn = sqlite3.connect(DB_PATH)
-            cursor = conn.cursor()
+            with get_db_connection() as conn:
+                cursor = conn.cursor()
             
             # Get overall statistics with deduplication
             cursor.execute('''
@@ -147,8 +147,7 @@ def create_app():
                     'latest_report_date': None
                 }
             
-            conn.close()
-            return jsonify(stats)
+                return jsonify(stats)
             
         except Exception as e:
             return jsonify({'error': str(e)}), 500
@@ -158,8 +157,8 @@ def create_app():
     def get_committees():
         """Get all committees"""
         try:
-            conn = sqlite3.connect(DB_PATH)
-            cursor = conn.cursor()
+            with get_db_connection() as conn:
+                cursor = conn.cursor()
             
             cursor.execute('''
                 SELECT committee_id, name, chamber, url, updated_at
@@ -177,8 +176,7 @@ def create_app():
                     'updated_at': row[4]
                 })
             
-            conn.close()
-            return jsonify(committees)
+                return jsonify(committees)
             
         except Exception as e:
             return jsonify({'error': str(e)}), 500
@@ -188,8 +186,8 @@ def create_app():
     def get_committee_stats():
         """Get committee compliance statistics"""
         try:
-            conn = sqlite3.connect(DB_PATH)
-            cursor = conn.cursor()
+            with get_db_connection() as conn:
+                cursor = conn.cursor()
             
             cursor.execute('''
                 WITH latest_bills AS (
@@ -235,8 +233,7 @@ def create_app():
                     'last_report_generated': row[9]
                 })
             
-            conn.close()
-            return jsonify(committee_stats)
+                return jsonify(committee_stats)
             
         except Exception as e:
             return jsonify({'error': str(e)}), 500
@@ -246,8 +243,8 @@ def create_app():
     def get_committee_details(committee_id):
         """Get detailed information for a specific committee including contact details"""
         try:
-            conn = sqlite3.connect(DB_PATH)
-            cursor = conn.cursor()
+            with get_db_connection() as conn:
+                cursor = conn.cursor()
             
             cursor.execute('''
                 SELECT committee_id, name, chamber, url, 
@@ -264,7 +261,6 @@ def create_app():
             
             row = cursor.fetchone()
             if not row:
-                conn.close()
                 return jsonify({'error': 'Committee not found'}), 404
             
             committee = {
@@ -289,7 +285,6 @@ def create_app():
                 'updated_at': row[18]
             }
             
-            conn.close()
             return jsonify(committee)
             
         except Exception as e:
@@ -300,8 +295,8 @@ def create_app():
     def get_bills():
         """Get bills with optional filtering - deduplicated to show only latest version"""
         try:
-            conn = sqlite3.connect(DB_PATH)
-            cursor = conn.cursor()
+            with get_db_connection() as conn:
+                cursor = conn.cursor()
             
             # Get filter parameters
             committee_id = request.args.get('committee_id')  # For backward compatibility
@@ -400,8 +395,7 @@ def create_app():
                 
                 bills.append(bill)
             
-            conn.close()
-            return jsonify(bills)
+                return jsonify(bills)
             
         except Exception as e:
             return jsonify({'error': str(e)}), 500
@@ -580,218 +574,130 @@ def verify_ingest_signature(request):
 
 def import_cache_data(cache_data):
     """Import data from cache.json structure"""
-    conn = sqlite3.connect(DB_PATH)
-    cursor = conn.cursor()
+    with get_db_connection() as conn:
+        cursor = conn.cursor()
+    
+        try:
+            # Import committees
+            if 'committee_contacts' in cache_data:
+                for comm_id, comm_data in cache_data['committee_contacts'].items():
+                    cursor.execute(
+                        'INSERT OR REPLACE INTO committees '
+                        'VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, '
+                        '?, ?, ?, ?, ?, ?, ?, ?, ?)',
+                        (
+                            comm_data.get('committee_id', comm_id),
+                            comm_data.get('name', ''),
+                            comm_data.get('chamber', 'Joint'),
+                            comm_data.get('url', ''),
+                            comm_data.get('house_room'),
+                            comm_data.get('house_address'),
+                            comm_data.get('house_phone'),
+                            comm_data.get('senate_room'),
+                            comm_data.get('senate_address'),
+                            comm_data.get('senate_phone'),
+                            comm_data.get('house_chair_name', ''),
+                            comm_data.get('house_chair_email', ''),
+                            comm_data.get('house_vice_chair_name', ''),
+                            comm_data.get('house_vice_chair_email', ''),
+                            comm_data.get('senate_chair_name', ''),
+                            comm_data.get('senate_chair_email', ''),
+                            comm_data.get('senate_vice_chair_name', ''),
+                            comm_data.get('senate_vice_chair_email', ''),
+                            comm_data.get('updated_at', datetime.utcnow().isoformat() + 'Z')
+                        ))
 
-    try:
-        # Import committees
-        if 'committee_contacts' in cache_data:
-            for comm_id, comm_data in cache_data['committee_contacts'].items():
-                cursor.execute(
-                    'INSERT OR REPLACE INTO committees '
-                    'VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, '
-                    '?, ?, ?, ?, ?, ?, ?, ?, ?)',
-                    (
-                        comm_data.get('committee_id', comm_id),
-                        comm_data.get('name', ''),
-                        comm_data.get('chamber', 'Joint'),
-                        comm_data.get('url', ''),
-                        comm_data.get('house_room'),
-                        comm_data.get('house_address'),
-                        comm_data.get('house_phone'),
-                        comm_data.get('senate_room'),
-                        comm_data.get('senate_address'),
-                        comm_data.get('senate_phone'),
-                        comm_data.get('house_chair_name', ''),
-                        comm_data.get('house_chair_email', ''),
-                        comm_data.get('house_vice_chair_name', ''),
-                        comm_data.get('house_vice_chair_email', ''),
-                        comm_data.get('senate_chair_name', ''),
-                        comm_data.get('senate_chair_email', ''),
-                        comm_data.get('senate_vice_chair_name', ''),
-                        comm_data.get('senate_vice_chair_email', ''),
-                        comm_data.get('updated_at', datetime.utcnow().isoformat() + 'Z')
-                    ))
+            # Import bills
+            if 'bill_parsers' in cache_data:
+                for bill_id, bill_data in cache_data['bill_parsers'].items():
+                    # Insert basic bill info
+                    title = bill_data.get('title', {})
+                    cursor.execute(
+                        'INSERT OR REPLACE INTO bills '
+                        '(bill_id, bill_title, bill_url, updated_at) '
+                        'VALUES (?, ?, ?, ?)',
+                        (
+                            bill_id,
+                            title.get('value') if isinstance(title, dict) else title,
+                            bill_data.get('bill_url'),
+                            title.get('updated_at') if isinstance(title, dict) else datetime.utcnow().isoformat() + 'Z'
+                        ))
 
-        # Import bills
-        if 'bill_parsers' in cache_data:
-            for bill_id, bill_data in cache_data['bill_parsers'].items():
-                # Insert basic bill info
-                title = bill_data.get('title', {})
+            return {
+                "status": "success",
+                "message": f"Successfully imported cache data"
+            }
+
+        except Exception as e:
+            return {
+                "status": "error",
+                "message": f"Database error: {str(e)}"
+            }
+
+def import_compliance_report(committee_id, bills_data):
+    """Import compliance report data for a specific committee"""
+    with get_db_connection() as conn:
+        cursor = conn.cursor()
+    
+        try:
+            imported_count = 0
+        
+            for bill in bills_data:
+                # Upsert bill basic info
                 cursor.execute(
                     'INSERT OR REPLACE INTO bills '
                     '(bill_id, bill_title, bill_url, updated_at) '
                     'VALUES (?, ?, ?, ?)',
                     (
-                        bill_id,
-                        title.get('value') if isinstance(title, dict) else title,
-                        bill_data.get('bill_url'),
-                        title.get('updated_at') if isinstance(title, dict) else datetime.utcnow().isoformat() + 'Z'
+                        bill.get('bill_id'),
+                        bill.get('bill_title'),
+                        bill.get('bill_url'),
+                        datetime.utcnow().isoformat() + 'Z'
                     ))
 
-        conn.commit()
-        return {
-            "status": "success",
-            "message": f"Successfully imported cache data"
-        }
+                # Insert compliance record
+                cursor.execute(
+                    'INSERT INTO bill_compliance ('
+                    'committee_id, bill_id, hearing_date, deadline_60, '
+                    'effective_deadline, extension_order_url, extension_date, '
+                    'reported_out, summary_present, summary_url, '
+                    'votes_present, votes_url, state, reason, '
+                    'notice_status, notice_gap_days, announcement_date, '
+                    'scheduled_hearing_date, generated_at) '
+                    'VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+                    (
+                        committee_id,
+                        bill.get('bill_id'),
+                        bill.get('hearing_date'),
+                        bill.get('deadline_60'),
+                        bill.get('effective_deadline'),
+                        bill.get('extension_order_url'),
+                        bill.get('extension_date'),
+                        1 if bill.get('reported_out') else 0,
+                        1 if bill.get('summary_present') else 0,
+                        bill.get('summary_url'),
+                        1 if bill.get('votes_present') else 0,
+                        bill.get('votes_url'),
+                        bill.get('state', 'unknown'),
+                        bill.get('reason', ''),
+                        bill.get('notice_status'),
+                        bill.get('notice_gap_days'),
+                        bill.get('announcement_date'),
+                        bill.get('scheduled_hearing_date'),
+                        datetime.utcnow().isoformat() + 'Z'
+                    ))
+                imported_count += 1
 
-    except Exception as e:
-        conn.rollback()
-        return {
-            "status": "error",
-            "message": f"Database error: {str(e)}"
-        }
-    finally:
-        conn.close()
+            return {
+                "status": "success",
+                "message": f"Successfully imported {imported_count} bills for committee {committee_id}"
+            }
 
-def import_compliance_report(committee_id, bills_data):
-    """Import compliance report data for a specific committee"""
-    conn = sqlite3.connect(DB_PATH)
-    cursor = conn.cursor()
-
-    try:
-        imported_count = 0
-        
-        for bill in bills_data:
-            # Upsert bill basic info
-            cursor.execute(
-                'INSERT OR REPLACE INTO bills '
-                '(bill_id, bill_title, bill_url, updated_at) '
-                'VALUES (?, ?, ?, ?)',
-                (
-                    bill.get('bill_id'),
-                    bill.get('bill_title'),
-                    bill.get('bill_url'),
-                    datetime.utcnow().isoformat() + 'Z'
-                ))
-
-            # Insert compliance record
-            cursor.execute(
-                'INSERT INTO bill_compliance ('
-                'committee_id, bill_id, hearing_date, deadline_60, '
-                'effective_deadline, extension_order_url, extension_date, '
-                'reported_out, summary_present, summary_url, '
-                'votes_present, votes_url, state, reason, '
-                'notice_status, notice_gap_days, announcement_date, '
-                'scheduled_hearing_date, generated_at) '
-                'VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
-                (
-                    committee_id,
-                    bill.get('bill_id'),
-                    bill.get('hearing_date'),
-                    bill.get('deadline_60'),
-                    bill.get('effective_deadline'),
-                    bill.get('extension_order_url'),
-                    bill.get('extension_date'),
-                    1 if bill.get('reported_out') else 0,
-                    1 if bill.get('summary_present') else 0,
-                    bill.get('summary_url'),
-                    1 if bill.get('votes_present') else 0,
-                    bill.get('votes_url'),
-                    bill.get('state', 'unknown'),
-                    bill.get('reason', ''),
-                    bill.get('notice_status'),
-                    bill.get('notice_gap_days'),
-                    bill.get('announcement_date'),
-                    bill.get('scheduled_hearing_date'),
-                    datetime.utcnow().isoformat() + 'Z'
-                ))
-            imported_count += 1
-
-        conn.commit()
-        return {
-            "status": "success",
-            "message": f"Successfully imported {imported_count} bills for committee {committee_id}"
-        }
-
-    except Exception as e:
-        conn.rollback()
-        return {
-            "status": "error",
-            "message": f"Database error: {str(e)}"
-        }
-    finally:
-        conn.close()
-
-# ========================================================================
-# Database Initialization (Existing functionality)
-# ========================================================================
-
-# Get the absolute path to the compliance_tracker.db in the parent directory
-BASE_DIR = Path(__file__).parent.parent
-DB_PATH = str(BASE_DIR / 'compliance_tracker.db')
-
-def init_database():
-    """Initialize SQLite3 database with schema from SCHEMA.md Part 2"""
-    conn = sqlite3.connect(DB_PATH)
-    cursor = conn.cursor()
-
-    # Create committees table
-    cursor.execute('''
-        CREATE TABLE IF NOT EXISTS committees (
-            committee_id TEXT PRIMARY KEY,
-            name TEXT NOT NULL,
-            chamber TEXT NOT NULL CHECK(chamber IN
-                ('Joint', 'House', 'Senate')),
-            url TEXT NOT NULL,
-            house_room TEXT,
-            house_address TEXT,
-            house_phone TEXT,
-            senate_room TEXT,
-            senate_address TEXT,
-            senate_phone TEXT,
-            house_chair_name TEXT,
-            house_chair_email TEXT,
-            house_vice_chair_name TEXT,
-            house_vice_chair_email TEXT,
-            senate_chair_name TEXT,
-            senate_chair_email TEXT,
-            senate_vice_chair_name TEXT,
-            senate_vice_chair_email TEXT,
-            updated_at TEXT NOT NULL
-        )
-    ''')
-
-    # Create bills table
-    cursor.execute('''
-        CREATE TABLE IF NOT EXISTS bills (
-            bill_id TEXT PRIMARY KEY,
-            bill_title TEXT,
-            bill_url TEXT,
-            updated_at TEXT
-        )
-    ''')
-
-    # Create bill_compliance table
-    cursor.execute('''
-        CREATE TABLE IF NOT EXISTS bill_compliance (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            committee_id TEXT NOT NULL,
-            bill_id TEXT NOT NULL,
-            hearing_date TEXT,
-            deadline_60 TEXT,
-            effective_deadline TEXT,
-            extension_order_url TEXT,
-            extension_date TEXT,
-            reported_out INTEGER NOT NULL,
-            summary_present INTEGER NOT NULL,
-            summary_url TEXT,
-            votes_present INTEGER NOT NULL,
-            votes_url TEXT,
-            state TEXT NOT NULL,
-            reason TEXT NOT NULL,
-            notice_status TEXT,
-            notice_gap_days INTEGER,
-            announcement_date TEXT,
-            scheduled_hearing_date TEXT,
-            generated_at TEXT DEFAULT CURRENT_TIMESTAMP,
-            FOREIGN KEY (committee_id) REFERENCES committees(committee_id) ON DELETE CASCADE,
-            FOREIGN KEY (bill_id) REFERENCES bills(bill_id) ON DELETE CASCADE
-        )
-    ''')
-
-    conn.commit()
-    conn.close()
+        except Exception as e:
+            return {
+                "status": "error",
+                "message": f"Database error: {str(e)}"
+            }
 
 # Create the Flask app instance for direct execution
 if __name__ == '__main__':
