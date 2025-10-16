@@ -60,14 +60,14 @@ const ComplianceOverviewChart: React.FC<ComplianceOverviewChartProps> = ({
       <Plot
         data={[
           {
-            type: 'pie',
+            type: 'pie' as const,
             values: values,
             labels: labels,
             marker: {
               colors: colors,
             },
-            textinfo: 'percent',
-            textposition: 'inside',
+            textinfo: 'percent' as const,
+            textposition: 'inside' as const,
             textfont: {
               size: 14,
               color: 'white'
