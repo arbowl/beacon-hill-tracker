@@ -783,8 +783,8 @@ const DashboardPage: React.FC = () => {
                      value={committeeViewMode}
                      onChange={(e) => setCommitteeViewMode(e.target.value as 'top_performers' | 'all_committees')}
                    >
-                     <option value="top_performers">Top Performers</option>
-                     <option value="all_committees">All Committees</option>
+                     <option value="top_performers">Top</option>
+                     <option value="all_committees">All</option>
                    </select>
                    
                    {committeeViewMode !== 'all_committees' && (
