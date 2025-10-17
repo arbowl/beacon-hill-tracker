@@ -26,8 +26,11 @@ def init_cors(app: Flask):
     production_origins = os.getenv('CORS_ORIGINS', '').split(',')
     for origin in production_origins:
         origin = origin.strip()
-        if origin:
+        if origin and origin not in allowed_origins:
             allowed_origins.append(origin)
+    
+    # Log CORS configuration for debugging
+    app.logger.info(f"CORS allowed origins: {allowed_origins}")
     
     # Configure CORS
     CORS(app, 
