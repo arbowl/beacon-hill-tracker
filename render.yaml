@@ -17,13 +17,9 @@ services:
       - key: JWT_ACCESS_TOKEN_EXPIRES
         value: "3600"
       - key: DATABASE_URL
-        fromDatabase:
-          name: beacon-hill-db
-          property: connectionString
+        sync: false  # Set manually in Render dashboard
       - key: AUTH_DATABASE_URL
-        fromDatabase:
-          name: beacon-hill-db
-          property: connectionString
+        sync: false  # Set manually in Render dashboard
       - key: MAIL_SERVER
         value: "smtp.gmail.com"
       - key: MAIL_PORT
@@ -41,7 +37,7 @@ services:
       - key: FRONTEND_URL
         value: "https://beacon-hill-frontend.onrender.com"
       - key: BACKEND_URL
-        value: "https://beacon-hill-backend.onrender.com"
+        value: "https://beacon-hill-tracker.onrender.com"
       - key: BCRYPT_LOG_ROUNDS
         value: "12"
       - key: TOKEN_EXPIRATION_HOURS
