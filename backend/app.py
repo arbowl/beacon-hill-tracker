@@ -11,7 +11,6 @@ from flask import Flask, request, jsonify, make_response
 from flask_jwt_extended import JWTManager
 from dotenv import load_dotenv
 from datetime import datetime
-from functools import wraps
 
 # Import our new modules
 from auth_models import init_db as init_auth_db
@@ -24,6 +23,7 @@ from database import get_db_connection, get_database_type, init_compliance_datab
 
 # Load environment variables
 load_dotenv()
+
 
 def create_app():
     """Application factory pattern"""
@@ -73,29 +73,36 @@ def create_app():
     # Simple authentication middleware for development protection
     def check_simple_auth():
         """Check HTTP Basic Auth if SIMPLE_AUTH_ENABLED is True"""
-        if os.getenv('SIMPLE_AUTH_ENABLED', 'False').lower() != 'true':
+        enabled = os.getenv('SIMPLE_AUTH_ENABLED', 'False').lower()
+        if enabled != 'true':
             return None  # Auth disabled, allow through
-        
+
         # Skip auth check for health endpoint
         if request.path == '/health':
             return None
-        
+
         auth = request.authorization
         expected_username = os.getenv('SIMPLE_AUTH_USERNAME', 'dev')
         expected_password = os.getenv('SIMPLE_AUTH_PASSWORD', 'changeme')
-        
-        if not auth or auth.username != expected_username or auth.password != expected_password:
+
+        is_valid = (auth and
+                    auth.username == expected_username and
+                    auth.password == expected_password)
+
+        if not is_valid:
             response = make_response(
                 jsonify({
                     'message': 'Authentication required',
-                    'hint': 'Use HTTP Basic Auth with username and password'
+                    'hint': 'Use HTTP Basic Auth with username/password'
                 }), 401
             )
-            response.headers['WWW-Authenticate'] = 'Basic realm="Development Access"'
+            response.headers['WWW-Authenticate'] = (
+                'Basic realm="Development Access"'
+            )
             return response
-        
+
         return None  # Auth successful
-    
+
     flask_app.before_request(check_simple_auth)
 
     # Initialize auth database
