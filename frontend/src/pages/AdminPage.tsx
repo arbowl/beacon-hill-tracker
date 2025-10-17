@@ -134,10 +134,6 @@ const AdminPage: React.FC = () => {
             <div className="flex justify-center py-8">
               <span className="loading loading-spinner loading-lg"></span>
             </div>
-          ) : error ? (
-            <div className="alert alert-error">
-              <span>Error loading users: {error}</span>
-            </div>
           ) : (
             <div className="overflow-x-auto">
               <table className="table table-zebra">
