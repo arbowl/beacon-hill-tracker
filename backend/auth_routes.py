@@ -174,23 +174,33 @@ def login():
     try:
         data = request.get_json()
         if not data:
+            current_app.logger.error('Login failed: No JSON data provided')
             return jsonify({'error': 'No JSON data provided'}), 400
         
         email = data.get('email', '').strip().lower()
         password = data.get('password', '')
         
+        current_app.logger.info(f'Login attempt for email: {email}')
+        
         if not email or not password:
+            current_app.logger.warning('Login failed: Missing email or password')
             return jsonify({'error': 'Email and password are required'}), 400
         
         # Find user
         user = User.query.filter_by(email=email).first()
         
-        if not user or not check_password_hash(user.pw_hash, password):
+        if not user:
+            current_app.logger.warning(f'Login failed: User not found for email: {email}')
+            return jsonify({'error': 'Invalid email or password'}), 401
+        
+        if not check_password_hash(user.pw_hash, password):
+            current_app.logger.warning(f'Login failed: Invalid password for email: {email}')
             return jsonify({'error': 'Invalid email or password'}), 401
         
         if not user.is_active:
+            current_app.logger.warning(f'Login failed: Account not verified for email: {email}')
             return jsonify({
-                'error': 'Account not verified. Please check your email.'
+                'error': 'Account not verified. Please check your email or contact support.'
             }), 401
         
         # Create JWT token
