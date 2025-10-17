@@ -105,6 +105,12 @@ export const authService = {
     authApi.patch('/role', { user_id: userId, role }),
   
   getUsers: () => authApi.get('/users'),
+  
+  forgotPassword: (email: string) =>
+    authApi.post('/forgot-password', { email }),
+  
+  resetPassword: (token: string, password: string) =>
+    authApi.post('/reset-password', { token, password }),
 }
 
 // Views API endpoints
@@ -181,5 +187,12 @@ export const keysService = {
     keysApi.get('/admin/all', { params: { include_revoked: includeRevoked, user_id: userId } }),
   adminRevokeKey: (id: number) => keysApi.patch(`/admin/revoke/${id}`),
 }
+
+// Convenience exports for password reset
+export const forgotPassword = (email: string) => 
+  authService.forgotPassword(email).then(res => res.data)
+
+export const resetPassword = (token: string, password: string) => 
+  authService.resetPassword(token, password).then(res => res.data)
 
 export default api
