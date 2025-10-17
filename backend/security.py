@@ -20,6 +20,8 @@ def init_cors(app: Flask):
         'http://localhost:3000',  # Alternative React dev server
         'http://localhost:5173',  # Vite dev server
         'http://127.0.0.1:5173',  # Alternative localhost
+        'https://beaconhilltracker.org',  # Production frontend
+        'https://www.beaconhilltracker.org',  # Production frontend with www
     ]
     
     # Add production origins if specified
