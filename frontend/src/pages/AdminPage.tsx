@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react'
 import { useAuth } from '../contexts/AuthContext'
+import { authService, keysService } from '../services/api'
 
 interface User {
   id: number
@@ -12,67 +13,45 @@ interface User {
 interface SigningKey {
   id: number
   key_id: string
-  user_id: number
+  user_id?: number
   created_at: string
   is_revoked: boolean
-  user_email?: string
+  revoked_at?: string | null
 }
 
 const AdminPage: React.FC = () => {
-  const { user } = useAuth()
+  const { user: currentUser } = useAuth()
   const [users, setUsers] = useState<User[]>([])
   const [signingKeys, setSigningKeys] = useState<SigningKey[]>([])
   const [loading, setLoading] = useState(true)
+  const [error, setError] = useState('')
+  const [success, setSuccess] = useState('')
+  
+  // Edit role modal state
+  const [editingUser, setEditingUser] = useState<User | null>(null)
+  const [newRole, setNewRole] = useState<'user' | 'privileged' | 'admin'>('user')
+  const [updating, setUpdating] = useState(false)
 
-  // Placeholder data for demonstration
-  useEffect(() => {
-    // In a real implementation, these would be API calls
-    setTimeout(() => {
-      setUsers([
-        {
-          id: 1,
-          email: 'admin@example.com',
-          role: 'admin',
-          is_active: true,
-          created_at: '2024-01-15T10:30:00Z'
-        },
-        {
-          id: 2,
-          email: 'user@example.com',
-          role: 'user',
-          is_active: true,
-          created_at: '2024-01-16T14:20:00Z'
-        },
-        {
-          id: 3,
-          email: 'privileged@example.com',
-          role: 'privileged',
-          is_active: true,
-          created_at: '2024-01-17T09:15:00Z'
-        }
-      ])
+  const loadData = async () => {
+    setLoading(true)
+    setError('')
+    try {
+      // Fetch users
+      const usersResponse = await authService.getUsers()
+      setUsers(usersResponse.data.users)
 
-      setSigningKeys([
-        {
-          id: 1,
-          key_id: 'bhct_89tqtkhxtxw1ha7hdti0p5dc',
-          user_id: 3,
-          created_at: '2024-01-20T11:45:00Z',
-          is_revoked: false,
-          user_email: 'privileged@example.com'
-        },
-        {
-          id: 2,
-          key_id: 'bhct_x4k9m2n7b8v1c3d5f6g8h9j0',
-          user_id: 1,
-          created_at: '2024-01-18T16:30:00Z',
-          is_revoked: true,
-          user_email: 'admin@example.com'
-        }
-      ])
-
+      // Fetch all signing keys (including revoked)
+      const keysResponse = await keysService.adminGetAllKeys(true)
+      setSigningKeys(keysResponse.data.keys)
+    } catch (err: any) {
+      setError(err.response?.data?.error || 'Failed to load data')
+    } finally {
       setLoading(false)
-    }, 1000)
+    }
+  }
+
+  useEffect(() => {
+    loadData()
   }, [])
 
   const getRoleBadgeColor = (role: string) => {
@@ -105,7 +84,65 @@ const AdminPage: React.FC = () => {
     })
   }
 
-  if (user?.role !== 'admin') {
+  const handleEditRole = (user: User) => {
+    setEditingUser(user)
+    setNewRole(user.role)
+    setSuccess('')
+    setError('')
+  }
+
+  const handleUpdateRole = async () => {
+    if (!editingUser) return
+    
+    setUpdating(true)
+    setError('')
+    setSuccess('')
+    
+    try {
+      await authService.updateUserRole(editingUser.id, newRole)
+      setSuccess(`Role updated successfully for ${editingUser.email}`)
+      setEditingUser(null)
+      // Reload data to reflect changes
+      await loadData()
+    } catch (err: any) {
+      setError(err.response?.data?.error || 'Failed to update role')
+    } finally {
+      setUpdating(false)
+    }
+  }
+
+  const handleRevokeKey = async (keyId: number) => {
+    if (!confirm('Are you sure you want to revoke this key? This action cannot be undone.')) {
+      return
+    }
+
+    setError('')
+    setSuccess('')
+    
+    try {
+      await keysService.adminRevokeKey(keyId)
+      setSuccess('Key revoked successfully')
+      // Reload data to reflect changes
+      await loadData()
+    } catch (err: any) {
+      setError(err.response?.data?.error || 'Failed to revoke key')
+    }
+  }
+
+  const handleRefresh = () => {
+    setSuccess('')
+    setError('')
+    loadData()
+  }
+
+  // Get user email for a signing key
+  const getUserEmail = (userId?: number) => {
+    if (!userId) return 'Unknown'
+    const user = users.find(u => u.id === userId)
+    return user?.email || 'Unknown'
+  }
+
+  if (currentUser?.role !== 'admin') {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <div className="text-center">
@@ -118,12 +155,69 @@ const AdminPage: React.FC = () => {
 
   return (
     <div className="space-y-8">
-      <div>
-        <h1 className="text-3xl font-bold">Admin Panel</h1>
-        <p className="text-base-content/70">
-          Manage users, roles, and system settings.
-        </p>
+      <div className="flex justify-between items-center">
+        <div>
+          <h1 className="text-3xl font-bold">Admin Panel</h1>
+          <p className="text-base-content/70">
+            Manage users, roles, and system settings.
+          </p>
+        </div>
+        <button
+          onClick={handleRefresh}
+          className="btn btn-primary"
+          disabled={loading}
+        >
+          {loading ? (
+            <>
+              <span className="loading loading-spinner loading-sm"></span>
+              Loading...
+            </>
+          ) : (
+            <>
+              🔄 Refresh Data
+            </>
+          )}
+        </button>
       </div>
+
+      {/* Success/Error Messages */}
+      {success && (
+        <div className="alert alert-success">
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            className="stroke-current shrink-0 h-6 w-6"
+            fill="none"
+            viewBox="0 0 24 24"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth="2"
+              d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
+            />
+          </svg>
+          <span>{success}</span>
+        </div>
+      )}
+
+      {error && (
+        <div className="alert alert-error">
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            className="stroke-current shrink-0 h-6 w-6"
+            fill="none"
+            viewBox="0 0 24 24"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth="2"
+              d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z"
+            />
+          </svg>
+          <span>{error}</span>
+        </div>
+      )}
 
       {/* User Management */}
       <div className="card bg-base-100 shadow-md">
@@ -160,16 +254,13 @@ const AdminPage: React.FC = () => {
                       <td>{getStatusBadge(user.is_active)}</td>
                       <td>{formatDate(user.created_at)}</td>
                       <td>
-                        <div className="dropdown dropdown-end">
-                          <div tabIndex={0} role="button" className="btn btn-ghost btn-xs">
-                            ⋯
-                          </div>
-                          <ul tabIndex={0} className="dropdown-content z-[1] menu p-2 shadow bg-base-100 rounded-box w-52">
-                            <li><a>Edit Role</a></li>
-                            <li><a>Toggle Status</a></li>
-                            <li><a className="text-error">Delete User</a></li>
-                          </ul>
-                        </div>
+                        <button
+                          onClick={() => handleEditRole(user)}
+                          className="btn btn-ghost btn-xs"
+                          disabled={user.id === currentUser?.id}
+                        >
+                          Edit Role
+                        </button>
                       </td>
                     </tr>
                   ))}
@@ -209,12 +300,15 @@ const AdminPage: React.FC = () => {
                           {key.key_id}
                         </code>
                       </td>
-                      <td>{key.user_email}</td>
+                      <td>{getUserEmail(key.user_id)}</td>
                       <td>{getStatusBadge(false, key.is_revoked)}</td>
                       <td>{formatDate(key.created_at)}</td>
                       <td>
                         {!key.is_revoked && (
-                          <button className="btn btn-error btn-xs">
+                          <button
+                            onClick={() => handleRevokeKey(key.id)}
+                            className="btn btn-error btn-xs"
+                          >
                             Revoke
                           </button>
                         )}
@@ -253,26 +347,64 @@ const AdminPage: React.FC = () => {
         </div>
       </div>
 
-      {/* Quick Actions */}
-      <div className="card bg-base-100 shadow-md">
-        <div className="card-body">
-          <h3 className="card-title">Quick Actions</h3>
-          <div className="flex flex-wrap gap-4 mt-4">
-            <button className="btn btn-primary">
-              📧 Send System Email
-            </button>
-            <button className="btn btn-secondary">
-              📊 Generate Report
-            </button>
-            <button className="btn btn-accent">
-              🔄 Refresh Data
-            </button>
-            <button className="btn btn-warning">
-              ⚙️ System Settings
-            </button>
+      {/* Edit Role Modal */}
+      {editingUser && (
+        <div className="modal modal-open">
+          <div className="modal-box">
+            <h3 className="font-bold text-lg mb-4">
+              Edit Role for {editingUser.email}
+            </h3>
+            
+            <div className="form-control w-full mb-6">
+              <label className="label">
+                <span className="label-text">Select Role</span>
+              </label>
+              <select
+                className="select select-bordered w-full"
+                value={newRole}
+                onChange={(e) => setNewRole(e.target.value as 'user' | 'privileged' | 'admin')}
+                disabled={updating}
+              >
+                <option value="user">User</option>
+                <option value="privileged">Privileged</option>
+                <option value="admin">Admin</option>
+              </select>
+              <label className="label">
+                <span className="label-text-alt">
+                  {newRole === 'user' && 'Basic access to dashboard and saved views'}
+                  {newRole === 'privileged' && 'Can generate and manage signing keys'}
+                  {newRole === 'admin' && 'Full system access and user management'}
+                </span>
+              </label>
+            </div>
+
+            <div className="modal-action">
+              <button
+                onClick={() => setEditingUser(null)}
+                className="btn btn-ghost"
+                disabled={updating}
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleUpdateRole}
+                className="btn btn-primary"
+                disabled={updating || newRole === editingUser.role}
+              >
+                {updating ? (
+                  <>
+                    <span className="loading loading-spinner loading-sm"></span>
+                    Updating...
+                  </>
+                ) : (
+                  'Update Role'
+                )}
+              </button>
+            </div>
           </div>
+          <div className="modal-backdrop" onClick={() => !updating && setEditingUser(null)} />
         </div>
-      </div>
+      )}
     </div>
   )
 }
