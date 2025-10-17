@@ -465,7 +465,7 @@ const DashboardPage: React.FC = () => {
       <div className="card bg-base-100 shadow-md">
         <div className="card-body">
           <h2 className="card-title">Filters</h2>
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div className="form-control">
               <label className="label">
                 <span className="label-text">Search Bills</span>
@@ -480,28 +480,6 @@ const DashboardPage: React.FC = () => {
                   searchTerm: e.target.value
                 }))}
               />
-            </div>
-            
-            <div className="form-control">
-              <label className="label">
-                <span className="label-text">Chamber</span>
-              </label>
-              <select 
-                className="select select-bordered"
-                value={filters.chambers.length > 0 ? filters.chambers[0] : ''}
-                onChange={(e) => {
-                  const value = e.target.value
-                  setFilters(prev => ({
-                    ...prev,
-                    chambers: value ? [value] : []
-                  }))
-                }}
-              >
-                <option value="">All Chambers</option>
-                <option value="Joint">Joint</option>
-                <option value="House">House</option>
-                <option value="Senate">Senate</option>
-              </select>
             </div>
             
             <div className="form-control">
@@ -882,7 +860,6 @@ const DashboardPage: React.FC = () => {
                     <th className="w-24">Bill ID</th>
                     <th className="w-80">Title</th>
                     <th className="w-48">Committee</th>
-                    <th className="w-20">Chamber</th>
                     <th className="w-24">Status</th>
                     <th className="w-28">Hearing Date</th>
                     <th className="w-28">Deadline</th>
@@ -913,9 +890,6 @@ const DashboardPage: React.FC = () => {
                       </td>
                       <td>
                         <div className="text-sm">{bill.committee_name}</div>
-                      </td>
-                      <td>
-                        <div className="badge badge-outline">{bill.chamber}</div>
                       </td>
                       <td>
                         <div className={`badge ${
@@ -1039,11 +1013,6 @@ const DashboardPage: React.FC = () => {
                 {filters.committees.length > 0 && (
                   <div>
                     <span className="font-medium">Committees:</span> {filters.committees.length} selected
-                  </div>
-                )}
-                {filters.chambers.length > 0 && (
-                  <div>
-                    <span className="font-medium">Chambers:</span> {filters.chambers.join(', ')}
                   </div>
                 )}
                 {filters.states.length > 0 && (
