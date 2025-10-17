@@ -70,7 +70,7 @@ const DashboardPage: React.FC = () => {
 
   // Fetch committee details when a single committee is selected
   const selectedCommitteeId = filters.committees.length === 1 ? filters.committees[0] : null
-  const { committee: selectedCommitteeDetails, loading: committeeDetailsLoading } = useCommitteeDetails(selectedCommitteeId)
+  const { committee: selectedCommitteeDetails } = useCommitteeDetails(selectedCommitteeId)
 
   // Calculate contextual stats based on current filters
   const contextualStats = useMemo(() => {

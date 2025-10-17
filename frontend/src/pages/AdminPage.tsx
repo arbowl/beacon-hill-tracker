@@ -23,7 +23,6 @@ const AdminPage: React.FC = () => {
   const [users, setUsers] = useState<User[]>([])
   const [signingKeys, setSigningKeys] = useState<SigningKey[]>([])
   const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
 
   // Placeholder data for demonstration
   useEffect(() => {
