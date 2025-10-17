@@ -195,4 +195,27 @@ export const forgotPassword = (email: string) =>
 export const resetPassword = (token: string, password: string) => 
   authService.resetPassword(token, password).then(res => res.data)
 
+// Contact form API
+const contactApi = axios.create({
+  baseURL: import.meta.env.PROD
+    ? 'https://beacon-hill-tracker.onrender.com/api/contact'
+    : '/api/contact',
+  headers: {
+    'Content-Type': 'application/json',
+  },
+})
+
+export const contactService = {
+  sendMessage: (name: string, email: string, subject: string, message: string) =>
+    contactApi.post('/send', { name, email, subject, message }),
+}
+
+// Convenience export for contact form
+export const sendContactMessage = (
+  name: string,
+  email: string,
+  subject: string,
+  message: string
+) => contactService.sendMessage(name, email, subject, message).then(res => res.data)
+
 export default api
