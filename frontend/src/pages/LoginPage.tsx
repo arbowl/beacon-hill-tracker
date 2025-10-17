@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { Link, useNavigate, useLocation } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
 
@@ -7,12 +7,37 @@ const LoginPage: React.FC = () => {
   const [password, setPassword] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
+  const [successMessage, setSuccessMessage] = useState('')
 
   const { login } = useAuth()
   const navigate = useNavigate()
   const location = useLocation()
 
   const from = location.state?.from?.pathname || '/'
+
+  // Check for verification status in query parameters
+  useEffect(() => {
+    const searchParams = new URLSearchParams(location.search)
+    const verified = searchParams.get('verified')
+    const errorParam = searchParams.get('error')
+
+    if (verified === 'true') {
+      setSuccessMessage('Email verified successfully! You can now log in.')
+    } else if (verified === 'false') {
+      if (errorParam === 'invalid_token') {
+        setError('Invalid or already used verification link.')
+      } else if (errorParam === 'expired') {
+        setError('Verification link has expired. Please contact support.')
+      } else {
+        setError('Email verification failed. Please try again or contact support.')
+      }
+    }
+
+    // Clear the query parameters from the URL
+    if (verified) {
+      navigate('/login', { replace: true, state: location.state })
+    }
+  }, [location.search, navigate, location.state])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -50,6 +75,15 @@ const LoginPage: React.FC = () => {
             </div>
 
             <form onSubmit={handleSubmit} className="space-y-6">
+              {successMessage && (
+                <div className="alert alert-success">
+                  <svg xmlns="http://www.w3.org/2000/svg" className="stroke-current shrink-0 h-6 w-6" fill="none" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                  <span>{successMessage}</span>
+                </div>
+              )}
+              
               {error && (
                 <div className="alert alert-error">
                   <svg xmlns="http://www.w3.org/2000/svg" className="stroke-current shrink-0 h-6 w-6" fill="none" viewBox="0 0 24 24">
