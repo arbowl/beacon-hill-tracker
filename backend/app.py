@@ -18,6 +18,7 @@ from auth_models import init_db as init_auth_db
 from auth_routes import auth_bp
 from views_routes import views_bp
 from keys_routes import keys_bp
+from contact_routes import contact_bp
 from email_service import init_mail
 from security import init_security_middleware
 from database import get_db_connection, get_database_type, init_compliance_database
@@ -79,6 +80,7 @@ def create_app():
     flask_app.register_blueprint(auth_bp)
     flask_app.register_blueprint(views_bp)
     flask_app.register_blueprint(keys_bp)
+    flask_app.register_blueprint(contact_bp)
 
     # Initialize main database (existing functionality)
     init_compliance_database()
@@ -1070,4 +1072,5 @@ app = create_app()
 # For direct execution
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000, debug=True)
+
 
