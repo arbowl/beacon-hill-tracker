@@ -1,8 +1,18 @@
 import axios from 'axios'
 
+// Determine API base URL based on environment
+const getApiBaseURL = () => {
+  // In production, call backend directly
+  if (import.meta.env.PROD) {
+    return 'https://beacon-hill-tracker.onrender.com/api'
+  }
+  // In development, use Vite proxy
+  return '/api'
+}
+
 // Create axios instance with base configuration
 const api = axios.create({
-  baseURL: '/api',
+  baseURL: getApiBaseURL(),
   headers: {
     'Content-Type': 'application/json',
   },
@@ -60,7 +70,9 @@ export const apiService = {
 
 // Auth API endpoints
 const authApi = axios.create({
-  baseURL: '/api/auth',
+  baseURL: import.meta.env.PROD 
+    ? 'https://beacon-hill-tracker.onrender.com/api/auth'
+    : '/api/auth',
   headers: {
     'Content-Type': 'application/json',
   },
@@ -97,7 +109,9 @@ export const authService = {
 
 // Views API endpoints
 const viewsApi = axios.create({
-  baseURL: '/api/views',
+  baseURL: import.meta.env.PROD
+    ? 'https://beacon-hill-tracker.onrender.com/api/views'
+    : '/api/views',
   headers: {
     'Content-Type': 'application/json',
   },
@@ -132,7 +146,9 @@ export const viewsService = {
 
 // Keys API endpoints
 const keysApi = axios.create({
-  baseURL: '/api/keys',
+  baseURL: import.meta.env.PROD
+    ? 'https://beacon-hill-tracker.onrender.com/api/keys'
+    : '/api/keys',
   headers: {
     'Content-Type': 'application/json',
   },
