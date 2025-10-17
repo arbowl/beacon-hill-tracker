@@ -141,6 +141,8 @@ def register():
 @auth_bp.route('/verify/<token>')
 def verify_email(token):
     """Verify user email address using token"""
+    from flask import redirect
+    
     try:
         # Find the token
         email_token = EmailToken.query.filter_by(
@@ -148,14 +150,21 @@ def verify_email(token):
             purpose=EmailToken.PURPOSE_VERIFICATION
         ).first()
         
+        # Get frontend URL for redirects
+        frontend_url = current_app.config.get(
+            'FRONTEND_URL', 'http://localhost:5173'
+        )
+        
         if not email_token:
-            return jsonify({'error': 'Invalid verification token'}), 400
+            # Redirect to frontend with error
+            return redirect(f"{frontend_url}/login?verified=false&error=invalid_token")
         
         # Check if token is expired
         if email_token.is_expired():
             db.session.delete(email_token)
             db.session.commit()
-            return jsonify({'error': 'Verification token has expired'}), 400
+            # Redirect to frontend with error
+            return redirect(f"{frontend_url}/login?verified=false&error=expired")
         
         # Activate the user
         user = email_token.user
@@ -165,16 +174,17 @@ def verify_email(token):
         db.session.delete(email_token)
         db.session.commit()
         
-        return jsonify({
-            'message': 'Email verified successfully. You can now log in.',
-            'user_id': user.id,
-            'email': user.email
-        }), 200
+        # Redirect to frontend with success
+        return redirect(f"{frontend_url}/login?verified=true")
         
     except Exception as e:
         db.session.rollback()
         current_app.logger.error(f'Email verification error: {e}')
-        return jsonify({'error': 'Verification failed'}), 500
+        # Redirect to frontend with error
+        frontend_url = current_app.config.get(
+            'FRONTEND_URL', 'http://localhost:5173'
+        )
+        return redirect(f"{frontend_url}/login?verified=false&error=server_error")
 
 
 @auth_bp.route('/login', methods=['POST', 'OPTIONS'])
