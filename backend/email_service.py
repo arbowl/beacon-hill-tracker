@@ -113,6 +113,60 @@ ROLE_UPDATE_EMAIL_TEMPLATE = """
 </html>
 """
 
+PASSWORD_RESET_EMAIL_TEMPLATE = """
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>Reset Your Password - Beacon Hill Compliance Tracker</title>
+    <style>
+        body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+        .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+        .header { background: #2563eb; color: white; padding: 20px; text-align: center; }
+        .content { padding: 20px; background: #f9fafb; }
+        .button { 
+            display: inline-block; 
+            background: #2563eb; 
+            color: white; 
+            padding: 12px 24px; 
+            text-decoration: none; 
+            border-radius: 6px; 
+            margin: 20px 0; 
+        }
+        .footer { padding: 20px; text-align: center; color: #666; font-size: 14px; }
+        .warning { background: #fef3c7; border-left: 4px solid #f59e0b; padding: 12px; margin: 20px 0; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Beacon Hill Compliance Tracker</h1>
+        </div>
+        <div class="content">
+            <h2>Reset Your Password</h2>
+            <p>We received a request to reset your password for your Beacon Hill Compliance Tracker account.</p>
+            <p>To reset your password, click the button below:</p>
+            <a href="{{ reset_url }}" class="button">Reset Password</a>
+            <p>If the button doesn't work, you can copy and paste this link into your browser:</p>
+            <p><a href="{{ reset_url }}">{{ reset_url }}</a></p>
+            <div class="warning">
+                <p><strong>⚠️ Important:</strong></p>
+                <ul style="margin: 0;">
+                    <li>This link will expire in 1 hour</li>
+                    <li>If you didn't request a password reset, you can safely ignore this email</li>
+                    <li>Your password will not change unless you click the link and set a new password</li>
+                </ul>
+            </div>
+        </div>
+        <div class="footer">
+            <p>If you didn't request a password reset, please ignore this email or contact support if you have concerns.</p>
+            <p>This is an automated message, please do not reply.</p>
+        </div>
+    </div>
+</body>
+</html>
+"""
+
 
 def init_mail(app):
     """Initialize Flask-Mail with the application"""
@@ -160,6 +214,49 @@ If you didn't create an account, you can safely ignore this email.
         raise
 
 
+def send_password_reset_email(email, reset_url):
+    """Send password reset email to user"""
+    try:
+        subject = "Reset Your Password - Beacon Hill Compliance Tracker"
+        
+        # Render HTML template
+        html_body = render_template_string(
+            PASSWORD_RESET_EMAIL_TEMPLATE,
+            reset_url=reset_url
+        )
+        
+        # Create plain text version
+        text_body = f"""
+Beacon Hill Compliance Tracker - Password Reset
+
+We received a request to reset your password.
+
+To reset your password, visit:
+{reset_url}
+
+This link will expire in 1 hour.
+
+If you didn't request a password reset, you can safely ignore this email.
+        """.strip()
+        
+        # Send email
+        msg = Message(
+            subject=subject,
+            recipients=[email],
+            html=html_body,
+            body=text_body
+        )
+        
+        mail.send(msg)
+        current_app.logger.info(f"Password reset email sent to {email}")
+        
+    except Exception as e:
+        current_app.logger.error(
+            f"Failed to send password reset email to {email}: {e}"
+        )
+        raise
+
+
 def send_role_update_email(email, new_role, old_role=None):
     """Send notification when user role is updated"""
     try:
@@ -195,7 +292,9 @@ Log in to your account to access your new features.
         current_app.logger.info(f"Role update email sent to {email}")
         
     except Exception as e:
-        current_app.logger.error(f"Failed to send role update email to {email}: {e}")
+        current_app.logger.error(
+            f"Failed to send role update email to {email}: {e}"
+        )
         # Don't raise - this is a notification, not critical
 
 
@@ -233,6 +332,7 @@ Keep your signing keys secure and do not share them with others.
 
 # Export functions
 __all__ = [
-    'mail', 'init_mail', 'send_verification_email', 
-    'send_role_update_email', 'send_key_generated_email'
+    'mail', 'init_mail', 'send_verification_email',
+    'send_password_reset_email', 'send_role_update_email',
+    'send_key_generated_email'
 ]
