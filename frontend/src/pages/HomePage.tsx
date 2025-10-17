@@ -21,7 +21,7 @@ const HomePage: React.FC = () => {
             However, these rules are often ignored or circumvented, leading to a lack of transparency about how decisions are made. When they are posted, the information is often hard to find.
           </p>
           <p>
-            Lack of transparency is a systemic issue that transcends party lines. My goal is simple: To organize compliance tracking in one place and put a spotlight on gaps.
+            Lack of transparency is a systemic issue, not a partisan one. My goal is simple: to cast a spotlight on the requirements, and give others the tools to enact change.
           </p>
         </div>
         

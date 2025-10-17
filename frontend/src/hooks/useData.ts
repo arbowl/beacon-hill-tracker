@@ -4,9 +4,7 @@ import {
   Committee, 
   Bill, 
   GlobalStats, 
-  CommitteeStats, 
   DashboardFilters,
-  ApiError,
   SavedView
 } from '../types'
 
@@ -369,7 +367,7 @@ export const useSavedViews = () => {
       
       // Handle the correct response structure from backend
       // Backend returns: { views: [...], count: N }
-      const viewsData = response.data?.views || response.views || []
+      const viewsData = response.data?.views || response.data || []
       setSavedViews(Array.isArray(viewsData) ? viewsData : [])
     } catch (err) {
       console.error('Error fetching saved views:', err)
@@ -391,7 +389,7 @@ export const useSavedViews = () => {
       await fetchSavedViews() // Refresh the list
       
       // Backend returns: { message: "...", view: {...} }
-      return response.data?.view || response.view || response.data
+      return response.data
     } catch (err) {
       console.error('createSavedView error:', err)
       const errorMessage = err instanceof Error ? err.message : 'Failed to create saved view'
@@ -407,7 +405,7 @@ export const useSavedViews = () => {
       await fetchSavedViews() // Refresh the list
       
       // Backend returns: { message: "...", view: {...} }
-      return response.data?.view || response.view || response.data
+      return response.data
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to update saved view')
       throw err
@@ -432,7 +430,7 @@ export const useSavedViews = () => {
       await fetchSavedViews() // Refresh the list
       
       // Backend returns: { message: "...", view: {...} }
-      return response.data?.view || response.view || response.data
+      return response.data
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to duplicate saved view')
       throw err
@@ -445,7 +443,7 @@ export const useSavedViews = () => {
       const response = await viewsService.getSavedView(id)
       
       // Backend returns: { view: {...} }
-      return response.data?.view || response.view || response.data
+      return response.data
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to get saved view')
       throw err

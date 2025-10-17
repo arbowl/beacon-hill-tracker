@@ -45,8 +45,8 @@ const ComplianceTrendsChart: React.FC<ComplianceTrendsChartProps> = ({
       <Plot
         data={[
           {
-            type: 'scatter' as const,
-            mode: 'lines+markers' as const,
+            type: 'scatter',
+            mode: 'lines+markers',
             x: dates,
             y: rates,
             name: 'Compliance Rate',
@@ -63,8 +63,8 @@ const ComplianceTrendsChart: React.FC<ComplianceTrendsChartProps> = ({
                           '<extra></extra>',
           },
           {
-            type: 'scatter' as const,
-            mode: 'lines' as const,
+            type: 'scatter',
+            mode: 'lines',
             x: dates,
             y: totals,
             name: 'Total Bills',

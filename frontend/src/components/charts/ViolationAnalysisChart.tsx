@@ -1,6 +1,6 @@
 import React from 'react'
 import Plot from 'react-plotly.js'
-import { ReasonAnalysis } from '../utils/reasonParser'
+import { ReasonAnalysis } from '../../utils/reasonParser'
 
 interface ViolationAnalysisChartProps {
   data: ReasonAnalysis[]
@@ -43,8 +43,8 @@ const ViolationAnalysisChart: React.FC<ViolationAnalysisChartProps> = ({
   const values = data.map(item => item.count)
   const colors = data.map(item => item.violation.color)
 
-  let plotData: any[] = []
-  let layout: any = {
+  const plotData: any[] = []
+  const layout: any = {
     title: {
       text: title,
       font: { size: 18, color: '#374151' },
@@ -61,8 +61,8 @@ const ViolationAnalysisChart: React.FC<ViolationAnalysisChartProps> = ({
   }
 
   if (chartType === 'pie') {
-    plotData = [{
-      type: 'pie' as const,
+    plotData.push({
+      type: 'pie',
       labels: labels,
       values: values,
       marker: { colors: colors },
@@ -70,22 +70,22 @@ const ViolationAnalysisChart: React.FC<ViolationAnalysisChartProps> = ({
                      'Count: %{value}<br>' +
                      'Percentage: %{percent}<br>' +
                      '<extra></extra>',
-      textinfo: 'label+percent' as const,
-      textposition: 'auto' as const
-    }]
+      textinfo: 'label+percent',
+      textposition: 'auto'
+    })
     layout.showlegend = true
     layout.legend = { orientation: 'v', x: 1.05, y: 0.5 }
   } else if (chartType === 'horizontal_bar') {
-    plotData = [{
-      type: 'bar' as const,
-      orientation: 'h' as const,
+    plotData.push({
+      type: 'bar',
+      orientation: 'h',
       x: values,
       y: labels,
       marker: { color: colors },
       hovertemplate: '<b>%{y}</b><br>' +
                      'Count: %{x}<br>' +
                      '<extra></extra>'
-    }]
+    })
     layout.xaxis = {
       title: 'Number of Bills',
       gridcolor: '#f3f4f6',
@@ -98,15 +98,15 @@ const ViolationAnalysisChart: React.FC<ViolationAnalysisChartProps> = ({
     }
     layout.margin.l = 200
   } else {
-    plotData = [{
-      type: 'bar' as const,
+    plotData.push({
+      type: 'bar',
       x: labels,
       y: values,
       marker: { color: colors },
       hovertemplate: '<b>%{x}</b><br>' +
                      'Count: %{y}<br>' +
                      '<extra></extra>'
-    }]
+    })
     layout.xaxis = {
       title: 'Violation Type',
       gridcolor: '#f3f4f6',

@@ -75,6 +75,7 @@ const CommitteeComparisonChart: React.FC<CommitteeComparisonChartProps> = ({
     case 'top_performers':
       displayData = sortedData.slice(0, limit)
       chartTitle = ``
+      break
       
     case 'all_committees':
       displayData = sortedData
@@ -97,10 +98,10 @@ const CommitteeComparisonChart: React.FC<CommitteeComparisonChartProps> = ({
 
   const isHorizontal = chartType === 'horizontal_bar'
 
-  const traces = [
+  const traces: any[] = [
     {
-      type: 'bar' as const,
-      orientation: (isHorizontal ? 'h' : 'v') as const,
+      type: 'bar',
+      orientation: isHorizontal ? 'h' : 'v',
       x: isHorizontal ? compliant : names,
       y: isHorizontal ? names : compliant,
       name: 'Compliant',
@@ -110,8 +111,8 @@ const CommitteeComparisonChart: React.FC<CommitteeComparisonChartProps> = ({
                      '<extra></extra>',
     },
     {
-      type: 'bar' as const,
-      orientation: (isHorizontal ? 'h' : 'v') as const,
+      type: 'bar',
+      orientation: isHorizontal ? 'h' : 'v',
       x: isHorizontal ? incomplete : names,
       y: isHorizontal ? names : incomplete,
       name: 'Incomplete',
@@ -121,8 +122,8 @@ const CommitteeComparisonChart: React.FC<CommitteeComparisonChartProps> = ({
                      '<extra></extra>',
     },
     {
-      type: 'bar' as const,
-      orientation: (isHorizontal ? 'h' : 'v') as const,
+      type: 'bar',
+      orientation: isHorizontal ? 'h' : 'v',
       x: isHorizontal ? nonCompliant : names,
       y: isHorizontal ? names : nonCompliant,
       name: 'Non-Compliant',
