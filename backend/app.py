@@ -1,3 +1,4 @@
+
 """
 Beacon Hill Compliance Tracker - Integrated Flask Application
 Combines existing ingest API with new authentication, dashboard,
@@ -7,7 +8,7 @@ and admin features.
 import os
 import logging
 import time
-from flask import Flask, request, jsonify, make_response
+from flask import Flask, request, jsonify
 from flask_jwt_extended import JWTManager
 from dotenv import load_dotenv
 from datetime import datetime
@@ -23,7 +24,6 @@ from database import get_db_connection, get_database_type, init_compliance_datab
 
 # Load environment variables
 load_dotenv()
-
 
 def create_app():
     """Application factory pattern"""
@@ -69,41 +69,6 @@ def create_app():
 
     # Initialize security middleware (includes CORS, rate limiting, etc.)
     flask_app, _ = init_security_middleware(flask_app)
-
-    # Simple authentication middleware for development protection
-    def check_simple_auth():
-        """Check HTTP Basic Auth if SIMPLE_AUTH_ENABLED is True"""
-        enabled = os.getenv('SIMPLE_AUTH_ENABLED', 'False').lower()
-        if enabled != 'true':
-            return None  # Auth disabled, allow through
-
-        # Skip auth check for health endpoint
-        if request.path == '/health':
-            return None
-
-        auth = request.authorization
-        expected_username = os.getenv('SIMPLE_AUTH_USERNAME', 'dev')
-        expected_password = os.getenv('SIMPLE_AUTH_PASSWORD', 'changeme')
-
-        is_valid = (auth and
-                    auth.username == expected_username and
-                    auth.password == expected_password)
-
-        if not is_valid:
-            response = make_response(
-                jsonify({
-                    'message': 'Authentication required',
-                    'hint': 'Use HTTP Basic Auth with username/password'
-                }), 401
-            )
-            response.headers['WWW-Authenticate'] = (
-                'Basic realm="Development Access"'
-            )
-            return response
-
-        return None  # Auth successful
-
-    flask_app.before_request(check_simple_auth)
 
     # Initialize auth database
     init_auth_db(flask_app)
