@@ -42,7 +42,10 @@ def init_cors(app: Flask):
              'Accept',
              'Origin',
              'X-Requested-With',
-             'X-CSRF-Token'
+             'X-CSRF-Token',
+             'X-Ingest-Key-Id',
+             'X-Ingest-Timestamp',
+             'X-Ingest-Signature'
          ],
          supports_credentials=True,
          max_age=timedelta(hours=24))
