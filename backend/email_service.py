@@ -167,6 +167,60 @@ PASSWORD_RESET_EMAIL_TEMPLATE = """
 </html>
 """
 
+CONTACT_FORM_EMAIL_TEMPLATE = """
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>New Contact Form Submission - Beacon Hill Compliance Tracker</title>
+    <style>
+        body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+        .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+        .header { background: #2563eb; color: white; padding: 20px; text-align: center; }
+        .content { padding: 20px; background: #f9fafb; }
+        .footer { padding: 20px; text-align: center; color: #666; font-size: 14px; }
+        .info-box { background: #e0f2fe; border-left: 4px solid #0284c7; padding: 12px; margin: 20px 0; }
+        .message-box { background: white; border: 1px solid #e5e7eb; padding: 15px; margin: 20px 0; border-radius: 6px; }
+        .label { font-weight: bold; color: #1f2937; }
+        .value { color: #4b5563; margin-bottom: 10px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>📬 New Contact Form Submission</h1>
+        </div>
+        <div class="content">
+            <h2>Contact Form Message</h2>
+            <div class="info-box">
+                <p><strong>You have received a new message from your website's contact form.</strong></p>
+            </div>
+            
+            <div class="value">
+                <span class="label">From:</span> {{ sender_name }} &lt;{{ sender_email }}&gt;
+            </div>
+            
+            <div class="value">
+                <span class="label">Subject:</span> {{ subject }}
+            </div>
+            
+            <div class="message-box">
+                <div class="label">Message:</div>
+                <div style="margin-top: 10px; white-space: pre-wrap;">{{ message }}</div>
+            </div>
+            
+            <div class="info-box">
+                <p><strong>💡 Tip:</strong> Reply directly to this email to respond to {{ sender_name }}.</p>
+            </div>
+        </div>
+        <div class="footer">
+            <p>This message was sent from the Beacon Hill Compliance Tracker contact form.</p>
+        </div>
+    </div>
+</body>
+</html>
+"""
+
 
 def init_mail(app):
     """Initialize Flask-Mail with the application"""
@@ -257,6 +311,56 @@ If you didn't request a password reset, you can safely ignore this email.
         raise
 
 
+def send_contact_form_email(contact_email, sender_name, sender_email,
+                            subject, message):
+    """Send contact form submission to site admin"""
+    try:
+        email_subject = f"Contact Form: {subject}"
+        
+        # Render HTML template
+        html_body = render_template_string(
+            CONTACT_FORM_EMAIL_TEMPLATE,
+            sender_name=sender_name,
+            sender_email=sender_email,
+            subject=subject,
+            message=message
+        )
+        
+        # Create plain text version
+        text_body = f"""
+Beacon Hill Compliance Tracker - New Contact Form Submission
+
+From: {sender_name} <{sender_email}>
+Subject: {subject}
+
+Message:
+{message}
+
+---
+Reply to this email to respond to {sender_name}.
+        """.strip()
+        
+        # Send email to site admin with reply-to set to sender
+        msg = Message(
+            subject=email_subject,
+            recipients=[contact_email],
+            html=html_body,
+            body=text_body,
+            reply_to=sender_email
+        )
+        
+        mail.send(msg)
+        current_app.logger.info(
+            f"Contact form email sent to {contact_email} from {sender_email}"
+        )
+        
+    except Exception as e:
+        current_app.logger.error(
+            f"Failed to send contact form email: {e}"
+        )
+        raise
+
+
 def send_role_update_email(email, new_role, old_role=None):
     """Send notification when user role is updated"""
     try:
@@ -333,6 +437,6 @@ Keep your signing keys secure and do not share them with others.
 # Export functions
 __all__ = [
     'mail', 'init_mail', 'send_verification_email',
-    'send_password_reset_email', 'send_role_update_email',
-    'send_key_generated_email'
+    'send_password_reset_email', 'send_contact_form_email',
+    'send_role_update_email', 'send_key_generated_email'
 ]
