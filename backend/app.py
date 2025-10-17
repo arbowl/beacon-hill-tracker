@@ -9,7 +9,6 @@ from flask import Flask, request, jsonify
 from flask_jwt_extended import JWTManager
 from dotenv import load_dotenv
 from datetime import datetime
-from pathlib import Path
 
 # Import our new modules
 from auth_models import init_db as init_auth_db
@@ -18,7 +17,7 @@ from views_routes import views_bp
 from keys_routes import keys_bp
 from email_service import init_mail
 from security import init_security_middleware
-from database import get_db_connection, init_compliance_database
+from database import get_db_connection, get_database_type, init_compliance_database
 
 # Load environment variables
 load_dotenv()
@@ -247,7 +246,6 @@ def create_app():
                 cursor = conn.cursor()
                 
                 # Use appropriate placeholder based on database type
-                from database import get_database_type
                 placeholder = '%s' if get_database_type() == 'postgresql' else '?'
                 
                 cursor.execute(f'''
@@ -310,7 +308,6 @@ def create_app():
                 search_term = request.args.get('search', '')
                 
                 # Get appropriate placeholder for database type
-                from database import get_database_type
                 placeholder = '%s' if get_database_type() == 'postgresql' else '?'
                 
                 # Build the query with deduplication
@@ -586,13 +583,44 @@ def import_cache_data(cache_data):
         cursor = conn.cursor()
         
         try:
+            db_type = get_database_type()
+            placeholder = '%s' if db_type == 'postgresql' else '?'
+            
             # Import committees
             if 'committee_contacts' in cache_data:
                 for comm_id, comm_data in cache_data['committee_contacts'].items():
-                    cursor.execute(
-                        'INSERT OR REPLACE INTO committees '
-                        'VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, '
-                        '?, ?, ?, ?, ?, ?, ?, ?, ?)',
+                    if db_type == 'postgresql':
+                        # PostgreSQL: Use INSERT ... ON CONFLICT ... DO UPDATE
+                        cursor.execute(f'''
+                            INSERT INTO committees 
+                            (committee_id, name, chamber, url, house_room, house_address, house_phone,
+                             senate_room, senate_address, senate_phone, house_chair_name, house_chair_email,
+                             house_vice_chair_name, house_vice_chair_email, senate_chair_name, senate_chair_email,
+                             senate_vice_chair_name, senate_vice_chair_email, updated_at)
+                            VALUES ({placeholder}, {placeholder}, {placeholder}, {placeholder}, {placeholder}, 
+                                    {placeholder}, {placeholder}, {placeholder}, {placeholder}, {placeholder},
+                                    {placeholder}, {placeholder}, {placeholder}, {placeholder}, {placeholder},
+                                    {placeholder}, {placeholder}, {placeholder}, {placeholder})
+                            ON CONFLICT (committee_id) DO UPDATE SET
+                                name = EXCLUDED.name,
+                                chamber = EXCLUDED.chamber,
+                                url = EXCLUDED.url,
+                                house_room = EXCLUDED.house_room,
+                                house_address = EXCLUDED.house_address,
+                                house_phone = EXCLUDED.house_phone,
+                                senate_room = EXCLUDED.senate_room,
+                                senate_address = EXCLUDED.senate_address,
+                                senate_phone = EXCLUDED.senate_phone,
+                                house_chair_name = EXCLUDED.house_chair_name,
+                                house_chair_email = EXCLUDED.house_chair_email,
+                                house_vice_chair_name = EXCLUDED.house_vice_chair_name,
+                                house_vice_chair_email = EXCLUDED.house_vice_chair_email,
+                                senate_chair_name = EXCLUDED.senate_chair_name,
+                                senate_chair_email = EXCLUDED.senate_chair_email,
+                                senate_vice_chair_name = EXCLUDED.senate_vice_chair_name,
+                                senate_vice_chair_email = EXCLUDED.senate_vice_chair_email,
+                                updated_at = EXCLUDED.updated_at
+                        ''',
                         (
                             comm_data.get('committee_id', comm_id),
                             comm_data.get('name', ''),
@@ -614,22 +642,67 @@ def import_cache_data(cache_data):
                             comm_data.get('senate_vice_chair_email', ''),
                             comm_data.get('updated_at', datetime.utcnow().isoformat() + 'Z')
                         ))
+                    else:
+                        # SQLite: Use INSERT OR REPLACE
+                        cursor.execute(
+                            'INSERT OR REPLACE INTO committees '
+                            'VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, '
+                            '?, ?, ?, ?, ?, ?, ?, ?, ?)',
+                            (
+                                comm_data.get('committee_id', comm_id),
+                                comm_data.get('name', ''),
+                                comm_data.get('chamber', 'Joint'),
+                                comm_data.get('url', ''),
+                                comm_data.get('house_room'),
+                                comm_data.get('house_address'),
+                                comm_data.get('house_phone'),
+                                comm_data.get('senate_room'),
+                                comm_data.get('senate_address'),
+                                comm_data.get('senate_phone'),
+                                comm_data.get('house_chair_name', ''),
+                                comm_data.get('house_chair_email', ''),
+                                comm_data.get('house_vice_chair_name', ''),
+                                comm_data.get('house_vice_chair_email', ''),
+                                comm_data.get('senate_chair_name', ''),
+                                comm_data.get('senate_chair_email', ''),
+                                comm_data.get('senate_vice_chair_name', ''),
+                                comm_data.get('senate_vice_chair_email', ''),
+                                comm_data.get('updated_at', datetime.utcnow().isoformat() + 'Z')
+                            ))
 
             # Import bills
             if 'bill_parsers' in cache_data:
                 for bill_id, bill_data in cache_data['bill_parsers'].items():
                     # Insert basic bill info
                     title = bill_data.get('title', {})
-                    cursor.execute(
-                        'INSERT OR REPLACE INTO bills '
-                        '(bill_id, bill_title, bill_url, updated_at) '
-                        'VALUES (?, ?, ?, ?)',
+                    if db_type == 'postgresql':
+                        # PostgreSQL: Use INSERT ... ON CONFLICT ... DO UPDATE
+                        cursor.execute(f'''
+                            INSERT INTO bills (bill_id, bill_title, bill_url, updated_at)
+                            VALUES ({placeholder}, {placeholder}, {placeholder}, {placeholder})
+                            ON CONFLICT (bill_id) DO UPDATE SET
+                                bill_title = EXCLUDED.bill_title,
+                                bill_url = EXCLUDED.bill_url,
+                                updated_at = EXCLUDED.updated_at
+                        ''',
                         (
                             bill_id,
                             title.get('value') if isinstance(title, dict) else title,
                             bill_data.get('bill_url'),
                             title.get('updated_at') if isinstance(title, dict) else datetime.utcnow().isoformat() + 'Z'
                         ))
+                    else:
+                        # SQLite: Use INSERT OR REPLACE
+                        cursor.execute(
+                            'INSERT OR REPLACE INTO bills '
+                            '(bill_id, bill_title, bill_url, updated_at) '
+                            'VALUES (?, ?, ?, ?)',
+                            (
+                                bill_id,
+                                title.get('value') if isinstance(title, dict) else title,
+                                bill_data.get('bill_url'),
+                                title.get('updated_at') if isinstance(title, dict) else datetime.utcnow().isoformat() + 'Z'
+                            ))
 
             return {
                 "status": "success",
@@ -648,31 +721,58 @@ def import_compliance_report(committee_id, bills_data):
         cursor = conn.cursor()
         
         try:
+            db_type = get_database_type()
+            placeholder = '%s' if db_type == 'postgresql' else '?'
             imported_count = 0
             
             for bill in bills_data:
                 # Upsert bill basic info
-                cursor.execute(
-                    'INSERT OR REPLACE INTO bills '
-                    '(bill_id, bill_title, bill_url, updated_at) '
-                    'VALUES (?, ?, ?, ?)',
+                if db_type == 'postgresql':
+                    # PostgreSQL: Use INSERT ... ON CONFLICT ... DO UPDATE
+                    cursor.execute(f'''
+                        INSERT INTO bills (bill_id, bill_title, bill_url, updated_at)
+                        VALUES ({placeholder}, {placeholder}, {placeholder}, {placeholder})
+                        ON CONFLICT (bill_id) DO UPDATE SET
+                            bill_title = EXCLUDED.bill_title,
+                            bill_url = EXCLUDED.bill_url,
+                            updated_at = EXCLUDED.updated_at
+                    ''',
                     (
                         bill.get('bill_id'),
                         bill.get('bill_title'),
                         bill.get('bill_url'),
                         datetime.utcnow().isoformat() + 'Z'
                     ))
+                else:
+                    # SQLite: Use INSERT OR REPLACE
+                    cursor.execute(
+                        'INSERT OR REPLACE INTO bills '
+                        '(bill_id, bill_title, bill_url, updated_at) '
+                        'VALUES (?, ?, ?, ?)',
+                        (
+                            bill.get('bill_id'),
+                            bill.get('bill_title'),
+                            bill.get('bill_url'),
+                            datetime.utcnow().isoformat() + 'Z'
+                        ))
 
                 # Insert compliance record
-                cursor.execute(
-                    'INSERT INTO bill_compliance ('
-                    'committee_id, bill_id, hearing_date, deadline_60, '
-                    'effective_deadline, extension_order_url, extension_date, '
-                    'reported_out, summary_present, summary_url, '
-                    'votes_present, votes_url, state, reason, '
-                    'notice_status, notice_gap_days, announcement_date, '
-                    'scheduled_hearing_date, generated_at) '
-                    'VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+                if db_type == 'postgresql':
+                    cursor.execute(f'''
+                        INSERT INTO bill_compliance (
+                            committee_id, bill_id, hearing_date, deadline_60, 
+                            effective_deadline, extension_order_url, extension_date, 
+                            reported_out, summary_present, summary_url, 
+                            votes_present, votes_url, state, reason, 
+                            notice_status, notice_gap_days, announcement_date, 
+                            scheduled_hearing_date, generated_at
+                        ) VALUES (
+                            {placeholder}, {placeholder}, {placeholder}, {placeholder}, {placeholder}, 
+                            {placeholder}, {placeholder}, {placeholder}, {placeholder}, {placeholder}, 
+                            {placeholder}, {placeholder}, {placeholder}, {placeholder}, {placeholder}, 
+                            {placeholder}, {placeholder}, {placeholder}, {placeholder}
+                        )
+                    ''',
                     (
                         committee_id,
                         bill.get('bill_id'),
@@ -694,6 +794,37 @@ def import_compliance_report(committee_id, bills_data):
                         bill.get('scheduled_hearing_date'),
                         datetime.utcnow().isoformat() + 'Z'
                     ))
+                else:
+                    cursor.execute(
+                        'INSERT INTO bill_compliance ('
+                        'committee_id, bill_id, hearing_date, deadline_60, '
+                        'effective_deadline, extension_order_url, extension_date, '
+                        'reported_out, summary_present, summary_url, '
+                        'votes_present, votes_url, state, reason, '
+                        'notice_status, notice_gap_days, announcement_date, '
+                        'scheduled_hearing_date, generated_at) '
+                        'VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+                        (
+                            committee_id,
+                            bill.get('bill_id'),
+                            bill.get('hearing_date'),
+                            bill.get('deadline_60'),
+                            bill.get('effective_deadline'),
+                            bill.get('extension_order_url'),
+                            bill.get('extension_date'),
+                            1 if bill.get('reported_out') else 0,
+                            1 if bill.get('summary_present') else 0,
+                            bill.get('summary_url'),
+                            1 if bill.get('votes_present') else 0,
+                            bill.get('votes_url'),
+                            bill.get('state', 'unknown'),
+                            bill.get('reason', ''),
+                            bill.get('notice_status'),
+                            bill.get('notice_gap_days'),
+                            bill.get('announcement_date'),
+                            bill.get('scheduled_hearing_date'),
+                            datetime.utcnow().isoformat() + 'Z'
+                        ))
                 imported_count += 1
 
             return {
