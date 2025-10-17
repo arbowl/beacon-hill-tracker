@@ -217,7 +217,7 @@ const HomePage: React.FC = () => {
 
       {/* Call to Action */}
       {!user && (
-        <div className="card bg-primary text-primary-content shadow-md">
+        <div className="card bg-base-100 shadow-md">
           <div className="card-body text-center">
             <h2 className="card-title text-2xl justify-center mb-4">
               Ready to Get Started?
