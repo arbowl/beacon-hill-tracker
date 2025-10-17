@@ -20,7 +20,7 @@ export const useCommittees = () => {
         setLoading(true)
         setError(null)
         const response = await apiService.getCommittees()
-        setCommittees(response.data)
+        setCommittees(Array.isArray(response.data) ? response.data : [])
       } catch (err: any) {
         setError(err.response?.data?.error || 'Failed to fetch committees')
       } finally {
@@ -71,8 +71,9 @@ export const useBills = (filters?: DashboardFilters) => {
         }
 
         const response = await apiService.getBills(params)
-        setBills(response.data.bills || response.data)
-        setTotalCount(response.data.count || response.data.length)
+        const billsData = response.data.bills || response.data || []
+        setBills(Array.isArray(billsData) ? billsData : [])
+        setTotalCount(response.data.count || billsData.length || 0)
       } catch (err: any) {
         setError(err.response?.data?.error || 'Failed to fetch bills')
       } finally {
@@ -112,8 +113,9 @@ export const useBills = (filters?: DashboardFilters) => {
         }
 
         const response = await apiService.getBills(params)
-        setBills(response.data.bills || response.data)
-        setTotalCount(response.data.count || response.data.length)
+        const billsData = response.data.bills || response.data || []
+        setBills(Array.isArray(billsData) ? billsData : [])
+        setTotalCount(response.data.count || billsData.length || 0)
       } catch (err: any) {
         setError(err.response?.data?.error || 'Failed to fetch bills')
       } finally {
@@ -330,7 +332,7 @@ export const useCommitteeStats = () => {
         setLoading(true)
         setError(null)
         const response = await apiService.getCommitteeStats()
-        setData(response.data)
+        setData(Array.isArray(response.data) ? response.data : [])
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Failed to fetch committee statistics')
       } finally {
