@@ -4,7 +4,8 @@ services:
     name: beacon-hill-backend
     env: python
     buildCommand: "pip install -r backend/requirements.txt"
-    startCommand: "python start_prod.py"
+    startCommand: "cd backend && gunicorn -w 2 -b 0.0.0.0:$PORT app:app"
+    healthCheckPath: /health
     envVars:
       - key: FLASK_ENV
         value: production
