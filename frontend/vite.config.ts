@@ -17,7 +17,17 @@ export default defineConfig({
   },
   build: {
     outDir: 'dist',
-    sourcemap: true,
+    sourcemap: false, // Disable to save memory
+    chunkSizeWarningLimit: 1000,
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          'react-vendor': ['react', 'react-dom', 'react-router-dom'],
+          'plotly-vendor': ['plotly.js', 'react-plotly.js'],
+          'utils-vendor': ['axios', 'papaparse', 'jwt-decode']
+        }
+      }
+    }
   },
   define: {
     'process.env': {}
