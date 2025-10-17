@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "NODE_OPTIONS='--max-old-space-size=450' tsc --skipLibCheck && NODE_OPTIONS='--max-old-space-size=450' vite build",
+    "build": "NODE_OPTIONS='--max-old-space-size=2000' tsc --skipLibCheck && NODE_OPTIONS='--max-old-space-size=2000' vite build",
     "lint": "eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0",
     "preview": "vite preview"
   },
@@ -39,3 +39,4 @@
     "vite": "^5.0.0"
   }
 }
+
