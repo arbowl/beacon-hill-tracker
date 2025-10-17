@@ -96,57 +96,57 @@ def create_app():
         try:
             with get_db_connection() as conn:
                 cursor = conn.cursor()
-            
-            # Get overall statistics with deduplication
-            cursor.execute('''
-                WITH latest_bills AS (
-                    SELECT bc.*, 
-                           ROW_NUMBER() OVER (PARTITION BY bc.bill_id, bc.committee_id ORDER BY bc.generated_at DESC) as rn
-                    FROM bill_compliance bc
-                )
-                SELECT 
-                    COUNT(DISTINCT committee_id) as total_committees,
-                    COUNT(CASE WHEN rn = 1 THEN 1 END) as total_bills,
-                    SUM(CASE WHEN rn = 1 AND LOWER(state) = 'compliant' THEN 1 ELSE 0 END) as compliant_bills,
-                    SUM(CASE WHEN rn = 1 AND LOWER(state) IN ('incomplete') THEN 1 ELSE 0 END) as incomplete_bills,
-                    SUM(CASE WHEN rn = 1 AND LOWER(state) = 'non-compliant' THEN 1 ELSE 0 END) as non_compliant_bills,
-                    SUM(CASE WHEN rn = 1 AND (LOWER(state) IN ('unknown') OR state = 'Unknown') THEN 1 ELSE 0 END) as unknown_bills,
-                    ROUND(
-                        CASE
-                            WHEN COUNT(CASE WHEN rn = 1 AND LOWER(state) NOT IN ('unknown') AND state != 'Unknown' THEN 1 END) > 0
-                            THEN 100.0 * SUM(CASE WHEN rn = 1 AND LOWER(state) = 'compliant' THEN 1 ELSE 0 END) / COUNT(CASE WHEN rn = 1 AND LOWER(state) NOT IN ('unknown') AND state != 'Unknown' THEN 1 END)
-                            ELSE 0
-                        END, 2
-                    ) as overall_compliance_rate,
-                    MAX(generated_at) as latest_report_date
-                FROM latest_bills
-            ''')
-            
-            result = cursor.fetchone()
-            
-            if result:
-                stats = {
-                    'total_committees': result[0] or 0,
-                    'total_bills': result[1] or 0,
-                    'compliant_bills': result[2] or 0,
-                    'incomplete_bills': result[3] or 0,
-                    'non_compliant_bills': result[4] or 0,
-                    'unknown_bills': result[5] or 0,
-                    'overall_compliance_rate': result[6] or 0,
-                    'latest_report_date': result[7]
-                }
-            else:
-                stats = {
-                    'total_committees': 0,
-                    'total_bills': 0,
-                    'compliant_bills': 0,
-                    'incomplete_bills': 0,
-                    'non_compliant_bills': 0,
-                    'unknown_bills': 0,
-                    'overall_compliance_rate': 0,
-                    'latest_report_date': None
-                }
-            
+                
+                # Get overall statistics with deduplication
+                cursor.execute('''
+                    WITH latest_bills AS (
+                        SELECT bc.*, 
+                               ROW_NUMBER() OVER (PARTITION BY bc.bill_id, bc.committee_id ORDER BY bc.generated_at DESC) as rn
+                        FROM bill_compliance bc
+                    )
+                    SELECT 
+                        COUNT(DISTINCT committee_id) as total_committees,
+                        COUNT(CASE WHEN rn = 1 THEN 1 END) as total_bills,
+                        SUM(CASE WHEN rn = 1 AND LOWER(state) = 'compliant' THEN 1 ELSE 0 END) as compliant_bills,
+                        SUM(CASE WHEN rn = 1 AND LOWER(state) IN ('incomplete') THEN 1 ELSE 0 END) as incomplete_bills,
+                        SUM(CASE WHEN rn = 1 AND LOWER(state) = 'non-compliant' THEN 1 ELSE 0 END) as non_compliant_bills,
+                        SUM(CASE WHEN rn = 1 AND (LOWER(state) IN ('unknown') OR state = 'Unknown') THEN 1 ELSE 0 END) as unknown_bills,
+                        ROUND(
+                            CASE
+                                WHEN COUNT(CASE WHEN rn = 1 AND LOWER(state) NOT IN ('unknown') AND state != 'Unknown' THEN 1 END) > 0
+                                THEN 100.0 * SUM(CASE WHEN rn = 1 AND LOWER(state) = 'compliant' THEN 1 ELSE 0 END) / COUNT(CASE WHEN rn = 1 AND LOWER(state) NOT IN ('unknown') AND state != 'Unknown' THEN 1 END)
+                                ELSE 0
+                            END, 2
+                        ) as overall_compliance_rate,
+                        MAX(generated_at) as latest_report_date
+                    FROM latest_bills
+                ''')
+                
+                result = cursor.fetchone()
+                
+                if result:
+                    stats = {
+                        'total_committees': result[0] or 0,
+                        'total_bills': result[1] or 0,
+                        'compliant_bills': result[2] or 0,
+                        'incomplete_bills': result[3] or 0,
+                        'non_compliant_bills': result[4] or 0,
+                        'unknown_bills': result[5] or 0,
+                        'overall_compliance_rate': result[6] or 0,
+                        'latest_report_date': result[7]
+                    }
+                else:
+                    stats = {
+                        'total_committees': 0,
+                        'total_bills': 0,
+                        'compliant_bills': 0,
+                        'incomplete_bills': 0,
+                        'non_compliant_bills': 0,
+                        'unknown_bills': 0,
+                        'overall_compliance_rate': 0,
+                        'latest_report_date': None
+                    }
+                
                 return jsonify(stats)
             
         except Exception as e:
@@ -159,23 +159,23 @@ def create_app():
         try:
             with get_db_connection() as conn:
                 cursor = conn.cursor()
-            
-            cursor.execute('''
-                SELECT committee_id, name, chamber, url, updated_at
-                FROM committees
-                ORDER BY name
-            ''')
-            
-            committees = []
-            for row in cursor.fetchall():
-                committees.append({
-                    'committee_id': row[0],
-                    'name': row[1],
-                    'chamber': row[2],
-                    'url': row[3],
-                    'updated_at': row[4]
-                })
-            
+                
+                cursor.execute('''
+                    SELECT committee_id, name, chamber, url, updated_at
+                    FROM committees
+                    ORDER BY name
+                ''')
+                
+                committees = []
+                for row in cursor.fetchall():
+                    committees.append({
+                        'committee_id': row[0],
+                        'name': row[1],
+                        'chamber': row[2],
+                        'url': row[3],
+                        'updated_at': row[4]
+                    })
+                
                 return jsonify(committees)
             
         except Exception as e:
@@ -188,51 +188,51 @@ def create_app():
         try:
             with get_db_connection() as conn:
                 cursor = conn.cursor()
-            
-            cursor.execute('''
-                WITH latest_bills AS (
-                    SELECT bc.*, 
-                           ROW_NUMBER() OVER (PARTITION BY bc.bill_id, bc.committee_id ORDER BY bc.generated_at DESC) as rn
-                    FROM bill_compliance bc
-                )
-                SELECT 
-                    c.committee_id,
-                    c.name as committee_name,
-                    c.chamber,
-                    COUNT(CASE WHEN lb.rn = 1 THEN 1 END) as total_bills,
-                    SUM(CASE WHEN lb.rn = 1 AND LOWER(lb.state) = 'compliant' THEN 1 ELSE 0 END) as compliant_count,
-                    SUM(CASE WHEN lb.rn = 1 AND LOWER(lb.state) IN ('incomplete') THEN 1 ELSE 0 END) as incomplete_count,
-                    SUM(CASE WHEN lb.rn = 1 AND LOWER(lb.state) = 'non-compliant' THEN 1 ELSE 0 END) as non_compliant_count,
-                    SUM(CASE WHEN lb.rn = 1 AND (LOWER(lb.state) IN ('unknown') OR lb.state = 'Unknown') THEN 1 ELSE 0 END) as unknown_count,
-                    ROUND(
-                        CASE
-                            WHEN COUNT(CASE WHEN lb.rn = 1 AND LOWER(lb.state) NOT IN ('unknown') AND lb.state != 'Unknown' THEN 1 END) > 0
-                            THEN 100.0 * SUM(CASE WHEN lb.rn = 1 AND LOWER(lb.state) = 'compliant' THEN 1 ELSE 0 END) / COUNT(CASE WHEN lb.rn = 1 AND LOWER(lb.state) NOT IN ('unknown') AND lb.state != 'Unknown' THEN 1 END)
-                            ELSE 0
-                        END, 2
-                    ) as compliance_rate,
-                    MAX(lb.generated_at) as last_report_generated
-                FROM committees c
-                LEFT JOIN latest_bills lb ON c.committee_id = lb.committee_id
-                GROUP BY c.committee_id, c.name, c.chamber
-                ORDER BY compliance_rate DESC, c.name
-            ''')
-            
-            committee_stats = []
-            for row in cursor.fetchall():
-                committee_stats.append({
-                    'committee_id': row[0],
-                    'committee_name': row[1],
-                    'chamber': row[2],
-                    'total_bills': row[3] or 0,
-                    'compliant_count': row[4] or 0,
-                    'incomplete_count': row[5] or 0,
-                    'non_compliant_count': row[6] or 0,
-                    'unknown_count': row[7] or 0,
-                    'compliance_rate': row[8] or 0,
-                    'last_report_generated': row[9]
-                })
-            
+                
+                cursor.execute('''
+                    WITH latest_bills AS (
+                        SELECT bc.*, 
+                               ROW_NUMBER() OVER (PARTITION BY bc.bill_id, bc.committee_id ORDER BY bc.generated_at DESC) as rn
+                        FROM bill_compliance bc
+                    )
+                    SELECT 
+                        c.committee_id,
+                        c.name as committee_name,
+                        c.chamber,
+                        COUNT(CASE WHEN lb.rn = 1 THEN 1 END) as total_bills,
+                        SUM(CASE WHEN lb.rn = 1 AND LOWER(lb.state) = 'compliant' THEN 1 ELSE 0 END) as compliant_count,
+                        SUM(CASE WHEN lb.rn = 1 AND LOWER(lb.state) IN ('incomplete') THEN 1 ELSE 0 END) as incomplete_count,
+                        SUM(CASE WHEN lb.rn = 1 AND LOWER(lb.state) = 'non-compliant' THEN 1 ELSE 0 END) as non_compliant_count,
+                        SUM(CASE WHEN lb.rn = 1 AND (LOWER(lb.state) IN ('unknown') OR lb.state = 'Unknown') THEN 1 ELSE 0 END) as unknown_count,
+                        ROUND(
+                            CASE
+                                WHEN COUNT(CASE WHEN lb.rn = 1 AND LOWER(lb.state) NOT IN ('unknown') AND lb.state != 'Unknown' THEN 1 END) > 0
+                                THEN 100.0 * SUM(CASE WHEN lb.rn = 1 AND LOWER(lb.state) = 'compliant' THEN 1 ELSE 0 END) / COUNT(CASE WHEN lb.rn = 1 AND LOWER(lb.state) NOT IN ('unknown') AND lb.state != 'Unknown' THEN 1 END)
+                                ELSE 0
+                            END, 2
+                        ) as compliance_rate,
+                        MAX(lb.generated_at) as last_report_generated
+                    FROM committees c
+                    LEFT JOIN latest_bills lb ON c.committee_id = lb.committee_id
+                    GROUP BY c.committee_id, c.name, c.chamber
+                    ORDER BY compliance_rate DESC, c.name
+                ''')
+                
+                committee_stats = []
+                for row in cursor.fetchall():
+                    committee_stats.append({
+                        'committee_id': row[0],
+                        'committee_name': row[1],
+                        'chamber': row[2],
+                        'total_bills': row[3] or 0,
+                        'compliant_count': row[4] or 0,
+                        'incomplete_count': row[5] or 0,
+                        'non_compliant_count': row[6] or 0,
+                        'unknown_count': row[7] or 0,
+                        'compliance_rate': row[8] or 0,
+                        'last_report_generated': row[9]
+                    })
+                
                 return jsonify(committee_stats)
             
         except Exception as e:
@@ -245,47 +245,51 @@ def create_app():
         try:
             with get_db_connection() as conn:
                 cursor = conn.cursor()
-            
-            cursor.execute('''
-                SELECT committee_id, name, chamber, url, 
-                       house_room, house_address, house_phone,
-                       senate_room, senate_address, senate_phone,
-                       house_chair_name, house_chair_email,
-                       house_vice_chair_name, house_vice_chair_email,
-                       senate_chair_name, senate_chair_email,
-                       senate_vice_chair_name, senate_vice_chair_email,
-                       updated_at
-                FROM committees
-                WHERE committee_id = ?
-            ''', (committee_id,))
-            
-            row = cursor.fetchone()
-            if not row:
-                return jsonify({'error': 'Committee not found'}), 404
-            
-            committee = {
-                'committee_id': row[0],
-                'name': row[1],
-                'chamber': row[2],
-                'url': row[3],
-                'house_room': row[4],
-                'house_address': row[5],
-                'house_phone': row[6],
-                'senate_room': row[7],
-                'senate_address': row[8],
-                'senate_phone': row[9],
-                'house_chair_name': row[10],
-                'house_chair_email': row[11],
-                'house_vice_chair_name': row[12],
-                'house_vice_chair_email': row[13],
-                'senate_chair_name': row[14],
-                'senate_chair_email': row[15],
-                'senate_vice_chair_name': row[16],
-                'senate_vice_chair_email': row[17],
-                'updated_at': row[18]
-            }
-            
-            return jsonify(committee)
+                
+                # Use appropriate placeholder based on database type
+                from database import get_database_type
+                placeholder = '%s' if get_database_type() == 'postgresql' else '?'
+                
+                cursor.execute(f'''
+                    SELECT committee_id, name, chamber, url, 
+                           house_room, house_address, house_phone,
+                           senate_room, senate_address, senate_phone,
+                           house_chair_name, house_chair_email,
+                           house_vice_chair_name, house_vice_chair_email,
+                           senate_chair_name, senate_chair_email,
+                           senate_vice_chair_name, senate_vice_chair_email,
+                           updated_at
+                    FROM committees
+                    WHERE committee_id = {placeholder}
+                ''', (committee_id,))
+                
+                row = cursor.fetchone()
+                if not row:
+                    return jsonify({'error': 'Committee not found'}), 404
+                
+                committee = {
+                    'committee_id': row[0],
+                    'name': row[1],
+                    'chamber': row[2],
+                    'url': row[3],
+                    'house_room': row[4],
+                    'house_address': row[5],
+                    'house_phone': row[6],
+                    'senate_room': row[7],
+                    'senate_address': row[8],
+                    'senate_phone': row[9],
+                    'house_chair_name': row[10],
+                    'house_chair_email': row[11],
+                    'house_vice_chair_name': row[12],
+                    'house_vice_chair_email': row[13],
+                    'senate_chair_name': row[14],
+                    'senate_chair_email': row[15],
+                    'senate_vice_chair_name': row[16],
+                    'senate_vice_chair_email': row[17],
+                    'updated_at': row[18]
+                }
+                
+                return jsonify(committee)
             
         except Exception as e:
             return jsonify({'error': str(e)}), 500
@@ -297,104 +301,108 @@ def create_app():
         try:
             with get_db_connection() as conn:
                 cursor = conn.cursor()
-            
-            # Get filter parameters
-            committee_id = request.args.get('committee_id')  # For backward compatibility
-            committees = request.args.get('committees')      # For multiple committee selection
-            chamber = request.args.get('chamber')
-            state = request.args.get('state')
-            search_term = request.args.get('search', '')
-            
-            # Build the query with deduplication
-            base_query = '''
-                WITH latest_bills AS (
-                    SELECT bc.committee_id, bc.bill_id, bc.hearing_date, bc.deadline_60, bc.effective_deadline,
-                           bc.extension_order_url, bc.extension_date, bc.reported_out, bc.summary_present,
-                           bc.summary_url, bc.votes_present, bc.votes_url, bc.state, bc.reason,
-                           bc.notice_status, bc.notice_gap_days, bc.announcement_date, bc.scheduled_hearing_date,
-                           bc.generated_at, b.bill_title, b.bill_url, c.name as committee_name, c.chamber,
-                           ROW_NUMBER() OVER (PARTITION BY bc.bill_id, bc.committee_id ORDER BY bc.generated_at DESC) as rn
-                    FROM bill_compliance bc
-                    LEFT JOIN bills b ON bc.bill_id = b.bill_id
-                    LEFT JOIN committees c ON bc.committee_id = c.committee_id
-                )
-                SELECT committee_id, bill_id, hearing_date, deadline_60, effective_deadline,
-                       extension_order_url, extension_date, reported_out, summary_present,
-                       summary_url, votes_present, votes_url, state, reason,
-                       notice_status, notice_gap_days, announcement_date, scheduled_hearing_date,
-                       generated_at, bill_title, bill_url, committee_name, chamber
-                FROM latest_bills
-                WHERE rn = 1
-            '''
-            
-            params = []
-            conditions = []
-            
-            # Handle committee filtering (single or multiple)
-            if committee_id:
-                conditions.append("committee_id = ?")
-                params.append(committee_id)
-            elif committees:
-                # Handle comma-separated list of committee IDs
-                committee_list = [c.strip() for c in committees.split(',') if c.strip()]
-                if committee_list:
-                    placeholders = ','.join(['?' for _ in committee_list])
-                    conditions.append(f"committee_id IN ({placeholders})")
-                    params.extend(committee_list)
-            
-            if chamber:
-                conditions.append("chamber = ?")
-                params.append(chamber)
-            
-            if state:
-                conditions.append("LOWER(state) = LOWER(?)")
-                params.append(state)
-            
-            if search_term:
-                conditions.append("(bill_id LIKE ? OR bill_title LIKE ?)")
-                params.extend([f'%{search_term}%', f'%{search_term}%'])
-            
-            if conditions:
-                base_query += " AND " + " AND ".join(conditions)
-            
-            base_query += " ORDER BY generated_at DESC"
-            
-            cursor.execute(base_query, params)
-            
-            bills = []
-            for row in cursor.fetchall():
-                bill = {
-                    'committee_id': row[0],          # committee_id
-                    'bill_id': row[1],               # bill_id
-                    'hearing_date': row[2],          # hearing_date
-                    'deadline_60': row[3],           # deadline_60
-                    'effective_deadline': row[4],    # effective_deadline
-                    'extension_order_url': row[5],   # extension_order_url
-                    'extension_date': row[6],        # extension_date
-                    'reported_out': bool(row[7]),    # reported_out
-                    'summary_present': bool(row[8]), # summary_present
-                    'summary_url': row[9],           # summary_url
-                    'votes_present': bool(row[10]),  # votes_present
-                    'votes_url': row[11],            # votes_url
-                    'state': row[12],                # state
-                    'reason': row[13],               # reason
-                    'notice_status': row[14],        # notice_status
-                    'notice_gap_days': row[15],      # notice_gap_days
-                    'announcement_date': row[16],    # announcement_date
-                    'scheduled_hearing_date': row[17], # scheduled_hearing_date
-                    'generated_at': row[18],         # generated_at
-                    'bill_title': row[19],           # bill_title (from JOIN)
-                    'bill_url': row[20] if row[20] else f'https://malegislature.gov/Bills/194/{row[1]}', # bill_url (from JOIN)
-                    'committee_name': row[21],       # committee_name (from JOIN)
-                    'chamber': row[22],              # chamber (from JOIN)
-                }
                 
-                # Normalize state to lowercase for consistent frontend handling
-                if bill['state']:
-                    bill['state'] = bill['state'].lower()
+                # Get filter parameters
+                committee_id = request.args.get('committee_id')  # For backward compatibility
+                committees = request.args.get('committees')      # For multiple committee selection
+                chamber = request.args.get('chamber')
+                state = request.args.get('state')
+                search_term = request.args.get('search', '')
                 
-                bills.append(bill)
-            
+                # Get appropriate placeholder for database type
+                from database import get_database_type
+                placeholder = '%s' if get_database_type() == 'postgresql' else '?'
+                
+                # Build the query with deduplication
+                base_query = '''
+                    WITH latest_bills AS (
+                        SELECT bc.committee_id, bc.bill_id, bc.hearing_date, bc.deadline_60, bc.effective_deadline,
+                               bc.extension_order_url, bc.extension_date, bc.reported_out, bc.summary_present,
+                               bc.summary_url, bc.votes_present, bc.votes_url, bc.state, bc.reason,
+                               bc.notice_status, bc.notice_gap_days, bc.announcement_date, bc.scheduled_hearing_date,
+                               bc.generated_at, b.bill_title, b.bill_url, c.name as committee_name, c.chamber,
+                               ROW_NUMBER() OVER (PARTITION BY bc.bill_id, bc.committee_id ORDER BY bc.generated_at DESC) as rn
+                        FROM bill_compliance bc
+                        LEFT JOIN bills b ON bc.bill_id = b.bill_id
+                        LEFT JOIN committees c ON bc.committee_id = c.committee_id
+                    )
+                    SELECT committee_id, bill_id, hearing_date, deadline_60, effective_deadline,
+                           extension_order_url, extension_date, reported_out, summary_present,
+                           summary_url, votes_present, votes_url, state, reason,
+                           notice_status, notice_gap_days, announcement_date, scheduled_hearing_date,
+                           generated_at, bill_title, bill_url, committee_name, chamber
+                    FROM latest_bills
+                    WHERE rn = 1
+                '''
+                
+                params = []
+                conditions = []
+                
+                # Handle committee filtering (single or multiple)
+                if committee_id:
+                    conditions.append(f"committee_id = {placeholder}")
+                    params.append(committee_id)
+                elif committees:
+                    # Handle comma-separated list of committee IDs
+                    committee_list = [c.strip() for c in committees.split(',') if c.strip()]
+                    if committee_list:
+                        placeholders = ','.join([placeholder for _ in committee_list])
+                        conditions.append(f"committee_id IN ({placeholders})")
+                        params.extend(committee_list)
+                
+                if chamber:
+                    conditions.append(f"chamber = {placeholder}")
+                    params.append(chamber)
+                
+                if state:
+                    conditions.append(f"LOWER(state) = LOWER({placeholder})")
+                    params.append(state)
+                
+                if search_term:
+                    conditions.append(f"(bill_id LIKE {placeholder} OR bill_title LIKE {placeholder})")
+                    params.extend([f'%{search_term}%', f'%{search_term}%'])
+                
+                if conditions:
+                    base_query += " AND " + " AND ".join(conditions)
+                
+                base_query += " ORDER BY generated_at DESC"
+                
+                cursor.execute(base_query, params)
+                
+                bills = []
+                for row in cursor.fetchall():
+                    bill = {
+                        'committee_id': row[0],          # committee_id
+                        'bill_id': row[1],               # bill_id
+                        'hearing_date': row[2],          # hearing_date
+                        'deadline_60': row[3],           # deadline_60
+                        'effective_deadline': row[4],    # effective_deadline
+                        'extension_order_url': row[5],   # extension_order_url
+                        'extension_date': row[6],        # extension_date
+                        'reported_out': bool(row[7]),    # reported_out
+                        'summary_present': bool(row[8]), # summary_present
+                        'summary_url': row[9],           # summary_url
+                        'votes_present': bool(row[10]),  # votes_present
+                        'votes_url': row[11],            # votes_url
+                        'state': row[12],                # state
+                        'reason': row[13],               # reason
+                        'notice_status': row[14],        # notice_status
+                        'notice_gap_days': row[15],      # notice_gap_days
+                        'announcement_date': row[16],    # announcement_date
+                        'scheduled_hearing_date': row[17], # scheduled_hearing_date
+                        'generated_at': row[18],         # generated_at
+                        'bill_title': row[19],           # bill_title (from JOIN)
+                        'bill_url': row[20] if row[20] else f'https://malegislature.gov/Bills/194/{row[1]}', # bill_url (from JOIN)
+                        'committee_name': row[21],       # committee_name (from JOIN)
+                        'chamber': row[22],              # chamber (from JOIN)
+                    }
+                    
+                    # Normalize state to lowercase for consistent frontend handling
+                    if bill['state']:
+                        bill['state'] = bill['state'].lower()
+                    
+                    bills.append(bill)
+                
                 return jsonify(bills)
             
         except Exception as e:
@@ -576,7 +584,7 @@ def import_cache_data(cache_data):
     """Import data from cache.json structure"""
     with get_db_connection() as conn:
         cursor = conn.cursor()
-    
+        
         try:
             # Import committees
             if 'committee_contacts' in cache_data:
@@ -638,10 +646,10 @@ def import_compliance_report(committee_id, bills_data):
     """Import compliance report data for a specific committee"""
     with get_db_connection() as conn:
         cursor = conn.cursor()
-    
+        
         try:
             imported_count = 0
-        
+            
             for bill in bills_data:
                 # Upsert bill basic info
                 cursor.execute(
