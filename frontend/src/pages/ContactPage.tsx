@@ -1,4 +1,48 @@
+import React, { useState } from 'react'
+import { sendContactMessage } from '../services/api'
+
 const ContactPage = () => {
+  const [formData, setFormData] = useState({
+    name: '',
+    email: '',
+    subject: '',
+    message: '',
+  })
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState('')
+  const [success, setSuccess] = useState(false)
+
+  const handleChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
+  ) => {
+    setFormData({
+      ...formData,
+      [e.target.name]: e.target.value,
+    })
+  }
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setError('')
+    setSuccess(false)
+    setLoading(true)
+
+    try {
+      await sendContactMessage(
+        formData.name,
+        formData.email,
+        formData.subject,
+        formData.message
+      )
+      setSuccess(true)
+      setFormData({ name: '', email: '', subject: '', message: '' })
+    } catch (err: any) {
+      setError(err.message || 'Failed to send message')
+    } finally {
+      setLoading(false)
+    }
+  }
+
   return (
     <div className="max-w-4xl mx-auto space-y-8">
       <div className="text-center">
@@ -10,25 +54,126 @@ const ContactPage = () => {
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
         <div className="dashboard-card">
-          <h2 className="text-2xl font-semibold text-gray-900 mb-6">Send us a message</h2>
-          <form className="space-y-6">
+          <h2 className="text-2xl font-semibold text-gray-900 mb-6">
+            Send us a message
+          </h2>
+
+          {success && (
+            <div className="alert alert-success mb-6">
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                className="stroke-current shrink-0 h-6 w-6"
+                fill="none"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth="2"
+                  d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
+                />
+              </svg>
+              <span>
+                Message sent successfully! We'll get back to you soon.
+              </span>
+            </div>
+          )}
+
+          {error && (
+            <div className="alert alert-error mb-6">
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                className="stroke-current shrink-0 h-6 w-6"
+                fill="none"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth="2"
+                  d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z"
+                />
+              </svg>
+              <span>{error}</span>
+            </div>
+          )}
+
+          <form onSubmit={handleSubmit} className="space-y-6">
             <div>
-              <label className="form-label">Name</label>
-              <input type="text" className="form-input" placeholder="Your full name" />
+              <label className="form-label" htmlFor="name">
+                Name
+              </label>
+              <input
+                id="name"
+                name="name"
+                type="text"
+                className="form-input"
+                placeholder="Your full name"
+                value={formData.name}
+                onChange={handleChange}
+                required
+              />
             </div>
             <div>
-              <label className="form-label">Email</label>
-              <input type="email" className="form-input" placeholder="your.email@example.com" />
+              <label className="form-label" htmlFor="email">
+                Email
+              </label>
+              <input
+                id="email"
+                name="email"
+                type="email"
+                className="form-input"
+                placeholder="your.email@example.com"
+                value={formData.email}
+                onChange={handleChange}
+                required
+              />
             </div>
             <div>
-              <label className="form-label">Subject</label>
-              <input type="text" className="form-input" placeholder="What is this regarding?" />
+              <label className="form-label" htmlFor="subject">
+                Subject
+              </label>
+              <input
+                id="subject"
+                name="subject"
+                type="text"
+                className="form-input"
+                placeholder="What is this regarding?"
+                value={formData.subject}
+                onChange={handleChange}
+                required
+              />
             </div>
             <div>
-              <label className="form-label">Message</label>
-              <textarea rows={6} className="form-input" placeholder="Your message..." />
+              <label className="form-label" htmlFor="message">
+                Message
+              </label>
+              <textarea
+                id="message"
+                name="message"
+                rows={6}
+                className="form-input"
+                placeholder="Your message..."
+                value={formData.message}
+                onChange={handleChange}
+                required
+                minLength={10}
+              />
             </div>
-            <button type="submit" className="btn-primary w-full">Send Message</button>
+            <button
+              type="submit"
+              className="btn-primary w-full"
+              disabled={loading}
+            >
+              {loading ? (
+                <>
+                  <span className="loading loading-spinner loading-sm mr-2"></span>
+                  Sending...
+                </>
+              ) : (
+                'Send Message'
+              )}
+            </button>
           </form>
         </div>
 
@@ -37,8 +182,6 @@ const ContactPage = () => {
             <h3 className="text-xl font-semibold text-gray-900 mb-4">Contact Information</h3>
             <div className="space-y-3 text-gray-600">
               <div>Email: info@beaconhilltracker.org</div>
-              <div>Phone: (617) 555-0123</div>
-              <div>Address: Boston, MA</div>
             </div>
           </div>
           <div className="dashboard-card">
