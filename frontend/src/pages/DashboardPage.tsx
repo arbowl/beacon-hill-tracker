@@ -1,6 +1,6 @@
 import React, { useState, useMemo, useEffect } from 'react'
 import { useSearchParams } from 'react-router-dom'
-import { useGlobalStats, useCommittees, useBills, useCommitteeStats, useSavedViews, useCommitteeDetails } from '../hooks/useData'
+import { useGlobalStats, useCommittees, useBills, useCommitteeStats, useSavedViews, useCommitteeDetails, useDebounce } from '../hooks/useData'
 import { useAuth } from '../contexts/AuthContext'
 import { DashboardFilters, Bill } from '../types'
 import { analyzeReasons, getTopViolationsForCommittee } from '../utils/reasonParser'
@@ -24,6 +24,15 @@ const DashboardPage: React.FC = () => {
     },
     searchTerm: ''
   })
+
+  // Debounce the search term to avoid too many API calls
+  const debouncedSearchTerm = useDebounce(filters.searchTerm, 500)
+
+  // Create debounced filters for API calls
+  const debouncedFilters = useMemo(() => ({
+    ...filters,
+    searchTerm: debouncedSearchTerm
+  }), [filters.committees, filters.chambers, filters.states, filters.dateRange, debouncedSearchTerm])
 
   // Load filters from URL parameters (for saved views)
   useEffect(() => {
@@ -65,8 +74,8 @@ const DashboardPage: React.FC = () => {
   const [committeeViewMode, setCommitteeViewMode] = useState<'top_performers' | 'all_committees'>('top_performers')
   const [committeeLimit, setCommitteeLimit] = useState(15)
 
-  // Fetch bills with current filters
-  const { bills: billsData, loading: billsLoading, error: billsError } = useBills(filters)
+  // Fetch bills with debounced filters to prevent rapid API calls during typing
+  const { bills: billsData, loading: billsLoading, error: billsError } = useBills(debouncedFilters)
 
   // Fetch committee details when a single committee is selected
   const selectedCommitteeId = filters.committees.length === 1 ? filters.committees[0] : null
@@ -144,10 +153,10 @@ const DashboardPage: React.FC = () => {
     }
   }, [billsData, filters.committees])
 
-  // Reset to first page when filters change
+  // Reset to first page when debounced filters change
   React.useEffect(() => {
     setCurrentPage(1)
-  }, [filters])
+  }, [debouncedFilters])
 
   const handlePageChange = (page: number) => {
     setCurrentPage(page)
@@ -440,7 +449,7 @@ const DashboardPage: React.FC = () => {
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
           </svg>
           <div className="text-sm text-base-content/80">
-            <span className="font-medium">Notice an error? Accuracy is important!</span> Shoot me an email, or submit a pull request on GitHub.
+            <span className="font-medium">Notice an error? Accuracy is important!</span> Shoot us an email, or submit a pull request on GitHub.
           </div>
         </div>
         <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 w-full sm:w-auto mt-2">
@@ -469,6 +478,9 @@ const DashboardPage: React.FC = () => {
             <div className="form-control">
               <label className="label">
                 <span className="label-text">Search Bills</span>
+                {filters.searchTerm !== debouncedSearchTerm && (
+                  <span className="label-text-alt text-info">Typing...</span>
+                )}
               </label>
               <input
                 type="text"
