@@ -1061,7 +1061,9 @@ def import_compliance_report(committee_id, bills_data):
                 "message": f"Database error: {str(e)}"
             }
 
-# Create the Flask app instance for direct execution
+# Create the Flask app instance for Gunicorn
+app = create_app()
+
+# For direct execution
 if __name__ == '__main__':
-    app = create_app()
     app.run(host='0.0.0.0', port=5000, debug=True)
