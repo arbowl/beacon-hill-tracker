@@ -3,7 +3,7 @@ Authentication and User Management API Endpoints
 Handles user registration, login, verification, and role management
 """
 
-from flask import Blueprint, request, jsonify, current_app, url_for
+from flask import Blueprint, request, jsonify, current_app
 from flask_jwt_extended import (
     jwt_required, get_jwt_identity, create_access_token,
     verify_jwt_in_request
@@ -44,9 +44,13 @@ def require_role(required_role):
     return decorator
 
 
-@auth_bp.route('/register', methods=['POST'])
+@auth_bp.route('/register', methods=['POST', 'OPTIONS'])
 def register():
     """Register a new user account with email verification"""
+    # Handle CORS preflight
+    if request.method == 'OPTIONS':
+        return '', 204
+    
     try:
         data = request.get_json()
         if not data:
@@ -105,9 +109,14 @@ def register():
         
         # Send verification email
         try:
-            verification_url = url_for('auth.verify_email',
-                                       token=token,
-                                       _external=True)
+            # Use BACKEND_URL from config instead of url_for to avoid
+            # Render internal URL issues
+            backend_url = current_app.config.get(
+                'BACKEND_URL', 'http://localhost:5000'
+            )
+            verification_url = (
+                f"{backend_url.rstrip('/')}/api/auth/verify/{token}"
+            )
             send_verification_email(email, verification_url)
         except Exception as e:
             current_app.logger.error(
@@ -168,9 +177,13 @@ def verify_email(token):
         return jsonify({'error': 'Verification failed'}), 500
 
 
-@auth_bp.route('/login', methods=['POST'])
+@auth_bp.route('/login', methods=['POST', 'OPTIONS'])
 def login():
     """Authenticate user and return JWT token"""
+    # Handle CORS preflight
+    if request.method == 'OPTIONS':
+        return '', 204
+    
     try:
         data = request.get_json()
         if not data:
