@@ -5,6 +5,7 @@ and admin features.
 """
 
 import os
+import logging
 from flask import Flask, request, jsonify
 from flask_jwt_extended import JWTManager
 from dotenv import load_dotenv
@@ -87,6 +88,45 @@ def create_app():
             'message': 'Beacon Hill Compliance Tracker API is running',
             'timestamp': datetime.utcnow().isoformat()
         })
+
+    @flask_app.route('/debug/db-info', methods=['GET'])
+    def debug_db_info():
+        """Debug endpoint to check database connection and type"""
+        try:
+            db_type = get_database_type()
+            db_url = os.getenv('DATABASE_URL', 'sqlite:///compliance_tracker.db')
+            
+            # Test database connection
+            with get_db_connection() as conn:
+                cursor = conn.cursor()
+                
+                # Count records
+                cursor.execute('SELECT COUNT(*) FROM committees')
+                committee_count = cursor.fetchone()[0]
+                
+                cursor.execute('SELECT COUNT(*) FROM bills')
+                bill_count = cursor.fetchone()[0]
+                
+                cursor.execute('SELECT COUNT(*) FROM bill_compliance')
+                compliance_count = cursor.fetchone()[0]
+            
+            return jsonify({
+                'status': 'success',
+                'database_type': db_type,
+                'database_url_prefix': db_url.split('://')[0] if '://' in db_url else 'unknown',
+                'counts': {
+                    'committees': committee_count,
+                    'bills': bill_count,
+                    'bill_compliance': compliance_count
+                },
+                'timestamp': datetime.utcnow().isoformat()
+            })
+        except Exception as e:
+            return jsonify({
+                'status': 'error',
+                'message': str(e),
+                'timestamp': datetime.utcnow().isoformat()
+            }), 500
 
     # Stats endpoint for dashboard
     @flask_app.route('/api/stats', methods=['GET'])
@@ -448,23 +488,32 @@ def create_app():
         Also accepts "bills" instead of "items" for backwards compatibility.
         Requires HMAC signature authentication.
         """
+        logger = logging.getLogger(__name__)
+        logger.info("=== INGEST BASIC ENDPOINT CALLED ===")
+        
         try:
             # Verify signature
+            logger.info("Verifying signature...")
             is_valid, error_msg, key_record = verify_ingest_signature(request)
             if not is_valid:
+                logger.warning(f"Authentication failed: {error_msg}")
                 return jsonify({
                     "status": "error",
                     "message": f"Authentication failed: {error_msg}"
                 }), 401
             
+            logger.info("Signature verified successfully")
+            
             data = request.get_json()
             if not data:
+                logger.error("No JSON data provided")
                 return jsonify({
                     "status": "error",
                     "message": "No JSON data provided"
                 }), 400
 
             if not isinstance(data, dict):
+                logger.error("Data is not a dictionary")
                 return jsonify({
                     "status": "error",
                     "message": "Expected JSON object with committee_id and items"
@@ -472,7 +521,10 @@ def create_app():
 
             # Extract committee_id (from body or query parameter)
             committee_id = data.get('committee_id') or request.args.get('committee_id')
+            logger.info(f"Committee ID: {committee_id}")
+            
             if not committee_id:
+                logger.error("No committee_id provided")
                 return jsonify({
                     "status": "error",
                     "message": "committee_id is required"
@@ -480,21 +532,31 @@ def create_app():
 
             # Extract items/bills array
             items = data.get('items', data.get('bills', []))
+            logger.info(f"Number of items to ingest: {len(items)}")
+            
             if not isinstance(items, list):
+                logger.error("Items is not a list")
                 return jsonify({
                     "status": "error",
                     "message": "Expected 'items' or 'bills' to be an array"
                 }), 400
 
+            logger.info("Calling import_compliance_report...")
             result = import_compliance_report(committee_id, items)
+            logger.info(f"Import result: {result}")
+            
             if result['status'] == 'success':
                 # Log successful ingestion
                 user_id = key_record[1] if key_record else None
                 result['authenticated_user_id'] = user_id
+                logger.info(f"SUCCESS: Returning 200 with result: {result}")
                 return jsonify(result), 200
+            
+            logger.error(f"Import failed with result: {result}")
             return jsonify(result), 500
 
         except Exception as exc:
+            logger.error(f"Exception in ingest_basic: {str(exc)}", exc_info=True)
             return jsonify({"status": "error", "message": str(exc)}), 500
 
     return flask_app
@@ -579,15 +641,20 @@ def verify_ingest_signature(request):
 
 def import_cache_data(cache_data):
     """Import data from cache.json structure"""
+    logger = logging.getLogger(__name__)
+    logger.info(f"Starting cache data import. DB type: {get_database_type()}")
+    
     with get_db_connection() as conn:
         cursor = conn.cursor()
         
         try:
             db_type = get_database_type()
             placeholder = '%s' if db_type == 'postgresql' else '?'
+            logger.info(f"Using database type: {db_type}, placeholder: {placeholder}")
             
             # Import committees
             if 'committee_contacts' in cache_data:
+                logger.info(f"Importing {len(cache_data['committee_contacts'])} committees")
                 for comm_id, comm_data in cache_data['committee_contacts'].items():
                     if db_type == 'postgresql':
                         # PostgreSQL: Use INSERT ... ON CONFLICT ... DO UPDATE
@@ -672,6 +739,7 @@ def import_cache_data(cache_data):
 
             # Import bills
             if 'bill_parsers' in cache_data:
+                logger.info(f"Importing {len(cache_data['bill_parsers'])} bills")
                 for bill_id, bill_data in cache_data['bill_parsers'].items():
                     # Insert basic bill info
                     title = bill_data.get('title', {})
@@ -704,12 +772,16 @@ def import_cache_data(cache_data):
                                 title.get('updated_at') if isinstance(title, dict) else datetime.utcnow().isoformat() + 'Z'
                             ))
 
+            conn.commit()  # Explicit commit
+            logger.info("Cache data import completed successfully")
             return {
                 "status": "success",
-                "message": f"Successfully imported cache data"
+                "message": "Successfully imported cache data"
             }
 
         except Exception as e:
+            logger.error(f"Cache data import failed: {str(e)}", exc_info=True)
+            conn.rollback()
             return {
                 "status": "error",
                 "message": f"Database error: {str(e)}"
@@ -717,15 +789,22 @@ def import_cache_data(cache_data):
 
 def import_compliance_report(committee_id, bills_data):
     """Import compliance report data for a specific committee"""
+    logger = logging.getLogger(__name__)
+    logger.info(f"Starting compliance report import for committee {committee_id}")
+    logger.info(f"Number of bills to import: {len(bills_data)}")
+    logger.info(f"Database type: {get_database_type()}")
+    
     with get_db_connection() as conn:
         cursor = conn.cursor()
         
         try:
             db_type = get_database_type()
             placeholder = '%s' if db_type == 'postgresql' else '?'
+            logger.info(f"Using placeholder: {placeholder}")
             imported_count = 0
             
             for bill in bills_data:
+                logger.debug(f"Importing bill: {bill.get('bill_id')}")
                 # Upsert bill basic info
                 if db_type == 'postgresql':
                     # PostgreSQL: Use INSERT ... ON CONFLICT ... DO UPDATE
@@ -827,12 +906,17 @@ def import_compliance_report(committee_id, bills_data):
                         ))
                 imported_count += 1
 
+            conn.commit()  # Explicit commit
+            logger.info(f"Successfully imported {imported_count} bills for committee {committee_id}")
             return {
                 "status": "success",
-                "message": f"Successfully imported {imported_count} bills for committee {committee_id}"
+                "message": f"Successfully imported {imported_count} bills for committee {committee_id}",
+                "imported_count": imported_count
             }
 
         except Exception as e:
+            logger.error(f"Compliance report import failed: {str(e)}", exc_info=True)
+            conn.rollback()
             return {
                 "status": "error",
                 "message": f"Database error: {str(e)}"
