@@ -6,6 +6,7 @@ and admin features.
 
 import os
 import logging
+import time
 from flask import Flask, request, jsonify
 from flask_jwt_extended import JWTManager
 from dotenv import load_dotenv
@@ -122,6 +123,88 @@ def create_app():
                 'timestamp': datetime.utcnow().isoformat()
             })
         except Exception as e:
+            return jsonify({
+                'status': 'error',
+                'message': str(e),
+                'timestamp': datetime.utcnow().isoformat()
+            }), 500
+
+    @flask_app.route('/debug/test-write', methods=['POST'])
+    def debug_test_write():
+        """Debug endpoint to test database write without authentication"""
+        logger = logging.getLogger(__name__)
+        logger.info("=== DEBUG TEST WRITE CALLED ===")
+        
+        try:
+            db_type = get_database_type()
+            placeholder = '%s' if db_type == 'postgresql' else '?'
+            logger.info(f"Database type: {db_type}")
+            
+            test_committee_id = f"TEST_DEBUG_{int(time.time())}"
+            
+            with get_db_connection() as conn:
+                cursor = conn.cursor()
+                logger.info("Database connection established")
+                
+                # Try to insert a test committee
+                if db_type == 'postgresql':
+                    logger.info("Using PostgreSQL INSERT")
+                    cursor.execute(f'''
+                        INSERT INTO committees 
+                        (committee_id, name, chamber, url, updated_at)
+                        VALUES ({placeholder}, {placeholder}, {placeholder}, {placeholder}, {placeholder})
+                        ON CONFLICT (committee_id) DO UPDATE SET
+                            name = EXCLUDED.name,
+                            updated_at = EXCLUDED.updated_at
+                    ''', (
+                        test_committee_id,
+                        'Test Committee',
+                        'Joint',
+                        'https://example.com',
+                        datetime.utcnow().isoformat() + 'Z'
+                    ))
+                else:
+                    logger.info("Using SQLite INSERT OR REPLACE")
+                    cursor.execute('''
+                        INSERT OR REPLACE INTO committees 
+                        (committee_id, name, chamber, url, updated_at)
+                        VALUES (?, ?, ?, ?, ?)
+                    ''', (
+                        test_committee_id,
+                        'Test Committee',
+                        'Joint',
+                        'https://example.com',
+                        datetime.utcnow().isoformat() + 'Z'
+                    ))
+                
+                logger.info("INSERT executed")
+                
+                # Verify the insert
+                cursor.execute(f'SELECT COUNT(*) FROM committees WHERE committee_id = {placeholder}', (test_committee_id,))
+                count = cursor.fetchone()[0]
+                logger.info(f"Verification count: {count}")
+                
+                # The context manager should commit automatically
+                logger.info("Exiting context manager (should auto-commit)")
+            
+            # Check again after context manager closes
+            with get_db_connection() as conn:
+                cursor = conn.cursor()
+                cursor.execute(f'SELECT COUNT(*) FROM committees WHERE committee_id = {placeholder}', (test_committee_id,))
+                final_count = cursor.fetchone()[0]
+                logger.info(f"Final verification count: {final_count}")
+            
+            return jsonify({
+                'status': 'success',
+                'message': 'Test write completed',
+                'database_type': db_type,
+                'test_committee_id': test_committee_id,
+                'inserted': final_count > 0,
+                'timestamp': datetime.utcnow().isoformat()
+            })
+            
+        except Exception as e:
+            logger.error(f"Test write failed: {str(e)}", exc_info=True)
             return jsonify({
                 'status': 'error',
                 'message': str(e),
