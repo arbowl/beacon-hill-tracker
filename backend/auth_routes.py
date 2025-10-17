@@ -109,13 +109,13 @@ def register():
         
         # Send verification email
         try:
-            # Use BACKEND_URL from config instead of url_for to avoid
-            # Render internal URL issues
-            backend_url = current_app.config.get(
-                'BACKEND_URL', 'http://localhost:5000'
+            # Send user directly to frontend verification page
+            # This avoids issues with email security proxies not handling redirects
+            frontend_url = current_app.config.get(
+                'FRONTEND_URL', 'http://localhost:5173'
             )
             verification_url = (
-                f"{backend_url.rstrip('/')}/api/auth/verify/{token}"
+                f"{frontend_url.rstrip('/')}/verify-email?token={token}"
             )
             send_verification_email(email, verification_url)
         except Exception as e:
@@ -138,9 +138,14 @@ def register():
         return jsonify({'error': 'Registration failed'}), 500
 
 
-@auth_bp.route('/verify/<token>')
+@auth_bp.route('/verify/<token>', methods=['GET', 'POST'])
 def verify_email(token):
-    """Verify user email address using token"""
+    """Verify user email address using token
+    
+    Supports both direct access (redirects to frontend) and API calls (returns JSON).
+    This dual approach helps handle email security proxies that may not properly
+    forward redirects.
+    """
     from flask import redirect
     
     try:
@@ -156,15 +161,31 @@ def verify_email(token):
         )
         
         if not email_token:
-            # Redirect to frontend with error
-            return redirect(f"{frontend_url}/login?verified=false&error=invalid_token")
+            # Check if this is an API call (has Accept: application/json header)
+            if request.headers.get('Accept') == 'application/json':
+                return jsonify({
+                    'success': False,
+                    'error': 'invalid_token',
+                    'message': 'Invalid or already used verification token'
+                }), 400
+            # Redirect for direct browser access
+            return redirect(
+                f"{frontend_url}/login?verified=false&error=invalid_token"
+            )
         
         # Check if token is expired
         if email_token.is_expired():
             db.session.delete(email_token)
             db.session.commit()
-            # Redirect to frontend with error
-            return redirect(f"{frontend_url}/login?verified=false&error=expired")
+            if request.headers.get('Accept') == 'application/json':
+                return jsonify({
+                    'success': False,
+                    'error': 'expired',
+                    'message': 'Verification token has expired'
+                }), 400
+            return redirect(
+                f"{frontend_url}/login?verified=false&error=expired"
+            )
         
         # Activate the user
         user = email_token.user
@@ -174,17 +195,31 @@ def verify_email(token):
         db.session.delete(email_token)
         db.session.commit()
         
-        # Redirect to frontend with success
+        # Return success
+        if request.headers.get('Accept') == 'application/json':
+            return jsonify({
+                'success': True,
+                'message': 'Email verified successfully',
+                'user_id': user.id,
+                'email': user.email
+            }), 200
         return redirect(f"{frontend_url}/login?verified=true")
         
     except Exception as e:
         db.session.rollback()
         current_app.logger.error(f'Email verification error: {e}')
-        # Redirect to frontend with error
         frontend_url = current_app.config.get(
             'FRONTEND_URL', 'http://localhost:5173'
         )
-        return redirect(f"{frontend_url}/login?verified=false&error=server_error")
+        if request.headers.get('Accept') == 'application/json':
+            return jsonify({
+                'success': False,
+                'error': 'server_error',
+                'message': 'Verification failed'
+            }), 500
+        return redirect(
+            f"{frontend_url}/login?verified=false&error=server_error"
+        )
 
 
 @auth_bp.route('/login', methods=['POST', 'OPTIONS'])
@@ -388,14 +423,13 @@ def forgot_password():
         # Send password reset email
         try:
             from email_service import send_password_reset_email
-            backend_url = current_app.config.get(
-                'BACKEND_URL', 'http://localhost:5000'
-            )
             frontend_url = current_app.config.get(
                 'FRONTEND_URL', 'http://localhost:5173'
             )
             # Send user to frontend reset page with token
-            reset_url = f"{frontend_url.rstrip('/')}/reset-password?token={token}"
+            reset_url = (
+                f"{frontend_url.rstrip('/')}/reset-password?token={token}"
+            )
             send_password_reset_email(email, reset_url)
         except Exception as e:
             current_app.logger.error(
