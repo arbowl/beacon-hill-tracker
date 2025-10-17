@@ -58,6 +58,8 @@ def create_app():
     # Other configuration
     flask_app.config['FRONTEND_URL'] = os.getenv(
         'FRONTEND_URL', 'http://localhost:5173')
+    flask_app.config['BACKEND_URL'] = os.getenv(
+        'BACKEND_URL', 'http://localhost:5000')
     flask_app.config['RATELIMIT_STORAGE_URL'] = os.getenv(
         'RATELIMIT_STORAGE_URL', 'memory://')
     flask_app.config['RATELIMIT_DEFAULT'] = os.getenv(
@@ -1068,3 +1070,4 @@ app = create_app()
 # For direct execution
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000, debug=True)
+
