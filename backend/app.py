@@ -426,8 +426,10 @@ def create_app():
                 # Get filter parameters
                 committee_id = request.args.get('committee_id')  # For backward compatibility
                 committees = request.args.get('committees')      # For multiple committee selection
-                chamber = request.args.get('chamber')
-                state = request.args.get('state')
+                chambers = request.args.get('chambers')          # For multiple chamber selection
+                chamber = request.args.get('chamber')            # For backward compatibility
+                states = request.args.get('states')              # For multiple state selection
+                state = request.args.get('state')                # For backward compatibility
                 search_term = request.args.get('search', '')
                 
                 # Get appropriate placeholder for database type
@@ -470,13 +472,30 @@ def create_app():
                         conditions.append(f"committee_id IN ({placeholders})")
                         params.extend(committee_list)
                 
+                # Handle chamber filtering (single or multiple)
                 if chamber:
                     conditions.append(f"chamber = {placeholder}")
                     params.append(chamber)
+                elif chambers:
+                    # Handle comma-separated list of chambers
+                    chamber_list = [c.strip() for c in chambers.split(',') if c.strip()]
+                    if chamber_list:
+                        placeholders = ','.join([placeholder for _ in chamber_list])
+                        conditions.append(f"chamber IN ({placeholders})")
+                        params.extend(chamber_list)
                 
+                # Handle state filtering (single or multiple)
                 if state:
                     conditions.append(f"LOWER(state) = LOWER({placeholder})")
                     params.append(state)
+                elif states:
+                    # Handle comma-separated list of states
+                    state_list = [s.strip() for s in states.split(',') if s.strip()]
+                    if state_list:
+                        # Create case-insensitive comparisons for each state
+                        state_placeholders = ' OR '.join([f"LOWER(state) = LOWER({placeholder})" for _ in state_list])
+                        conditions.append(f"({state_placeholders})")
+                        params.extend(state_list)
                 
                 if search_term:
                     conditions.append(f"(bill_id LIKE {placeholder} OR bill_title LIKE {placeholder})")
@@ -884,6 +903,43 @@ def import_compliance_report(committee_id, bills_data):
             db_type = get_database_type()
             placeholder = '%s' if db_type == 'postgresql' else '?'
             logger.info(f"Using placeholder: {placeholder}")
+            
+            # Ensure committee exists (auto-create if needed)
+            logger.info(f"Checking if committee {committee_id} exists...")
+            cursor.execute(f'SELECT COUNT(*) FROM committees WHERE committee_id = {placeholder}', (committee_id,))
+            committee_exists = cursor.fetchone()[0] > 0
+            
+            if not committee_exists:
+                logger.info(f"Committee {committee_id} not found, creating...")
+                if db_type == 'postgresql':
+                    cursor.execute(f'''
+                        INSERT INTO committees 
+                        (committee_id, name, chamber, url, updated_at)
+                        VALUES ({placeholder}, {placeholder}, {placeholder}, {placeholder}, {placeholder})
+                        ON CONFLICT (committee_id) DO NOTHING
+                    ''', (
+                        committee_id,
+                        f"Committee {committee_id}",
+                        'Joint',
+                        f"https://malegislature.gov/Committees/{committee_id}",
+                        datetime.utcnow().isoformat() + 'Z'
+                    ))
+                else:
+                    cursor.execute('''
+                        INSERT OR IGNORE INTO committees 
+                        (committee_id, name, chamber, url, updated_at)
+                        VALUES (?, ?, ?, ?, ?)
+                    ''', (
+                        committee_id,
+                        f"Committee {committee_id}",
+                        'Joint',
+                        f"https://malegislature.gov/Committees/{committee_id}",
+                        datetime.utcnow().isoformat() + 'Z'
+                    ))
+                logger.info(f"Committee {committee_id} created")
+            else:
+                logger.info(f"Committee {committee_id} exists")
+            
             imported_count = 0
             
             for bill in bills_data:
