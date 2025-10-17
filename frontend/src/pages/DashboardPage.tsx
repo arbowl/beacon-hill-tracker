@@ -454,7 +454,7 @@ const DashboardPage: React.FC = () => {
         </div>
         <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 w-full sm:w-auto mt-2">
           <a href="/contact" className="btn btn-xs btn-outline">
-            Contact Us
+            Contact
           </a>
           <a 
             href="https://github.com/arbowl/beacon-hill-compliance-tracker" 
