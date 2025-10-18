@@ -61,20 +61,22 @@ def init_rate_limiter(app: Flask):
     storage_url = app.config.get('RATELIMIT_STORAGE_URL', 'memory://')
     default_limits = app.config.get('RATELIMIT_DEFAULT', '100 per hour')
     
-    # Exempt health check and debug endpoints from rate limiting
-    def rate_limit_exempt():
-        """Check if current request should be exempt from rate limiting"""
+    # Custom key function that exempts certain paths
+    def get_rate_limit_key():
+        """Get key for rate limiting, returning None for exempt paths"""
+        # Exempt health check and debug endpoints
         exempt_paths = ['/health', '/debug/db-info']
-        return request.path in exempt_paths
+        if request.path in exempt_paths:
+            return None  # None means exempt from rate limiting
+        return get_remote_address()
     
     # Initialize limiter
     limiter = Limiter(
-        key_func=get_remote_address,
+        key_func=get_rate_limit_key,
         storage_uri=storage_url,
         default_limits=[default_limits],
         headers_enabled=True,
-        retry_after='http-date',
-        skip_if=rate_limit_exempt
+        retry_after='http-date'
     )
     limiter.init_app(app)
     
