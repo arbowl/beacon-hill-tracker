@@ -94,29 +94,24 @@ const AboutPage = () => {
               <li className="flex items-start">
                 <span className="text-primary mr-2">•</span>
                 <span>
-                If notice is less than 10 days, the bill is <div className="badge badge-error">Non-Compliant</div> regardless of other factors.</span>
+                If notice is less than 10 days (or missing entirely), the bill is <div className="badge badge-error">Non-Compliant</div> regardless of other factors.</span>
               </li>
               <li className="flex items-start">
                 <span className="text-primary mr-2">•</span>
                 <span>
-                If notice is missing and no other evidence is present, the bill's is <div className="badge">Unknown</div> and being <div className="badge">Monitored</div>.</span>
+                If notice is missing, the bill's status is <div className="badge">Unknown</div> and being <div className="badge">Monitored</div>.</span>
               </li>
               <li className="flex items-start">
                 <span className="text-primary mr-2">•</span>
-                <span>
-                If notice is missing but other evidence exists, the bill is <div className="badge badge-error">Non-Compliant</div>.</span>
-              </li>
-              <li className="flex items-start">
-                <span className="text-primary mr-2">•</span>
-                <span>If notice is adequate, normal compliance logic applies:</span>
+                <span>If notice is adequate, compliance is measured as such:</span>
                 <ul className="space-y-3 text-base-content/80">
                   <li className="flex items-start">
                     <span className="text-primary mr-2">•</span>
-                    <span><strong>Senate bills:</strong> Only summaries and votes are checked (no deadline enforcement).</span>
+                    <span><strong>Senate bills:</strong> Summaries and votes are checked, with deadlines following the "first Wednesday in December" rule.</span>
                   </li>
                   <li className="flex items-start">
                     <span className="text-primary mr-2">•</span>
-                    <span><strong>House bills:</strong> Must be reported out, have summaries posted, and votes posted, all within required deadlines.</span>
+                    <span><strong>House bills:</strong> Must be reported out within 60 days (with the possibility of a one-time extension to 90 days), have summaries posted, and votes posted.</span>
                   </li>
                 </ul>
               </li>
@@ -127,13 +122,13 @@ const AboutPage = () => {
               <li className="flex items-start">
                 <span className="text-primary mr-2">•</span>
                 <span>
-                If only one piece of evidence is missing, it could just be that my tool didn't find it, so I denote it with
-                a Non-Compliant state that highlights how close it is to being Compliant: <div className="badge badge-warning">Incomplete</div>.
+                If exactly one piece of any kind of evidence is missing, I mark it as <div className="badge badge-warning">Incomplete</div>. This status doesn't count toward
+                  compliance, but marks non-compliant bills which may be worthy of extra scrutiny for identifying trends (or even for finding gaps in my automation pipeline).
                 </span>
               </li>
               <li className="flex items-start">
                 <span className="text-primary mr-2">•</span>
-                <span>All three requirements (reported out, votes posted, summaries posted) must be present for a bill to be <div className="badge badge-success">Compliant</div>.</span>
+                <span>All evidence requirements (reported out, votes posted, summaries posted) plus 10 days of advance notice of a hearing must be present for a bill to be <div className="badge badge-success">Compliant</div>.</span>
               </li>
             </ul>
           </p>
@@ -240,3 +235,4 @@ const AboutPage = () => {
 }
 
 export default AboutPage
+
