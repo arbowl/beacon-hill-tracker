@@ -140,7 +140,7 @@ const HomePage: React.FC = () => {
             </div>
             <h3 className="card-title text-xl mb-2">My Methodology</h3>
             <p className="text-base-content/70">
-              Automated data collection from official sources ensures accuracy and real-time transparency tracking.
+              Automated data collection from official sources ensures accuracy and ongoing transparency tracking.
             </p>
             <div className="card-actions justify-end mt-4">
               <Link to="/about" className="btn btn-info btn-sm">
