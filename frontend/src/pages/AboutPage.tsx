@@ -214,7 +214,7 @@ const AboutPage = () => {
               View Dashboard
             </a>
             <a href="/contact" className="btn btn-outline">
-              Contact Us
+              Contact
             </a>
             <a 
               href="https://github.com/arbowl/beacon-hill-compliance-tracker" 
@@ -235,4 +235,5 @@ const AboutPage = () => {
 }
 
 export default AboutPage
+
 
