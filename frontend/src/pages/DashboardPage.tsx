@@ -449,12 +449,12 @@ const DashboardPage: React.FC = () => {
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
           </svg>
           <div className="text-sm text-base-content/80">
-            <span className="font-medium">Notice an error? Accuracy is important!</span> Shoot us an email, or submit a pull request on GitHub.
+            <span className="font-medium">Notice an error? Accuracy is important!</span> Shoot me an email, or submit a pull request on GitHub.
           </div>
         </div>
         <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 w-full sm:w-auto mt-2">
           <a href="/contact" className="btn btn-xs btn-outline">
-            Contact Us
+            Contact
           </a>
           <a 
             href="https://github.com/arbowl/beacon-hill-compliance-tracker" 
@@ -783,8 +783,8 @@ const DashboardPage: React.FC = () => {
                      value={committeeViewMode}
                      onChange={(e) => setCommitteeViewMode(e.target.value as 'top_performers' | 'all_committees')}
                    >
-                     <option value="top_performers">Top Performers</option>
-                     <option value="all_committees">All Committees</option>
+                     <option value="top_performers">Top</option>
+                     <option value="all_committees">All</option>
                    </select>
                    
                    {committeeViewMode !== 'all_committees' && (
