@@ -119,7 +119,11 @@ const HomePage: React.FC = () => {
             
             <div className="card bg-base-100 shadow-md">
               <div className="card-body text-center">
-                <div className="text-3xl font-bold text-warning mb-2">
+                <div className={`text-3xl font-bold mb-2 ${
+                  (adjustedStats?.overall_compliance_rate || 0) >= 80 ? 'text-success' :
+                  (adjustedStats?.overall_compliance_rate || 0) >= 60 ? 'text-warning' :
+                  'text-error'
+                }`}>
                   {adjustedStats?.overall_compliance_rate || 0}%
                 </div>
                 <div className="text-base-content/70">Compliance Rate</div>
