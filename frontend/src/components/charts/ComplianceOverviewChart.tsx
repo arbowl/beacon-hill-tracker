@@ -25,37 +25,22 @@ const ComplianceOverviewChart: React.FC<ComplianceOverviewChartProps> = ({
   }
 
   // Note: incomplete_bills is always 0 (merged into non_compliant_bills)
-  const provisionalCount = data.provisional_bills || 0
+  // Consolidate provisional and monitoring (unknown) into "Provisional"
+  const provisionalCount = (data.provisional_bills || 0) + (data.unknown_bills || 0)
   
-  const values = provisionalCount > 0 
-    ? [
-        data.compliant_bills,
-        provisionalCount,
-        data.non_compliant_bills,
-        data.unknown_bills
-      ]
-    : [
-        data.compliant_bills,
-        data.non_compliant_bills,
-        data.unknown_bills
-      ]
+  const values = [
+    data.compliant_bills,
+    provisionalCount,
+    data.non_compliant_bills
+  ]
 
-  const labels = provisionalCount > 0
-    ? ['Compliant', 'Provisional', 'Non-Compliant', 'Monitoring']
-    : ['Compliant', 'Non-Compliant', 'Monitoring']
+  const labels = ['Compliant', 'Provisional', 'Non-Compliant']
   
-  const colors = provisionalCount > 0
-    ? [
-        '#22c55e', // green for compliant
-        '#86efac', // light green for provisional
-        '#ef4444', // red for non-compliant
-        '#6b7280'  // gray for monitoring
-      ]
-    : [
-        '#22c55e', // green for compliant
-        '#ef4444', // red for non-compliant
-        '#6b7280'  // gray for monitoring
-      ]
+  const colors = [
+    '#22c55e', // green for compliant
+    '#86efac', // light green for provisional (includes monitoring)
+    '#ef4444'  // red for non-compliant
+  ]
 
   const total = values.reduce((sum, val) => sum + val, 0)
 
