@@ -23,6 +23,7 @@ export function getEffectiveState(bill: Bill): 'compliant' | 'non-compliant' | '
     
     // 2. Notice is adequate (compliant or exempt)
     const noticeGood = 
+      bill.notice_status === 'In range' ||
       bill.notice_status?.toLowerCase() === 'compliant' || 
       bill.notice_status?.toLowerCase() === 'exempt'
     
