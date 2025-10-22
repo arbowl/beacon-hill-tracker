@@ -150,6 +150,61 @@ const DashboardPage: React.FC = () => {
     }
   }, [billsData, billsLoading, filters.committees, stats, committees])
 
+  // Recalculate committee stats with provisional logic
+  const adjustedCommitteeStats = useMemo(() => {
+    if (!billsData || !committees) return committeeStats
+
+    // Group bills by committee and calculate effective stats
+    const committeeMap = new Map()
+    
+    billsData.forEach(bill => {
+      const committeeId = bill.committee_id
+      if (!committeeId) return
+      
+      if (!committeeMap.has(committeeId)) {
+        const committee = committees.find(c => c.committee_id === committeeId)
+        committeeMap.set(committeeId, {
+          committee_id: committeeId,
+          committee_name: committee?.name || committeeId,
+          compliant: 0,
+          provisional: 0,
+          nonCompliant: 0,
+          monitoring: 0,
+          total: 0
+        })
+      }
+      
+      const stats = committeeMap.get(committeeId)
+      const effectiveState = getEffectiveState(bill)
+      
+      stats.total++
+      if (effectiveState === 'compliant') stats.compliant++
+      else if (effectiveState === 'provisional') stats.provisional++
+      else if (effectiveState === 'non-compliant') stats.nonCompliant++
+      else if (effectiveState === 'monitoring') stats.monitoring++
+    })
+    
+    // Convert to array and calculate compliance rates
+    return Array.from(committeeMap.values()).map(stats => {
+      const totalExcludingMonitoring = stats.total - stats.monitoring
+      const complianceRate = totalExcludingMonitoring > 0
+        ? ((stats.compliant + stats.provisional) / totalExcludingMonitoring) * 100
+        : 0
+      
+      return {
+        committee_id: stats.committee_id,
+        committee_name: stats.committee_name,
+        compliance_rate: Math.round(complianceRate * 100) / 100,
+        total_bills: stats.total,
+        compliant_count: stats.compliant,
+        provisional_count: stats.provisional,
+        incomplete_count: 0,
+        non_compliant_count: stats.nonCompliant,
+        unknown_count: stats.monitoring
+      }
+    })
+  }, [billsData, committees, committeeStats])
+
   // Pagination calculations
   const totalBills = billsData?.length || 0
   const totalPages = Math.ceil(totalBills / pageSize)
@@ -877,6 +932,7 @@ const DashboardPage: React.FC = () => {
                <ComplianceOverviewChart 
                  data={{
                    compliant_bills: contextualStats?.compliant_bills || 0,
+                   provisional_bills: contextualStats?.provisional_bills || 0,
                    incomplete_bills: contextualStats?.incomplete_bills || 0,
                    non_compliant_bills: contextualStats?.non_compliant_bills || 0,
                    unknown_bills: contextualStats?.unknown_bills || 0
@@ -920,12 +976,13 @@ const DashboardPage: React.FC = () => {
                
                <CommitteeComparisonChart 
                  key={`committee-chart-${committeeViewMode}-${committeeLimit}`}
-                 data={committeeStats?.map(committee => ({
+                 data={adjustedCommitteeStats?.map(committee => ({
                    committee_id: committee.committee_id,
                    name: committee.committee_name,
                    compliance_rate: committee.compliance_rate || 0,
                    total_bills: committee.total_bills || 0,
                    compliant_count: committee.compliant_count || 0,
+                   provisional_count: committee.provisional_count || 0,
                    incomplete_count: committee.incomplete_count || 0,
                    non_compliant_count: committee.non_compliant_count || 0
                  })) || []}
