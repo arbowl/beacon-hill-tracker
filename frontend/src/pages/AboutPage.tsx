@@ -166,7 +166,7 @@ const AboutPage = () => {
             </div>
             <div className="ml-20 pl-4 border-l-2 border-primary/30">
               <p className="text-base-content/80">
-                If no hearing date exists → <span className="badge badge-ghost">Monitoring</span> <span className="text-sm opacity-70">(can't evaluate without a hearing)</span>
+                If no hearing date exists → <span className="badge badge-success badge-outline">Provisional</span> <span className="text-sm opacity-70">(can't evaluate without a hearing)</span>
               </p>
             </div>
           </div>
@@ -201,7 +201,7 @@ const AboutPage = () => {
               <div className="bg-base-200 p-4 rounded-lg">
                 <p className="font-semibold mb-2">If announcement not found:</p>
                 <ul className="space-y-2 text-base-content/80">
-                  <li>• If we also can't find any summaries or votes → <span className="badge badge-ghost">Monitoring</span> <span className="text-sm opacity-70">(not enough info)</span></li>
+                  <li>• If we also can't find any summaries or votes → <span className="badge badge-success badge-outline">Provisional</span> <span className="text-sm opacity-70">(not enough info)</span></li>
                   <li>• If we found summaries or votes → <span className="badge badge-error">Non-Compliant</span> <span className="text-sm opacity-70">(evidence exists but no announcement)</span></li>
                 </ul>
               </div>
@@ -281,11 +281,11 @@ const AboutPage = () => {
                   → <span className="badge badge-success badge-outline">Provisional</span> <span className="text-sm opacity-70">(on track, counts toward compliance)</span>
                 </p>
               </div>
-              <div className="bg-warning/10 border-l-4 border-warning p-4 rounded">
+              <div className="bg-success/10 border-l-4 border-success/30 p-4 rounded">
                 <p className="text-base-content/80">
                   If no hearing or no evidence of progress:
                   <br />
-                  → <span className="badge badge-ghost">Monitoring</span> <span className="text-sm opacity-70">(insufficient data, excluded from stats)</span>
+                  → <span className="badge badge-success badge-outline">Provisional</span> <span className="text-sm opacity-70">(insufficient data, excluded from stats)</span>
                 </p>
               </div>
               <div className="bg-error/10 border-l-4 border-error p-4 rounded">
