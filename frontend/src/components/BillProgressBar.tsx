@@ -20,14 +20,10 @@ interface ProgressData {
 function calculateProgress(bill: Bill): ProgressData {
   // Determine notice status
   const noticeCompliant = 
-    bill.notice_status === 'compliant' || 
-    bill.notice_status === 'exempt' ||
-    bill.notice_status === 'Compliant' ||
-    bill.notice_status === 'Exempt'
+    bill.notice_status === 'In range'
   
   const noticeFailed = 
-    bill.notice_status === 'non-compliant' ||
-    bill.notice_status === 'Non-Compliant'
+    bill.notice_status === 'Out of range'
   
   let noticeLabel = '✗ Notice Unknown'
   if (noticeCompliant) {
@@ -35,12 +31,16 @@ function calculateProgress(bill: Bill): ProgressData {
       noticeLabel = `✓ Notice Exempt (before June 26)`
     } else if (bill.notice_gap_days !== undefined && bill.notice_gap_days !== null) {
       noticeLabel = `✓ Notice (${bill.notice_gap_days} days)`
+    } else if (bill.notice_status === 'In range') {
+      noticeLabel = '✓ Notice In Range'
     } else {
       noticeLabel = '✓ Notice Compliant'
     }
   } else if (noticeFailed) {
     if (bill.notice_gap_days !== undefined && bill.notice_gap_days !== null) {
       noticeLabel = `✗ Notice (only ${bill.notice_gap_days} days)`
+    } else if (bill.notice_status === 'Out of range') {
+      noticeLabel = '✗ Notice Out of Range'
     } else {
       noticeLabel = '✗ Notice Missing'
     }
