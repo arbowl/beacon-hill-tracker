@@ -578,8 +578,8 @@ const DashboardPage: React.FC = () => {
             <div className="flex items-start space-x-3">
               <div className="badge badge-ghost badge-lg shrink-0 mt-1">Monitoring</div>
               <div className="text-sm text-base-content/80">
-                The bill's compliance status is still being determined. The bill is currently in good standing,
-                has not yet provided the required compliance information, but is still within the submission period.
+                The bill's compliance status is still being determined. This may be due to missing 
+                hearing data, pending review, or incomplete information.
               </div>
             </div>
           </div>
@@ -600,12 +600,12 @@ const DashboardPage: React.FC = () => {
               <span>
                 For detailed compliance rules and methodology, visit the <a href="/about" className="link link-primary">About page</a>.
               </span>
-              {stats?.last_updated && (
+              {stats?.latest_report_date && (
                 <span className="flex items-center gap-1">
                   <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" className="w-3 h-3">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" stroke="currentColor" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
                   </svg>
-                  Last updated: {new Date(stats.last_updated).toLocaleDateString('en-US', { 
+                  Last updated: {new Date(stats.latest_report_date).toLocaleDateString('en-US', { 
                     year: 'numeric', 
                     month: 'short', 
                     day: 'numeric',
@@ -614,7 +614,7 @@ const DashboardPage: React.FC = () => {
                   })}
                 </span>
               )}
-              {!stats?.last_updated && billsData && billsData.length > 0 && billsData[0].generated_at && (
+              {!stats?.latest_report_date && billsData && billsData.length > 0 && billsData[0].generated_at && (
                 <span className="flex items-center gap-1">
                   <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" className="w-3 h-3">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" stroke="currentColor" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
