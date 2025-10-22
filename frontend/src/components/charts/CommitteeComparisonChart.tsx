@@ -93,8 +93,8 @@ const CommitteeComparisonChart: React.FC<CommitteeComparisonChartProps> = ({
 
   const names = displayData.map(d => d.name.length > 30 ? d.name.substring(0, 30) + '...' : d.name)
   const compliant = displayData.map(d => d.compliant_count)
-  const incomplete = displayData.map(d => d.incomplete_count)
   const nonCompliant = displayData.map(d => d.non_compliant_count)
+  // Note: incomplete_count is always 0 (merged into non_compliant_count)
 
   const isHorizontal = chartType === 'horizontal_bar'
 
@@ -108,17 +108,6 @@ const CommitteeComparisonChart: React.FC<CommitteeComparisonChartProps> = ({
       marker: { color: '#22c55e' },
       hovertemplate: '<b>%{' + (isHorizontal ? 'y' : 'x') + '}</b><br>' +
                      'Compliant: %{' + (isHorizontal ? 'x' : 'y') + '}<br>' +
-                     '<extra></extra>',
-    },
-    {
-      type: 'bar',
-      orientation: isHorizontal ? 'h' : 'v',
-      x: isHorizontal ? incomplete : names,
-      y: isHorizontal ? names : incomplete,
-      name: 'Incomplete',
-      marker: { color: '#f59e0b' },
-      hovertemplate: '<b>%{' + (isHorizontal ? 'y' : 'x') + '}</b><br>' +
-                     'Incomplete: %{' + (isHorizontal ? 'x' : 'y') + '}<br>' +
                      '<extra></extra>',
     },
     {

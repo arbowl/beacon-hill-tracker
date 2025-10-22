@@ -84,10 +84,6 @@ code {
   @apply bg-emerald-50 text-emerald-700 px-3 py-1 rounded-full text-xs font-medium border border-emerald-200;
 }
 
-.status-incomplete {
-  @apply bg-amber-50 text-amber-700 px-3 py-1 rounded-full text-xs font-medium border border-amber-200;
-}
-
 .status-non-compliant {
   @apply bg-red-50 text-red-700 px-3 py-1 rounded-full text-xs font-medium border border-red-200;
 }

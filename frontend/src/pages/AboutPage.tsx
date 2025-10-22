@@ -121,13 +121,6 @@ const AboutPage = () => {
               </li>
               <li className="flex items-start">
                 <span className="text-primary mr-2">•</span>
-                <span>
-                If exactly one piece of any kind of evidence is missing, I mark it as <div className="badge badge-warning">Incomplete</div>. This status doesn't count toward
-                  compliance, but marks non-compliant bills which may be worthy of extra scrutiny for identifying trends (or even for finding gaps in my automation pipeline).
-                </span>
-              </li>
-              <li className="flex items-start">
-                <span className="text-primary mr-2">•</span>
                 <span>All evidence requirements (reported out, votes posted, summaries posted) plus 10 days of advance notice of a hearing must be present for a bill to be <div className="badge badge-success">Compliant</div>.</span>
               </li>
             </ul>

@@ -23,18 +23,17 @@ const ComplianceOverviewChart: React.FC<ComplianceOverviewChartProps> = ({
     )
   }
 
+  // Note: incomplete_bills is always 0 (merged into non_compliant_bills)
   const values = [
     data.compliant_bills,
-    data.incomplete_bills,
     data.non_compliant_bills,
     data.unknown_bills
   ]
 
-  const labels = ['Compliant', 'Incomplete', 'Non-Compliant', 'Monitoring']
+  const labels = ['Compliant', 'Non-Compliant', 'Monitoring']
   
   const colors = [
     '#22c55e', // green for compliant
-    '#f59e0b', // amber for incomplete  
     '#ef4444', // red for non-compliant
     '#6b7280'  // gray for unknown
   ]

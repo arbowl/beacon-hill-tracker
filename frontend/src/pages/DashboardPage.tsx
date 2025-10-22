@@ -101,7 +101,6 @@ const DashboardPage: React.FC = () => {
 
     // Calculate stats for filtered data
     const compliant = billsData.filter(bill => bill.state?.toLowerCase() === 'compliant').length
-    const incomplete = billsData.filter(bill => bill.state?.toLowerCase() === 'incomplete').length
     const nonCompliant = billsData.filter(bill => bill.state?.toLowerCase() === 'non-compliant').length
     const unknown = billsData.filter(bill => bill.state?.toLowerCase() === 'unknown').length
     const total = billsData.length
@@ -120,7 +119,7 @@ const DashboardPage: React.FC = () => {
       total_committees: filters.committees.length,
       total_bills: total,
       compliant_bills: compliant,
-      incomplete_bills: incomplete,
+      incomplete_bills: 0,  // Deprecated: merged into non_compliant_bills
       non_compliant_bills: nonCompliant,
       unknown_bills: unknown,
       overall_compliance_rate: complianceRate
@@ -511,7 +510,6 @@ const DashboardPage: React.FC = () => {
               >
                 <option value="">All States</option>
                 <option value="compliant">Compliant</option>
-                <option value="incomplete">Incomplete</option>
                 <option value="non-compliant">Non-Compliant</option>
                 <option value="unknown">Unknown</option>
               </select>
@@ -906,12 +904,10 @@ const DashboardPage: React.FC = () => {
                       <td>
                         <div className={`badge badge-lg whitespace-nowrap px-3 ${
                           bill.state?.toLowerCase() === 'compliant' ? 'badge-success' :
-                          bill.state?.toLowerCase() === 'incomplete' ? 'badge-warning' :
                           bill.state?.toLowerCase() === 'non-compliant' ? 'badge-error' :
                           'badge-ghost'
                         }`}>
                           {bill.state?.toLowerCase() === 'compliant' ? 'Compliant' :
-                           bill.state?.toLowerCase() === 'incomplete' ? 'Incomplete' :
                            bill.state?.toLowerCase() === 'non-compliant' ? 'Non-Compliant' :
                            bill.state?.toLowerCase() === 'unknown' ? 'Monitoring' :
                            bill.state || 'Monitoring'}
@@ -1180,12 +1176,10 @@ const DashboardPage: React.FC = () => {
                   <div className="text-sm font-medium text-base-content/70 mb-1">Status</div>
                   <div className={`badge badge-lg whitespace-nowrap px-3 ${
                     selectedBill.state?.toLowerCase() === 'compliant' ? 'badge-success' :
-                    selectedBill.state?.toLowerCase() === 'incomplete' ? 'badge-warning' :
                     selectedBill.state?.toLowerCase() === 'non-compliant' ? 'badge-error' :
                     'badge-ghost'
                   }`}>
                     {selectedBill.state?.toLowerCase() === 'compliant' ? 'Compliant' :
-                     selectedBill.state?.toLowerCase() === 'incomplete' ? 'Incomplete' :
                      selectedBill.state?.toLowerCase() === 'non-compliant' ? 'Non-Compliant' :
                      selectedBill.state?.toLowerCase() === 'unknown' ? 'Monitoring' :
                      selectedBill.state || 'Monitoring'}

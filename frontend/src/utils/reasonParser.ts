@@ -120,7 +120,7 @@ export function analyzeReasons(bills: any[]): ReasonAnalysis[] {
 
   // Count violations across all bills
   bills.forEach(bill => {
-    if (bill.state?.toLowerCase() === 'non-compliant' || bill.state?.toLowerCase() === 'incomplete') {
+    if (bill.state?.toLowerCase() === 'non-compliant') {
       const parsed = parseReason(bill.reason)
       
       parsed.violations.forEach(violation => {
@@ -160,7 +160,7 @@ export function getTopViolationsForCommittee(bills: any[], committeeId: string, 
  */
 export function getViolationSummary(bills: any[]) {
   const nonCompliantBills = bills.filter(bill => 
-    bill.state?.toLowerCase() === 'non-compliant' || bill.state?.toLowerCase() === 'incomplete'
+    bill.state?.toLowerCase() === 'non-compliant'
   )
   
   const analysis = analyzeReasons(nonCompliantBills)

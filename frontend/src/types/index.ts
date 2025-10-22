@@ -54,7 +54,7 @@ export interface Bill {
   summary_url?: string
   votes_present: boolean
   votes_url?: string
-  state: 'compliant' | 'Compliant' | 'incomplete' | 'Incomplete' | 'non-compliant' | 'unknown'
+  state: 'compliant' | 'Compliant' | 'non-compliant' | 'unknown'
   reason: string
   notice_status?: string
   notice_gap_days?: number
@@ -68,7 +68,7 @@ export interface GlobalStats {
   total_committees: number
   total_bills: number
   compliant_bills: number
-  incomplete_bills: number
+  incomplete_bills: number  // Deprecated: Always 0, merged into non_compliant_bills
   non_compliant_bills: number
   unknown_bills: number
   overall_compliance_rate: number
@@ -84,7 +84,7 @@ export interface CommitteeStats {
   chamber: string
   total_bills: number
   compliant_count: number
-  incomplete_count: number
+  incomplete_count: number  // Deprecated: Always 0, merged into non_compliant_count
   non_compliant_count: number
   unknown_count: number
   reported_out_count: number
