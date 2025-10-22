@@ -473,6 +473,20 @@ const DashboardPage: React.FC = () => {
       <div className="card bg-base-100 shadow-md">
         <div className="card-body">
           <h2 className="card-title">Filters</h2>
+          
+          {/* Helper text for filters */}
+          <div className="bg-base-200/50 p-3 rounded-lg mb-4">
+            <div className="flex items-start space-x-2">
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" className="stroke-primary shrink-0 w-5 h-5 mt-0.5">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+              </svg>
+              <div className="text-sm text-base-content/80">
+                Use the filters below to sort the data by title, ID, compliance state, and committee. 
+                Any changes you make will automatically update all statistics, charts, and the bills table below.
+              </div>
+            </div>
+          </div>
+          
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div className="form-control">
               <label className="label">
@@ -537,6 +551,81 @@ const DashboardPage: React.FC = () => {
                   </option>
                 ))}
               </select>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Understanding Compliance States */}
+      <div className="card bg-base-100 shadow-md">
+        <div className="card-body">
+          <h2 className="card-title text-lg mb-3">Understanding Compliance States</h2>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="flex items-start space-x-3">
+              <div className="badge badge-success badge-lg shrink-0 mt-1">Compliant</div>
+              <div className="text-sm text-base-content/80">
+                The bill has met all transparency requirements: 10+ days advance hearing notice, 
+                summary posted, votes posted, and reported out within deadline.
+              </div>
+            </div>
+            <div className="flex items-start space-x-3">
+              <div className="badge badge-error badge-lg shrink-0 mt-1">Non-Compliant</div>
+              <div className="text-sm text-base-content/80">
+                The bill is missing one or more required compliance factors, such as insufficient 
+                hearing notice, missing summaries/votes, or missed deadlines.
+              </div>
+            </div>
+            <div className="flex items-start space-x-3">
+              <div className="badge badge-ghost badge-lg shrink-0 mt-1">Monitoring</div>
+              <div className="text-sm text-base-content/80">
+                The bill's compliance status is still being determined. This may be due to missing 
+                hearing data, pending review, or incomplete information.
+              </div>
+            </div>
+          </div>
+          <div className="mt-4 pt-4 border-t border-base-300">
+            <div className="bg-warning/10 border border-warning/30 rounded-lg p-3 mb-3">
+              <div className="flex items-start space-x-2">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" className="stroke-warning shrink-0 w-4 h-4 mt-0.5">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                </svg>
+                <div className="text-xs text-base-content/80">
+                  <strong>Disclaimer:</strong> This dashboard is a passion project and analytical tool designed to promote transparency. 
+                  While every effort is made to ensure accuracy, it should not be considered a definitive source of truth. 
+                  Please use this tool as a guide and verify critical information through official legislative sources.
+                </div>
+              </div>
+            </div>
+            <div className="text-xs text-base-content/60 flex items-center justify-between">
+              <span>
+                For detailed compliance rules and methodology, visit the <a href="/about" className="link link-primary">About page</a>.
+              </span>
+              {stats?.last_updated && (
+                <span className="flex items-center gap-1">
+                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" className="w-3 h-3">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" stroke="currentColor" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                  </svg>
+                  Last updated: {new Date(stats.last_updated).toLocaleDateString('en-US', { 
+                    year: 'numeric', 
+                    month: 'short', 
+                    day: 'numeric',
+                    hour: '2-digit',
+                    minute: '2-digit'
+                  })}
+                </span>
+              )}
+              {!stats?.last_updated && billsData && billsData.length > 0 && billsData[0].generated_at && (
+                <span className="flex items-center gap-1">
+                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" className="w-3 h-3">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" stroke="currentColor" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                  </svg>
+                  Data generated: {new Date(billsData[0].generated_at).toLocaleDateString('en-US', { 
+                    year: 'numeric', 
+                    month: 'short', 
+                    day: 'numeric'
+                  })}
+                </span>
+              )}
             </div>
           </div>
         </div>
