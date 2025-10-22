@@ -606,7 +606,7 @@ const DashboardPage: React.FC = () => {
                 <option value="">All States</option>
                 <option value="compliant">Compliant</option>
                 <option value="non-compliant">Non-Compliant</option>
-                <option value="unknown">Provisional/Monitoring</option>
+                <option value="unknown">Provisional</option>
               </select>
             </div>
             
@@ -641,7 +641,7 @@ const DashboardPage: React.FC = () => {
       <div className="card bg-base-100 shadow-md">
         <div className="card-body">
           <h2 className="card-title text-lg mb-3">Understanding Compliance States</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div className="flex items-start space-x-3">
               <div className="badge badge-success badge-lg shrink-0 mt-1">Compliant</div>
               <div className="text-sm text-base-content/80">
@@ -651,19 +651,13 @@ const DashboardPage: React.FC = () => {
             <div className="flex items-start space-x-3">
               <div className="badge badge-success badge-outline badge-lg shrink-0 mt-1">Provisional</div>
               <div className="text-sm text-base-content/80">
-                On track: Has hearing with adequate notice and at least one requirement met. Counts toward compliance.
+                On track or insufficient data to fully evaluate. Includes bills with adequate notice and some progress, as well as bills lacking sufficient data. Counts toward compliance.
               </div>
             </div>
             <div className="flex items-start space-x-3">
               <div className="badge badge-error badge-lg shrink-0 mt-1">Non-Compliant</div>
               <div className="text-sm text-base-content/80">
                 Missing requirements, insufficient notice, or deadline passed without completion.
-              </div>
-            </div>
-            <div className="flex items-start space-x-3">
-              <div className="badge badge-ghost badge-lg shrink-0 mt-1">Monitoring</div>
-              <div className="text-sm text-base-content/80">
-                Insufficient data to evaluate. Missing hearing information or no evidence of progress.
               </div>
             </div>
           </div>
