@@ -271,16 +271,9 @@ const AboutPage = () => {
               </div>
               <div className="bg-success/10 border-l-4 border-success/50 p-4 rounded">
                 <p className="text-base-content/80">
-                  If notice is adequate and at least 1 of the 3 requirements is met:
+                  If a bill is on track and there are no violations:
                   <br />
-                  → <span className="badge badge-success badge-outline">Provisional</span> <span className="text-sm opacity-70">(on track, counts toward compliance)</span>
-                </p>
-              </div>
-              <div className="bg-success/10 border-l-4 border-success/30 p-4 rounded">
-                <p className="text-base-content/80">
-                  If no hearing or no evidence of progress:
-                  <br />
-                  → <span className="badge badge-success badge-outline">Provisional</span> <span className="text-sm opacity-70">(insufficient data, excluded from stats)</span>
+                  → <span className="badge badge-success badge-outline">Provisional</span> <span className="text-sm opacity-70">(counts toward compliance)</span>
                 </p>
               </div>
               <div className="bg-error/10 border-l-4 border-error p-4 rounded">
@@ -395,6 +388,7 @@ const AboutPage = () => {
 }
 
 export default AboutPage
+
 
 
 
