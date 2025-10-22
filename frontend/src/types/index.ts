@@ -68,6 +68,7 @@ export interface GlobalStats {
   total_committees: number
   total_bills: number
   compliant_bills: number
+  provisional_bills?: number  // Optional: Calculated from bills with provisional status
   incomplete_bills: number  // Deprecated: Always 0, merged into non_compliant_bills
   non_compliant_bills: number
   unknown_bills: number
@@ -84,6 +85,7 @@ export interface CommitteeStats {
   chamber: string
   total_bills: number
   compliant_count: number
+  provisional_count?: number  // Optional: Calculated from bills with provisional status
   incomplete_count: number  // Deprecated: Always 0, merged into non_compliant_count
   non_compliant_count: number
   unknown_count: number
