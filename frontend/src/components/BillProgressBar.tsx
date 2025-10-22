@@ -1,5 +1,6 @@
 import React from 'react'
 import { Bill } from '../types'
+import { getEffectiveState } from '../utils/billStatus'
 
 interface BillProgressBarProps {
   bill: Bill
@@ -45,14 +46,19 @@ function calculateProgress(bill: Bill): ProgressData {
     }
   }
 
+  // Apply inference: If votes are present, assume reported out
+  const isReportedOut = bill.reported_out || bill.votes_present
+  
   const requirements = {
     notice: {
       met: noticeCompliant,
       label: noticeLabel
     },
     reportedOut: {
-      met: bill.reported_out,
-      label: bill.reported_out ? '✓ Reported Out' : '✗ Not Reported Out'
+      met: isReportedOut,
+      label: isReportedOut 
+        ? (bill.reported_out ? '✓ Reported Out' : '✓ Reported Out (inferred from votes)')
+        : '✗ Not Reported Out'
     },
     summary: {
       met: bill.summary_present,
@@ -81,17 +87,19 @@ const BillProgressBar: React.FC<BillProgressBarProps> = ({ bill }) => {
   const progress = calculateProgress(bill)
   const percentage = (progress.met / progress.total) * 100
 
-  // Determine overall color based on bill state
-  const isCompliant = bill.state?.toLowerCase() === 'compliant'
-  const isNonCompliant = bill.state?.toLowerCase() === 'non-compliant'
+  // Determine overall color based on effective bill state
+  const effectiveState = getEffectiveState(bill)
   
   let barColorClass = 'bg-base-300' // default gray
   let textColorClass = 'text-base-content'
   
-  if (isCompliant) {
+  if (effectiveState === 'compliant') {
     barColorClass = 'bg-success'
     textColorClass = 'text-success'
-  } else if (isNonCompliant) {
+  } else if (effectiveState === 'provisional') {
+    barColorClass = 'bg-success/60' // light green for provisional
+    textColorClass = 'text-success/80'
+  } else if (effectiveState === 'non-compliant') {
     barColorClass = 'bg-error'
     textColorClass = 'text-error'
   } else if (progress.met > 0) {
