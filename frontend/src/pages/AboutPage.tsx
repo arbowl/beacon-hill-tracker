@@ -107,17 +107,17 @@ const AboutPage = () => {
             <ul className="space-y-3 text-base-content/80 mt-4">
               <li className="flex items-start">
                 <span className="text-primary mr-2">•</span>
-                <span>Hearing notice must be at least 10 days in advance, unless the announcement was made before June 26, 2025 (when the Joint rules were adopted).</span>
+                <span>Hearing notice must be at least 10 days in advance, unless the announcement was made before June 26, 2025 (exempt).</span>
               </li>
               <li className="flex items-start">
                 <span className="text-primary mr-2">•</span>
                 <span>
-                If notice is less than 10 days (or missing entirely), the bill is <div className="badge badge-error">Non-Compliant</div> regardless of other factors.</span>
+                If notice is less than 10 days (or missing entirely), the bill is <span className="badge badge-error">Non-Compliant</span> regardless of other factors.</span>
               </li>
               <li className="flex items-start">
                 <span className="text-primary mr-2">•</span>
                 <span>
-                If notice is missing, the bill's status is <div className="badge">Unknown</div> and being <div className="badge">Monitored</div>.</span>
+                If notice is missing, the bill is being <span className="badge">Monitored</span>.</span>
               </li>
               <li className="flex items-start">
                 <span className="text-primary mr-2">•</span>
@@ -125,7 +125,7 @@ const AboutPage = () => {
                 <ul className="space-y-3 text-base-content/80">
                   <li className="flex items-start">
                     <span className="text-primary mr-2">•</span>
-                    <span><strong>Senate bills:</strong> Summaries and votes are checked, with deadlines adhering to the "first Wednesday in December of the first year of the session" rule.</span>
+                    <span><strong>Senate bills:</strong> Summaries and votes are checked, with deadlines following the "first Wednesday in December" rule.</span>
                   </li>
                   <li className="flex items-start">
                     <span className="text-primary mr-2">•</span>
@@ -139,10 +139,152 @@ const AboutPage = () => {
               </li>
               <li className="flex items-start">
                 <span className="text-primary mr-2">•</span>
-                <span>All evidence requirements (reported out, votes posted, summaries posted) plus 10 days of advance notice of a hearing must be present for a bill to be <div className="badge badge-success">Compliant</div>.</span>
+                <span>All evidence requirements (reported out, votes posted, summaries posted) plus 10 days of advance notice of a hearing must be present for a bill to be <span className="badge badge-success">Compliant</span>.</span>
               </li>
             </ul>
           </p>
+        </div>
+      </div>
+
+      <div className="card bg-base-100 shadow-md">
+        <div className="card-body">
+          <h2 className="card-title text-2xl mb-4">The Decision-Making Logic (Step-by-Step)</h2>
+          <p className="text-base-content/80 mb-6">
+            Here's the exact order in which the system evaluates each bill:
+          </p>
+          
+          {/* Step 1 */}
+          <div className="mb-6">
+            <div className="flex items-start gap-3 mb-3">
+              <div className="badge badge-primary badge-lg">Step 1</div>
+              <h3 className="font-semibold text-lg">Check if there was a hearing</h3>
+            </div>
+            <div className="ml-20 pl-4 border-l-2 border-primary/30">
+              <p className="text-base-content/80">
+                If no hearing date exists → <span className="badge badge-ghost">MONITORING</span> <span className="text-sm opacity-70">(can't evaluate without a hearing)</span>
+              </p>
+            </div>
+          </div>
+
+          {/* Step 2 */}
+          <div className="mb-6">
+            <div className="flex items-start gap-3 mb-3">
+              <div className="badge badge-primary badge-lg">Step 2</div>
+              <h3 className="font-semibold text-lg">Check the hearing notice</h3>
+            </div>
+            <div className="ml-20 pl-4 border-l-2 border-primary/30 space-y-4">
+              <p className="text-base-content/80 mb-3">
+                The system looks for the "Hearing scheduled for [date]" announcement on the bill's page.
+              </p>
+              
+              <div className="bg-base-200 p-4 rounded-lg">
+                <p className="font-semibold mb-2">For hearings announced <strong>BEFORE June 26, 2025:</strong></p>
+                <p className="text-base-content/80">
+                  Automatically considered compliant with notice requirements (exempt from 10-day rule)
+                </p>
+              </div>
+
+              <div className="bg-base-200 p-4 rounded-lg">
+                <p className="font-semibold mb-2">For hearings announced <strong>ON or AFTER June 26, 2025:</strong></p>
+                <ul className="space-y-2 text-base-content/80">
+                  <li>• Calculate the gap between announcement date and hearing date</li>
+                  <li>• If gap is less than 10 days → <span className="badge badge-error">NON-COMPLIANT</span> <span className="text-sm opacity-70">(deal-breaker, stops here)</span></li>
+                  <li>• If gap is 10+ days → Continue to Step 3</li>
+                </ul>
+              </div>
+
+              <div className="bg-base-200 p-4 rounded-lg">
+                <p className="font-semibold mb-2">If announcement not found:</p>
+                <ul className="space-y-2 text-base-content/80">
+                  <li>• If we also can't find any summaries or votes → <span className="badge badge-ghost">MONITORING</span> <span className="text-sm opacity-70">(not enough info)</span></li>
+                  <li>• If we found summaries or votes → <span className="badge badge-error">NON-COMPLIANT</span> <span className="text-sm opacity-70">(evidence exists but no announcement)</span></li>
+                </ul>
+              </div>
+            </div>
+          </div>
+
+          {/* Step 3 */}
+          <div className="mb-6">
+            <div className="flex items-start gap-3 mb-3">
+              <div className="badge badge-primary badge-lg">Step 3</div>
+              <h3 className="font-semibold text-lg">Calculate the deadline</h3>
+            </div>
+            <div className="ml-20 pl-4 border-l-2 border-primary/30 space-y-3">
+              <div className="bg-base-200 p-4 rounded-lg">
+                <p className="font-semibold mb-2">For House bills:</p>
+                <p className="text-base-content/80">60 days (or extension date if approved, capped at 90 days)</p>
+              </div>
+              <div className="bg-base-200 p-4 rounded-lg">
+                <p className="font-semibold mb-2">For Senate bills:</p>
+                <p className="text-base-content/80">First Wednesday of December of the legislative year (or extension date if approved)</p>
+              </div>
+            </div>
+          </div>
+
+          {/* Step 4 */}
+          <div className="mb-6">
+            <div className="flex items-start gap-3 mb-3">
+              <div className="badge badge-primary badge-lg">Step 4</div>
+              <h3 className="font-semibold text-lg">Check what the committee has done</h3>
+            </div>
+            <div className="ml-20 pl-4 border-l-2 border-primary/30">
+              <p className="text-base-content/80 mb-3">Count how many of these three things are true:</p>
+              <div className="space-y-3">
+                <div className="flex items-start gap-2">
+                  <span className="text-primary font-bold">1.</span>
+                  <div>
+                    <span className="font-semibold">Reported Out:</span>
+                    <span className="text-base-content/80 ml-1">The bill page shows the committee made a decision (keywords like "reported favorably," "reported adversely," "study," "discharge")</span>
+                  </div>
+                </div>
+                <div className="flex items-start gap-2">
+                  <span className="text-primary font-bold">2.</span>
+                  <div>
+                    <span className="font-semibold">Summary Posted:</span>
+                    <span className="text-base-content/80 ml-1">The system found and confirmed a bill summary document</span>
+                  </div>
+                </div>
+                <div className="flex items-start gap-2">
+                  <span className="text-primary font-bold">3.</span>
+                  <div>
+                    <span className="font-semibold">Votes Posted:</span>
+                    <span className="text-base-content/80 ml-1">The system found and confirmed a vote record document</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Step 5 */}
+          <div className="mb-4">
+            <div className="flex items-start gap-3 mb-3">
+              <div className="badge badge-primary badge-lg">Step 5</div>
+              <h3 className="font-semibold text-lg">Apply the compliance rules</h3>
+            </div>
+            <div className="ml-20 pl-4 border-l-2 border-primary/30 space-y-3">
+              <div className="bg-success/10 border-l-4 border-success p-4 rounded">
+                <p className="text-base-content/80">
+                  If all 3 things are true (reported out + summary + votes):
+                  <br />
+                  → <span className="badge badge-success">COMPLIANT</span>
+                </p>
+              </div>
+              <div className="bg-warning/10 border-l-4 border-warning p-4 rounded">
+                <p className="text-base-content/80">
+                  If today's date is <strong>BEFORE</strong> the deadline:
+                  <br />
+                  → <span className="badge badge-ghost">MONITORING</span> <span className="text-sm opacity-70">(still have time)</span>
+                </p>
+              </div>
+              <div className="bg-error/10 border-l-4 border-error p-4 rounded">
+                <p className="text-base-content/80">
+                  If the deadline has passed and/or documentation is missing:
+                  <br />
+                  → <span className="badge badge-error">NON-COMPLIANT</span>
+                </p>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -246,6 +388,5 @@ const AboutPage = () => {
 }
 
 export default AboutPage
-
 
 
