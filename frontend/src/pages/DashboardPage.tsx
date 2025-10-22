@@ -578,8 +578,8 @@ const DashboardPage: React.FC = () => {
             <div className="flex items-start space-x-3">
               <div className="badge badge-ghost badge-lg shrink-0 mt-1">Monitoring</div>
               <div className="text-sm text-base-content/80">
-                The bill's compliance status is still being determined. This may be due to missing 
-                hearing data, pending review, or incomplete information.
+                The bill's compliance status is still being determined. The bill is currently in good standing,
+                has not yet provided the required compliance information, but is still within the submission period.
               </div>
             </div>
           </div>
