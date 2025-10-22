@@ -54,7 +54,7 @@ export interface Bill {
   summary_url?: string
   votes_present: boolean
   votes_url?: string
-  state: 'compliant' | 'Compliant' | 'non-compliant' | 'unknown'
+  state: 'compliant' | 'Compliant' | 'non-compliant' | 'unknown' | 'provisional' | 'monitoring'
   reason: string
   notice_status?: string
   notice_gap_days?: number
