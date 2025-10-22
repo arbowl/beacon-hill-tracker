@@ -98,10 +98,9 @@ const DashboardPage: React.FC = () => {
       const monitoring = billsData.filter(bill => getEffectiveState(bill) === 'monitoring').length
       const total = billsData.length
       
-      // Compliance rate includes provisional bills
-      const totalExcludingMonitoring = total - monitoring
-      const complianceRate = totalExcludingMonitoring > 0 
-        ? Math.round(((compliant + provisional) / totalExcludingMonitoring) * 100) 
+      // Compliance rate includes provisional and monitoring bills (now consolidated as "Provisional")
+      const complianceRate = total > 0 
+        ? Math.round(((compliant + provisional + monitoring) / total) * 100) 
         : 0
       
       return {
@@ -124,10 +123,9 @@ const DashboardPage: React.FC = () => {
     const monitoring = billsData.filter(bill => getEffectiveState(bill) === 'monitoring').length
     const total = billsData.length
     
-    // Compliance rate includes provisional bills
-    const totalExcludingMonitoring = total - monitoring
-    const complianceRate = totalExcludingMonitoring > 0 
-      ? Math.round(((compliant + provisional) / totalExcludingMonitoring) * 100) 
+    // Compliance rate includes provisional and monitoring bills (now consolidated as "Provisional")
+    const complianceRate = total > 0 
+      ? Math.round(((compliant + provisional + monitoring) / total) * 100) 
       : 0
 
     // Get selected committee names for title
@@ -186,9 +184,9 @@ const DashboardPage: React.FC = () => {
     
     // Convert to array and calculate compliance rates
     return Array.from(committeeMap.values()).map(stats => {
-      const totalExcludingMonitoring = stats.total - stats.monitoring
-      const complianceRate = totalExcludingMonitoring > 0
-        ? ((stats.compliant + stats.provisional) / totalExcludingMonitoring) * 100
+      // Compliance rate includes provisional and monitoring bills (now consolidated as "Provisional")
+      const complianceRate = stats.total > 0
+        ? ((stats.compliant + stats.provisional + stats.monitoring) / stats.total) * 100
         : 0
       
       return {
@@ -725,7 +723,7 @@ const DashboardPage: React.FC = () => {
           </div>
 
           {/* Stats Cards */}
-          <div className="grid grid-cols-1 md:grid-cols-5 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
             <div className="stat bg-base-100 shadow-md">
               <div className="stat-title">
                 {filters.committees && filters.committees.length > 0 ? 'Selected Committees' : 'Total Committees'}
@@ -738,22 +736,18 @@ const DashboardPage: React.FC = () => {
             
             <div className="stat bg-base-100 shadow-md">
               <div className="stat-title">Total Bills</div>
-              <div className="stat-value">{contextualStats.total_bills}</div>
+              <div className="stat-value text-success">{contextualStats.total_bills}</div>
               <div className="stat-desc">
                 {filters.committees && filters.committees.length > 0 ? 'In selected committees' : 'Under review'}
               </div>
             </div>
             
             <div className="stat bg-base-100 shadow-md">
-              <div className="stat-title">Compliant</div>
-              <div className="stat-value text-success">{contextualStats.compliant_bills}</div>
-              <div className="stat-desc">Fully compliant</div>
-            </div>
-            
-            <div className="stat bg-base-100 shadow-md">
-              <div className="stat-title">Provisional</div>
-              <div className="stat-value text-success/80">{(contextualStats.provisional_bills || 0) + (contextualStats.unknown_bills || 0)}</div>
-              <div className="stat-desc">On track / Insufficient data</div>
+              <div className="stat-title">Compliance Rate</div>
+              <div className="stat-value text-warning">{contextualStats.overall_compliance_rate}%</div>
+              <div className="stat-desc">
+                {filters.committees && filters.committees.length > 0 ? 'Committee performance' : 'Overall performance'}
+              </div>
             </div>
             
             <div className="stat bg-base-100 shadow-md">
