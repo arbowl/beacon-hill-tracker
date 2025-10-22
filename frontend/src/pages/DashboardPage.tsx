@@ -525,7 +525,7 @@ const DashboardPage: React.FC = () => {
                 <option value="">All States</option>
                 <option value="compliant">Compliant</option>
                 <option value="non-compliant">Non-Compliant</option>
-                <option value="unknown">Unknown</option>
+                <option value="unknown">Monitoring</option>
               </select>
             </div>
             
