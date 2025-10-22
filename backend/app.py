@@ -252,12 +252,16 @@ def create_app():
                 result = cursor.fetchone()
                 
                 if result:
+                    # Merge incomplete into non_compliant for presentation
+                    incomplete_count = result[3] or 0
+                    non_compliant_count = result[4] or 0
+                    
                     stats = {
                         'total_committees': result[0] or 0,
                         'total_bills': result[1] or 0,
                         'compliant_bills': result[2] or 0,
-                        'incomplete_bills': result[3] or 0,
-                        'non_compliant_bills': result[4] or 0,
+                        'incomplete_bills': 0,  # Always 0 - merged into non_compliant
+                        'non_compliant_bills': non_compliant_count + incomplete_count,  # Merge incomplete here
                         'unknown_bills': result[5] or 0,
                         'overall_compliance_rate': result[6] or 0,
                         'latest_report_date': result[7]
@@ -347,14 +351,18 @@ def create_app():
                 
                 committee_stats = []
                 for row in cursor.fetchall():
+                    # Merge incomplete into non_compliant for presentation
+                    incomplete_count = row[5] or 0
+                    non_compliant_count = row[6] or 0
+                    
                     committee_stats.append({
                         'committee_id': row[0],
                         'committee_name': row[1],
                         'chamber': row[2],
                         'total_bills': row[3] or 0,
                         'compliant_count': row[4] or 0,
-                        'incomplete_count': row[5] or 0,
-                        'non_compliant_count': row[6] or 0,
+                        'incomplete_count': 0,  # Always 0 - merged into non_compliant
+                        'non_compliant_count': non_compliant_count + incomplete_count,  # Merge incomplete here
                         'unknown_count': row[7] or 0,
                         'compliance_rate': row[8] or 0,
                         'last_report_generated': row[9]
@@ -541,9 +549,11 @@ def create_app():
                         'chamber': row[22],              # chamber (from JOIN)
                     }
                     
-                    # Normalize state to lowercase for consistent frontend handling
+                    # Normalize state to lowercase and map incomplete → non-compliant
                     if bill['state']:
                         bill['state'] = bill['state'].lower()
+                        if bill['state'] == 'incomplete':
+                            bill['state'] = 'non-compliant'
                     
                     bills.append(bill)
                 
