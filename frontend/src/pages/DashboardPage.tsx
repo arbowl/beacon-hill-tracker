@@ -649,7 +649,7 @@ const DashboardPage: React.FC = () => {
             <div className="flex items-start space-x-3">
               <div className="badge badge-success badge-outline badge-lg shrink-0 mt-1">Provisional</div>
               <div className="text-sm text-base-content/80">
-                On track or insufficient data to fully evaluate. Includes bills with adequate notice and some progress, as well as bills lacking sufficient data. Counts toward compliance.
+                On track and prior to deadlines, but insufficient data to fully evaluate. Includes bills with adequate notice and some progress, as well as bills pending documentation. Counts toward compliance.
               </div>
             </div>
             <div className="flex items-start space-x-3">
