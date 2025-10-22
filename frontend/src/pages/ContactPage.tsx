@@ -48,14 +48,14 @@ const ContactPage = () => {
       <div className="text-center">
         <h1 className="text-4xl font-bold text-gray-900 mb-4">Contact Us</h1>
         <p className="text-xl text-gray-600">
-          Get in touch with our team for questions, feedback, or support.
+          Get in touch with the developer for questions, feedback, or support.
         </p>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
         <div className="dashboard-card">
           <h2 className="text-2xl font-semibold text-gray-900 mb-6">
-            Send us a message
+            Send me a message
           </h2>
 
           {success && (
@@ -74,7 +74,7 @@ const ContactPage = () => {
                 />
               </svg>
               <span>
-                Message sent successfully! We'll get back to you soon.
+                Message sent successfully! I'll get back to you soon.
               </span>
             </div>
           )}
@@ -187,7 +187,7 @@ const ContactPage = () => {
           <div className="dashboard-card">
             <h3 className="text-xl font-semibold text-gray-900 mb-4">Technical Support</h3>
             <p className="text-gray-600 mb-4">
-              For technical issues, bug reports, and feature requests, visit our GitHub repository.
+              For technical issues, bug reports, and feature requests, visit the GitHub repository.
             </p>
             <a 
               href="https://github.com/arbowl/beacon-hill-compliance-tracker" 
@@ -208,6 +208,7 @@ const ContactPage = () => {
 }
 
 export default ContactPage
+
 
 
 
