@@ -5,6 +5,7 @@ import { useAuth } from '../contexts/AuthContext'
 import { DashboardFilters, Bill } from '../types'
 import { analyzeReasons, getTopViolationsForCommittee } from '../utils/reasonParser'
 import { ComplianceOverviewChart, CommitteeComparisonChart, ViolationAnalysisChart } from '../components/charts'
+import BillProgressBar from '../components/BillProgressBar'
 
 const DashboardPage: React.FC = () => {
   const { user } = useAuth()
@@ -959,6 +960,7 @@ const DashboardPage: React.FC = () => {
                     <th className="w-24">Bill ID</th>
                     <th className="w-80">Title</th>
                     <th className="w-48">Committee</th>
+                    <th className="w-32">Progress</th>
                     <th className="w-24">Status</th>
                     <th className="w-28">Hearing Date</th>
                     <th className="w-28">Deadline</th>
@@ -989,6 +991,9 @@ const DashboardPage: React.FC = () => {
                       </td>
                       <td>
                         <div className="text-sm">{bill.committee_name}</div>
+                      </td>
+                      <td>
+                        <BillProgressBar bill={bill} />
                       </td>
                       <td>
                         <div className={`badge badge-lg whitespace-nowrap px-3 ${
