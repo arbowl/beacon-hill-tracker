@@ -121,11 +121,6 @@ const AboutPage = () => {
               </li>
               <li className="flex items-start">
                 <span className="text-primary mr-2">•</span>
-                <span>
-                If notice data is missing or no progress is shown, the bill is being <span className="badge">Monitored</span> (excluded from compliance rate).</span>
-              </li>
-              <li className="flex items-start">
-                <span className="text-primary mr-2">•</span>
                 <span>If notice is adequate, compliance is measured as such:</span>
                 <ul className="space-y-3 text-base-content/80">
                   <li className="flex items-start">
@@ -400,6 +395,7 @@ const AboutPage = () => {
 }
 
 export default AboutPage
+
 
 
 
