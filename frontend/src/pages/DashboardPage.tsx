@@ -649,7 +649,7 @@ const DashboardPage: React.FC = () => {
             <div className="flex items-start space-x-3">
               <div className="badge badge-success badge-outline badge-lg shrink-0 mt-1">Provisional</div>
               <div className="text-sm text-base-content/80">
-                On track and prior to deadlines, but insufficient data to fully evaluate. Includes bills with adequate notice and some progress, as well as bills pending documentation. Counts toward compliance.
+                On track or insufficient data to fully evaluate. Includes bills with adequate notice and some progress, as well as bills lacking sufficient data. Counts toward compliance.
               </div>
             </div>
             <div className="flex items-start space-x-3">
@@ -744,7 +744,13 @@ const DashboardPage: React.FC = () => {
             
             <div className="stat bg-base-100 shadow-md">
               <div className="stat-title">Compliance Rate</div>
-              <div className="stat-value text-warning">{contextualStats.overall_compliance_rate}%</div>
+              <div className={`stat-value ${
+                contextualStats.overall_compliance_rate >= 80 ? 'text-success' :
+                contextualStats.overall_compliance_rate >= 60 ? 'text-warning' :
+                'text-error'
+              }`}>
+                {contextualStats.overall_compliance_rate}%
+              </div>
               <div className="stat-desc">
                 {filters.committees && filters.committees.length > 0 ? 'Committee performance' : 'Overall performance'}
               </div>
