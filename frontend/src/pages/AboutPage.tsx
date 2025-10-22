@@ -107,7 +107,7 @@ const AboutPage = () => {
             <ul className="space-y-3 text-base-content/80 mt-4">
               <li className="flex items-start">
                 <span className="text-primary mr-2">•</span>
-                <span>Hearing notice must be at least 10 days in advance, unless the announcement was made before June 26, 2025 (exempt).</span>
+                <span>Hearing notice must be at least 10 days in advance, unless the announcement was made before June 26, 2025 (when the Joint rules were adopted).</span>
               </li>
               <li className="flex items-start">
                 <span className="text-primary mr-2">•</span>
@@ -125,7 +125,7 @@ const AboutPage = () => {
                 <ul className="space-y-3 text-base-content/80">
                   <li className="flex items-start">
                     <span className="text-primary mr-2">•</span>
-                    <span><strong>Senate bills:</strong> Summaries and votes are checked, with deadlines following the "first Wednesday in December" rule.</span>
+                    <span><strong>Senate bills:</strong> Summaries and votes are checked, with deadlines adhering to the "first Wednesday in December of the first year of the session" rule.</span>
                   </li>
                   <li className="flex items-start">
                     <span className="text-primary mr-2">•</span>
@@ -246,5 +246,6 @@ const AboutPage = () => {
 }
 
 export default AboutPage
+
 
 
