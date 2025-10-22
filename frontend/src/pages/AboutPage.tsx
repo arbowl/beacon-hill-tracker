@@ -40,13 +40,13 @@ const AboutPage = () => {
             My name is Drew Bowler. I'm an independent engineer and civic technologist focused on improving public access to legislative data and government accountability.
           </p>
           <p className="text-base-content/80 mb-4">
-            I developed the Beacon Hill Compliance Tracker as an independent project, collaborating with the executive directors of two Massachusetts grassroots political organizations who provided input on design and functionality.
+            I developed the Beacon Hill Compliance Tracker as an independent project, collaborating with the directors of two Massachusetts grassroots political organizations who provided input on design and functionality.
           </p>
           <p className="text-base-content/80 mb-4">
             I believe technology should serve the public interest, especially when it comes to transparency, oversight, and civic participation.
           </p>
           <p className="text-base-content/80">
-            <i>Special thanks to the grassroots leaders whose feedback and direction made this tool possible. I handled the code, but the clarity and logic came from many thoughtful conversations along the way.</i>
+            <i>Special thanks to Jonathan Cohn and Scotia Hille, whose feedback and direction made this tool possible. I wrote the code, but the clarity and logic came from many thoughtful conversations along the way.</i>
           </p>
         </div>
       </div>
@@ -400,5 +400,6 @@ const AboutPage = () => {
 }
 
 export default AboutPage
+
 
 
