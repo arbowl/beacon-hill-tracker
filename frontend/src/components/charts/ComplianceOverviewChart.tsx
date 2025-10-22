@@ -4,6 +4,7 @@ import Plot from 'react-plotly.js'
 interface ComplianceOverviewChartProps {
   data: {
     compliant_bills: number
+    provisional_bills?: number
     incomplete_bills: number
     non_compliant_bills: number
     unknown_bills: number
@@ -24,19 +25,37 @@ const ComplianceOverviewChart: React.FC<ComplianceOverviewChartProps> = ({
   }
 
   // Note: incomplete_bills is always 0 (merged into non_compliant_bills)
-  const values = [
-    data.compliant_bills,
-    data.non_compliant_bills,
-    data.unknown_bills
-  ]
-
-  const labels = ['Compliant', 'Non-Compliant', 'Monitoring']
+  const provisionalCount = data.provisional_bills || 0
   
-  const colors = [
-    '#22c55e', // green for compliant
-    '#ef4444', // red for non-compliant
-    '#6b7280'  // gray for unknown
-  ]
+  const values = provisionalCount > 0 
+    ? [
+        data.compliant_bills,
+        provisionalCount,
+        data.non_compliant_bills,
+        data.unknown_bills
+      ]
+    : [
+        data.compliant_bills,
+        data.non_compliant_bills,
+        data.unknown_bills
+      ]
+
+  const labels = provisionalCount > 0
+    ? ['Compliant', 'Provisional', 'Non-Compliant', 'Monitoring']
+    : ['Compliant', 'Non-Compliant', 'Monitoring']
+  
+  const colors = provisionalCount > 0
+    ? [
+        '#22c55e', // green for compliant
+        '#86efac', // light green for provisional
+        '#ef4444', // red for non-compliant
+        '#6b7280'  // gray for monitoring
+      ]
+    : [
+        '#22c55e', // green for compliant
+        '#ef4444', // red for non-compliant
+        '#6b7280'  // gray for monitoring
+      ]
 
   const total = values.reduce((sum, val) => sum + val, 0)
 

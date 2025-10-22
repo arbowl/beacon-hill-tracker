@@ -7,6 +7,7 @@ interface Committee {
   compliance_rate: number
   total_bills: number
   compliant_count: number
+  provisional_count?: number
   incomplete_count: number
   non_compliant_count: number
 }
@@ -93,10 +94,12 @@ const CommitteeComparisonChart: React.FC<CommitteeComparisonChartProps> = ({
 
   const names = displayData.map(d => d.name.length > 30 ? d.name.substring(0, 30) + '...' : d.name)
   const compliant = displayData.map(d => d.compliant_count)
+  const provisional = displayData.map(d => d.provisional_count || 0)
   const nonCompliant = displayData.map(d => d.non_compliant_count)
   // Note: incomplete_count is always 0 (merged into non_compliant_count)
 
   const isHorizontal = chartType === 'horizontal_bar'
+  const hasProvisional = provisional.some(count => count > 0)
 
   const traces: any[] = [
     {
@@ -109,19 +112,35 @@ const CommitteeComparisonChart: React.FC<CommitteeComparisonChartProps> = ({
       hovertemplate: '<b>%{' + (isHorizontal ? 'y' : 'x') + '}</b><br>' +
                      'Compliant: %{' + (isHorizontal ? 'x' : 'y') + '}<br>' +
                      '<extra></extra>',
-    },
-    {
-      type: 'bar',
-      orientation: isHorizontal ? 'h' : 'v',
-      x: isHorizontal ? nonCompliant : names,
-      y: isHorizontal ? names : nonCompliant,
-      name: 'Non-Compliant',
-      marker: { color: '#ef4444' },
-      hovertemplate: '<b>%{' + (isHorizontal ? 'y' : 'x') + '}</b><br>' +
-                     'Non-Compliant: %{' + (isHorizontal ? 'x' : 'y') + '}<br>' +
-                     '<extra></extra>',
     }
   ]
+
+  // Add provisional trace if any committee has provisional bills
+  if (hasProvisional) {
+    traces.push({
+      type: 'bar',
+      orientation: isHorizontal ? 'h' : 'v',
+      x: isHorizontal ? provisional : names,
+      y: isHorizontal ? names : provisional,
+      name: 'Provisional',
+      marker: { color: '#86efac' },
+      hovertemplate: '<b>%{' + (isHorizontal ? 'y' : 'x') + '}</b><br>' +
+                     'Provisional: %{' + (isHorizontal ? 'x' : 'y') + '}<br>' +
+                     '<extra></extra>',
+    })
+  }
+
+  traces.push({
+    type: 'bar',
+    orientation: isHorizontal ? 'h' : 'v',
+    x: isHorizontal ? nonCompliant : names,
+    y: isHorizontal ? names : nonCompliant,
+    name: 'Non-Compliant',
+    marker: { color: '#ef4444' },
+    hovertemplate: '<b>%{' + (isHorizontal ? 'y' : 'x') + '}</b><br>' +
+                   'Non-Compliant: %{' + (isHorizontal ? 'x' : 'y') + '}<br>' +
+                   '<extra></extra>',
+  })
 
   return (
     <div className="w-full">
