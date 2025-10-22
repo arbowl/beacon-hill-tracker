@@ -2,11 +2,12 @@ import { Bill } from '../types'
 
 /**
  * Determine the effective status of a bill, converting "unknown" to either "provisional" or "monitoring"
+ * Note: In the UI, both "provisional" and "monitoring" are displayed as "Provisional"
  * 
  * Logic:
  * - Compliant/Non-Compliant: Pass through unchanged
  * - Unknown → Provisional: If bill has hearing, adequate notice, and at least 1 requirement met
- * - Unknown → Monitoring: If bill lacks hearing or all evidence
+ * - Unknown → Monitoring: If bill lacks hearing or all evidence (displayed as Provisional in UI)
  */
 export function getEffectiveState(bill: Bill): 'compliant' | 'non-compliant' | 'provisional' | 'monitoring' {
   const state = bill.state?.toLowerCase()
@@ -42,6 +43,7 @@ export function getEffectiveState(bill: Bill): 'compliant' | 'non-compliant' | '
 
 /**
  * Get display label for bill state
+ * Note: Both 'provisional' and 'monitoring' are displayed as 'Provisional'
  */
 export function getStateLabel(bill: Bill): string {
   const effectiveState = getEffectiveState(bill)
@@ -52,9 +54,8 @@ export function getStateLabel(bill: Bill): string {
     case 'non-compliant':
       return 'Non-Compliant'
     case 'provisional':
-      return 'Provisional'
     case 'monitoring':
-      return 'Monitoring'
+      return 'Provisional'
     default:
       return 'Unknown'
   }
@@ -62,6 +63,7 @@ export function getStateLabel(bill: Bill): string {
 
 /**
  * Get badge CSS classes for bill state
+ * Note: Both 'provisional' and 'monitoring' use the same badge style
  */
 export function getStateBadgeClass(bill: Bill): string {
   const effectiveState = getEffectiveState(bill)
@@ -72,9 +74,8 @@ export function getStateBadgeClass(bill: Bill): string {
     case 'non-compliant':
       return 'badge-error'
     case 'provisional':
-      return 'badge-success badge-outline' // Light green outline
     case 'monitoring':
-      return 'badge-ghost'
+      return 'badge-success badge-outline' // Light green outline for both
     default:
       return 'badge-ghost'
   }
