@@ -40,7 +40,7 @@ const AboutPage = () => {
             My name is Drew Bowler. I'm an independent engineer and civic technologist focused on improving public access to legislative data and government accountability.
           </p>
           <p className="text-base-content/80 mb-4">
-            I developed the Beacon Hill Compliance Tracker as an independent project, collaborating with the directors of two Massachusetts grassroots political organizations who provided input on design and functionality.
+            I developed the Beacon Hill Compliance Tracker as an independent project, collaborating with the executive directors of two Massachusetts grassroots political organizations who provided input on design and functionality.
           </p>
           <p className="text-base-content/80 mb-4">
             I believe technology should serve the public interest, especially when it comes to transparency, oversight, and civic participation.
@@ -112,12 +112,17 @@ const AboutPage = () => {
               <li className="flex items-start">
                 <span className="text-primary mr-2">•</span>
                 <span>
-                If notice is less than 10 days (or missing entirely), the bill is <span className="badge badge-error">Non-Compliant</span> regardless of other factors.</span>
+                If notice is less than 10 days, the bill is <span className="badge badge-error">Non-Compliant</span> regardless of other factors.</span>
               </li>
               <li className="flex items-start">
                 <span className="text-primary mr-2">•</span>
                 <span>
-                If notice is missing, the bill is being <span className="badge">Monitored</span>.</span>
+                If notice is adequate and at least one requirement is met, the bill is <span className="badge badge-success badge-outline">Provisional</span> (counts toward compliance).</span>
+              </li>
+              <li className="flex items-start">
+                <span className="text-primary mr-2">•</span>
+                <span>
+                If notice data is missing or no progress is shown, the bill is being <span className="badge">Monitored</span> (excluded from compliance rate).</span>
               </li>
               <li className="flex items-start">
                 <span className="text-primary mr-2">•</span>
@@ -161,7 +166,7 @@ const AboutPage = () => {
             </div>
             <div className="ml-20 pl-4 border-l-2 border-primary/30">
               <p className="text-base-content/80">
-                If no hearing date exists → <span className="badge badge-ghost">MONITORING</span> <span className="text-sm opacity-70">(can't evaluate without a hearing)</span>
+                If no hearing date exists → <span className="badge badge-ghost">Monitoring</span> <span className="text-sm opacity-70">(can't evaluate without a hearing)</span>
               </p>
             </div>
           </div>
@@ -188,7 +193,7 @@ const AboutPage = () => {
                 <p className="font-semibold mb-2">For hearings announced <strong>ON or AFTER June 26, 2025:</strong></p>
                 <ul className="space-y-2 text-base-content/80">
                   <li>• Calculate the gap between announcement date and hearing date</li>
-                  <li>• If gap is less than 10 days → <span className="badge badge-error">NON-COMPLIANT</span> <span className="text-sm opacity-70">(deal-breaker, stops here)</span></li>
+                  <li>• If gap is less than 10 days → <span className="badge badge-error">Non-Compliant</span> <span className="text-sm opacity-70">(deal-breaker, stops here)</span></li>
                   <li>• If gap is 10+ days → Continue to Step 3</li>
                 </ul>
               </div>
@@ -196,8 +201,8 @@ const AboutPage = () => {
               <div className="bg-base-200 p-4 rounded-lg">
                 <p className="font-semibold mb-2">If announcement not found:</p>
                 <ul className="space-y-2 text-base-content/80">
-                  <li>• If we also can't find any summaries or votes → <span className="badge badge-ghost">MONITORING</span> <span className="text-sm opacity-70">(not enough info)</span></li>
-                  <li>• If we found summaries or votes → <span className="badge badge-error">NON-COMPLIANT</span> <span className="text-sm opacity-70">(evidence exists but no announcement)</span></li>
+                  <li>• If we also can't find any summaries or votes → <span className="badge badge-ghost">Monitoring</span> <span className="text-sm opacity-70">(not enough info)</span></li>
+                  <li>• If we found summaries or votes → <span className="badge badge-error">Non-Compliant</span> <span className="text-sm opacity-70">(evidence exists but no announcement)</span></li>
                 </ul>
               </div>
             </div>
@@ -266,21 +271,28 @@ const AboutPage = () => {
                 <p className="text-base-content/80">
                   If all 3 things are true (reported out + summary + votes):
                   <br />
-                  → <span className="badge badge-success">COMPLIANT</span>
+                  → <span className="badge badge-success">Compliant</span>
+                </p>
+              </div>
+              <div className="bg-success/10 border-l-4 border-success/50 p-4 rounded">
+                <p className="text-base-content/80">
+                  If notice is adequate and at least 1 of the 3 requirements is met:
+                  <br />
+                  → <span className="badge badge-success badge-outline">Provisional</span> <span className="text-sm opacity-70">(on track, counts toward compliance)</span>
                 </p>
               </div>
               <div className="bg-warning/10 border-l-4 border-warning p-4 rounded">
                 <p className="text-base-content/80">
-                  If today's date is <strong>BEFORE</strong> the deadline:
+                  If no hearing or no evidence of progress:
                   <br />
-                  → <span className="badge badge-ghost">MONITORING</span> <span className="text-sm opacity-70">(still have time)</span>
+                  → <span className="badge badge-ghost">Monitoring</span> <span className="text-sm opacity-70">(insufficient data, excluded from stats)</span>
                 </p>
               </div>
               <div className="bg-error/10 border-l-4 border-error p-4 rounded">
                 <p className="text-base-content/80">
-                  If the deadline has passed and/or documentation is missing:
+                  If notice failed or deadline passed without completion:
                   <br />
-                  → <span className="badge badge-error">NON-COMPLIANT</span>
+                  → <span className="badge badge-error">Non-Compliant</span>
                 </p>
               </div>
             </div>
@@ -388,6 +400,5 @@ const AboutPage = () => {
 }
 
 export default AboutPage
-
 
 
