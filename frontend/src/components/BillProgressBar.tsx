@@ -99,12 +99,15 @@ const BillProgressBar: React.FC<BillProgressBarProps> = ({ bill }) => {
   } else if (effectiveState === 'provisional') {
     barColorClass = 'bg-success/60' // light green for provisional
     textColorClass = 'text-success/80'
+  } else if (effectiveState === 'monitoring') {
+    barColorClass = 'bg-success/60' // light green for monitoring (same as provisional)
+    textColorClass = 'text-success/80'
   } else if (effectiveState === 'non-compliant') {
     barColorClass = 'bg-error'
     textColorClass = 'text-error'
   } else if (progress.met > 0) {
-    barColorClass = 'bg-info'
-    textColorClass = 'text-info'
+    barColorClass = 'bg-success/60' // light green for any progress
+    textColorClass = 'text-success/80'
   }
 
   // Build tooltip content
