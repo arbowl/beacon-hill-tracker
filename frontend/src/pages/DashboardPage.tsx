@@ -6,6 +6,7 @@ import { DashboardFilters, Bill } from '../types'
 import { analyzeReasons, getTopViolationsForCommittee } from '../utils/reasonParser'
 import { ComplianceOverviewChart, CommitteeComparisonChart, ViolationAnalysisChart } from '../components/charts'
 import BillProgressBar from '../components/BillProgressBar'
+import { getEffectiveState, getStateLabel, getStateBadgeClass } from '../utils/billStatus'
 
 const DashboardPage: React.FC = () => {
   const { user } = useAuth()
@@ -86,27 +87,48 @@ const DashboardPage: React.FC = () => {
   const contextualStats = useMemo(() => {
     if (!billsData || billsLoading) return null
 
-    // If no committees selected, show global stats
+    // If no committees selected, recalculate global stats with provisional logic
     if (!filters.committees || filters.committees.length === 0) {
-      return stats ? {
+      if (!stats) return null
+      
+      // Recalculate using effective states from all bills
+      const compliant = billsData.filter(bill => getEffectiveState(bill) === 'compliant').length
+      const provisional = billsData.filter(bill => getEffectiveState(bill) === 'provisional').length
+      const nonCompliant = billsData.filter(bill => getEffectiveState(bill) === 'non-compliant').length
+      const monitoring = billsData.filter(bill => getEffectiveState(bill) === 'monitoring').length
+      const total = billsData.length
+      
+      // Compliance rate includes provisional bills
+      const totalExcludingMonitoring = total - monitoring
+      const complianceRate = totalExcludingMonitoring > 0 
+        ? Math.round(((compliant + provisional) / totalExcludingMonitoring) * 100) 
+        : 0
+      
+      return {
         title: 'Global Overview',
         total_committees: stats.total_committees,
-        total_bills: stats.total_bills,
-        compliant_bills: stats.compliant_bills,
-        incomplete_bills: stats.incomplete_bills,
-        non_compliant_bills: stats.non_compliant_bills,
-        unknown_bills: stats.unknown_bills,
-        overall_compliance_rate: stats.overall_compliance_rate
-      } : null
+        total_bills: total,
+        compliant_bills: compliant,
+        provisional_bills: provisional,
+        incomplete_bills: 0,
+        non_compliant_bills: nonCompliant,
+        unknown_bills: monitoring,
+        overall_compliance_rate: complianceRate
+      }
     }
 
-    // Calculate stats for filtered data
-    const compliant = billsData.filter(bill => bill.state?.toLowerCase() === 'compliant').length
-    const nonCompliant = billsData.filter(bill => bill.state?.toLowerCase() === 'non-compliant').length
-    const unknown = billsData.filter(bill => bill.state?.toLowerCase() === 'unknown').length
+    // Calculate stats for filtered data using effective states
+    const compliant = billsData.filter(bill => getEffectiveState(bill) === 'compliant').length
+    const provisional = billsData.filter(bill => getEffectiveState(bill) === 'provisional').length
+    const nonCompliant = billsData.filter(bill => getEffectiveState(bill) === 'non-compliant').length
+    const monitoring = billsData.filter(bill => getEffectiveState(bill) === 'monitoring').length
     const total = billsData.length
-    const totalExcludingUnknown = total - unknown
-    const complianceRate = totalExcludingUnknown > 0 ? Math.round((compliant / totalExcludingUnknown) * 100) : 0
+    
+    // Compliance rate includes provisional bills
+    const totalExcludingMonitoring = total - monitoring
+    const complianceRate = totalExcludingMonitoring > 0 
+      ? Math.round(((compliant + provisional) / totalExcludingMonitoring) * 100) 
+      : 0
 
     // Get selected committee names for title
     const selectedCommittees = committees?.filter(c => filters.committees.includes(c.committee_id))
@@ -120,9 +142,10 @@ const DashboardPage: React.FC = () => {
       total_committees: filters.committees.length,
       total_bills: total,
       compliant_bills: compliant,
+      provisional_bills: provisional,
       incomplete_bills: 0,  // Deprecated: merged into non_compliant_bills
       non_compliant_bills: nonCompliant,
-      unknown_bills: unknown,
+      unknown_bills: monitoring,
       overall_compliance_rate: complianceRate
     }
   }, [billsData, billsLoading, filters.committees, stats, committees])
@@ -179,7 +202,8 @@ const DashboardPage: React.FC = () => {
         'Committee ID',
         'Committee Name', 
         'Chamber', 
-        'State', 
+        'Effective State',
+        'Original State', 
         'Reason',
         'Hearing Date', 
         'Deadline (60 Days)', 
@@ -206,6 +230,7 @@ const DashboardPage: React.FC = () => {
           bill.committee_id || '',
           `"${(bill.committee_name || '').replace(/"/g, '""')}"`,
           bill.chamber || '',
+          getStateLabel(bill),
           bill.state || '',
           `"${(bill.reason || '').replace(/"/g, '""')}"`,
           bill.hearing_date || '',
@@ -526,7 +551,7 @@ const DashboardPage: React.FC = () => {
                 <option value="">All States</option>
                 <option value="compliant">Compliant</option>
                 <option value="non-compliant">Non-Compliant</option>
-                <option value="unknown">Monitoring</option>
+                <option value="unknown">Provisional/Monitoring</option>
               </select>
             </div>
             
@@ -561,26 +586,29 @@ const DashboardPage: React.FC = () => {
       <div className="card bg-base-100 shadow-md">
         <div className="card-body">
           <h2 className="card-title text-lg mb-3">Understanding Compliance States</h2>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
             <div className="flex items-start space-x-3">
               <div className="badge badge-success badge-lg shrink-0 mt-1">Compliant</div>
               <div className="text-sm text-base-content/80">
-                The bill has met all transparency requirements: 10+ days advance hearing notice, 
-                summary posted, votes posted, and reported out within deadline.
+                All requirements met: 10+ days advance notice, summary posted, votes posted, and reported out.
+              </div>
+            </div>
+            <div className="flex items-start space-x-3">
+              <div className="badge badge-success badge-outline badge-lg shrink-0 mt-1">Provisional</div>
+              <div className="text-sm text-base-content/80">
+                On track: Has hearing with adequate notice and at least one requirement met. Counts toward compliance.
               </div>
             </div>
             <div className="flex items-start space-x-3">
               <div className="badge badge-error badge-lg shrink-0 mt-1">Non-Compliant</div>
               <div className="text-sm text-base-content/80">
-                The bill is missing one or more required compliance factors, such as insufficient 
-                hearing notice, missing summaries/votes, or missed deadlines.
+                Missing requirements, insufficient notice, or deadline passed without completion.
               </div>
             </div>
             <div className="flex items-start space-x-3">
               <div className="badge badge-ghost badge-lg shrink-0 mt-1">Monitoring</div>
               <div className="text-sm text-base-content/80">
-                The bill's compliance status is still being determined. This may be due to missing 
-                hearing data, pending review, or incomplete information.
+                Insufficient data to evaluate. Missing hearing information or no evidence of progress.
               </div>
             </div>
           </div>
@@ -996,15 +1024,8 @@ const DashboardPage: React.FC = () => {
                         <BillProgressBar bill={bill} />
                       </td>
                       <td>
-                        <div className={`badge badge-lg whitespace-nowrap px-3 ${
-                          bill.state?.toLowerCase() === 'compliant' ? 'badge-success' :
-                          bill.state?.toLowerCase() === 'non-compliant' ? 'badge-error' :
-                          'badge-ghost'
-                        }`}>
-                          {bill.state?.toLowerCase() === 'compliant' ? 'Compliant' :
-                           bill.state?.toLowerCase() === 'non-compliant' ? 'Non-Compliant' :
-                           bill.state?.toLowerCase() === 'unknown' ? 'Monitoring' :
-                           bill.state || 'Monitoring'}
+                        <div className={`badge badge-lg whitespace-nowrap px-3 ${getStateBadgeClass(bill)}`}>
+                          {getStateLabel(bill)}
                         </div>
                       </td>
                       <td>{bill.hearing_date}</td>
@@ -1268,15 +1289,8 @@ const DashboardPage: React.FC = () => {
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div>
                   <div className="text-sm font-medium text-base-content/70 mb-1">Status</div>
-                  <div className={`badge badge-lg whitespace-nowrap px-3 ${
-                    selectedBill.state?.toLowerCase() === 'compliant' ? 'badge-success' :
-                    selectedBill.state?.toLowerCase() === 'non-compliant' ? 'badge-error' :
-                    'badge-ghost'
-                  }`}>
-                    {selectedBill.state?.toLowerCase() === 'compliant' ? 'Compliant' :
-                     selectedBill.state?.toLowerCase() === 'non-compliant' ? 'Non-Compliant' :
-                     selectedBill.state?.toLowerCase() === 'unknown' ? 'Monitoring' :
-                     selectedBill.state || 'Monitoring'}
+                  <div className={`badge badge-lg whitespace-nowrap px-3 ${getStateBadgeClass(selectedBill)}`}>
+                    {getStateLabel(selectedBill)}
                   </div>
                 </div>
                 <div>
