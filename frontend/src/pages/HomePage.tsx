@@ -1,10 +1,39 @@
 import { Link } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
-import { useGlobalStats } from '../hooks/useData'
+import { useGlobalStats, useBills } from '../hooks/useData'
+import { useMemo } from 'react'
+import { getEffectiveState } from '../utils/billStatus'
 
 const HomePage: React.FC = () => {
   const { user } = useAuth()
   const { data: stats, loading: statsLoading, error: statsError } = useGlobalStats()
+  const { bills: billsData, loading: billsLoading } = useBills()
+
+  // Recalculate stats with provisional logic
+  const adjustedStats = useMemo(() => {
+    if (!billsData || !stats) return stats
+
+    const compliant = billsData.filter(bill => getEffectiveState(bill) === 'compliant').length
+    const provisional = billsData.filter(bill => getEffectiveState(bill) === 'provisional').length
+    const nonCompliant = billsData.filter(bill => getEffectiveState(bill) === 'non-compliant').length
+    const monitoring = billsData.filter(bill => getEffectiveState(bill) === 'monitoring').length
+    const total = billsData.length
+
+    // Compliance rate includes provisional bills
+    const totalExcludingMonitoring = total - monitoring
+    const complianceRate = totalExcludingMonitoring > 0
+      ? Math.round(((compliant + provisional) / totalExcludingMonitoring) * 100)
+      : 0
+
+    return {
+      ...stats,
+      compliant_bills: compliant,
+      provisional_bills: provisional,
+      non_compliant_bills: nonCompliant,
+      unknown_bills: monitoring,
+      overall_compliance_rate: complianceRate
+    }
+  }, [billsData, stats])
 
   return (
     <div className="space-y-8">
@@ -55,7 +84,7 @@ const HomePage: React.FC = () => {
 
       {/* Real-time Stats */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-        {statsLoading ? (
+        {(statsLoading || billsLoading) ? (
           // Loading skeleton
           Array.from({ length: 4 }).map((_, i) => (
             <div key={i} className="card bg-base-100 shadow-md">
@@ -74,7 +103,7 @@ const HomePage: React.FC = () => {
             <div className="card bg-base-100 shadow-md">
               <div className="card-body text-center">
                 <div className="text-3xl font-bold text-primary mb-2">
-                  {stats?.total_committees || 0}
+                  {adjustedStats?.total_committees || 0}
                 </div>
                 <div className="text-base-content/70">Committees Tracked</div>
               </div>
@@ -83,7 +112,7 @@ const HomePage: React.FC = () => {
             <div className="card bg-base-100 shadow-md">
               <div className="card-body text-center">
                 <div className="text-3xl font-bold text-success mb-2">
-                  {stats?.total_bills || 0}
+                  {adjustedStats?.total_bills || 0}
                 </div>
                 <div className="text-base-content/70">Bills Analyzed</div>
               </div>
@@ -92,7 +121,7 @@ const HomePage: React.FC = () => {
             <div className="card bg-base-100 shadow-md">
               <div className="card-body text-center">
                 <div className="text-3xl font-bold text-warning mb-2">
-                  {stats?.overall_compliance_rate || 0}%
+                  {adjustedStats?.overall_compliance_rate || 0}%
                 </div>
                 <div className="text-base-content/70">Compliance Rate</div>
               </div>
@@ -101,7 +130,7 @@ const HomePage: React.FC = () => {
             <div className="card bg-base-100 shadow-md">
               <div className="card-body text-center">
                 <div className="text-3xl font-bold text-error mb-2">
-                  {stats?.non_compliant_bills || 0}
+                  {adjustedStats?.non_compliant_bills || 0}
                 </div>
                 <div className="text-base-content/70">Non-Compliant Bills</div>
               </div>
@@ -193,7 +222,7 @@ const HomePage: React.FC = () => {
               <div>
                 <div className="font-medium">Database</div>
                 <div className="text-sm text-base-content/70">
-                  {stats ? `Last updated: ${stats.latest_report_date || 'Recently'}` : 'Connected'}
+                  {adjustedStats ? `Last updated: ${adjustedStats.latest_report_date || 'Recently'}` : 'Connected'}
                 </div>
               </div>
             </div>
