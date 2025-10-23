@@ -27,6 +27,17 @@ const DashboardPage: React.FC = () => {
     searchTerm: ''
   })
 
+  const [viewName, setViewName] = useState('')
+  const [showSaveModal, setShowSaveModal] = useState(false)
+  const [isExporting, setIsExporting] = useState(false)
+  const [selectedBill, setSelectedBill] = useState<Bill | null>(null)
+  const [showBillModal, setShowBillModal] = useState(false)
+  const [currentPage, setCurrentPage] = useState(1)
+  const [pageSize, setPageSize] = useState(25)
+  const [sortColumn, setSortColumn] = useState<string | null>(null)
+  const [sortDirection, setSortDirection] = useState<'asc' | 'desc' | null>(null)
+  const [isLoadingFromURL, setIsLoadingFromURL] = useState(true)
+
   // Debounce the search term to avoid too many API calls
   const debouncedSearchTerm = useDebounce(filters.searchTerm, 500)
 
@@ -37,7 +48,10 @@ const DashboardPage: React.FC = () => {
   }), [filters.committees, filters.chambers, filters.states, filters.dateRange, debouncedSearchTerm])
 
   // Load filters and view state from URL parameters (for saved views and shared links)
+  // Only runs on initial page load to prevent circular updates
   useEffect(() => {
+    if (!isLoadingFromURL) return
+
     const committees = searchParams.get('committees')?.split(',').filter(Boolean) || []
     const chambers = searchParams.get('chambers')?.split(',').filter(Boolean) || []
     const states = searchParams.get('states')?.split(',').filter(Boolean) || []
@@ -81,18 +95,11 @@ const DashboardPage: React.FC = () => {
         setPageSize(sizeNum)
       }
     }
-  }, [searchParams])
 
-  const [viewName, setViewName] = useState('')
-  const [showSaveModal, setShowSaveModal] = useState(false)
-  const [isExporting, setIsExporting] = useState(false)
-  const [selectedBill, setSelectedBill] = useState<Bill | null>(null)
-  const [showBillModal, setShowBillModal] = useState(false)
-  const [currentPage, setCurrentPage] = useState(1)
-  const [pageSize, setPageSize] = useState(25)
-  const [sortColumn, setSortColumn] = useState<string | null>(null)
-  const [sortDirection, setSortDirection] = useState<'asc' | 'desc' | null>(null)
-  
+    // Mark as loaded to prevent future runs
+    setIsLoadingFromURL(false)
+  }, [searchParams, isLoadingFromURL])
+
   // Check if view name already exists
   const viewNameExists = savedViews && Array.isArray(savedViews) 
     ? savedViews.some(view => view.name.toLowerCase() === viewName.trim().toLowerCase())
@@ -414,14 +421,17 @@ const DashboardPage: React.FC = () => {
     setSearchParams(params, { replace: true })
   }
 
-  // Update URL whenever view state changes (but not on initial load)
+  // Update URL whenever view state changes (but not on initial load or when loading from URL)
   useEffect(() => {
-    // Skip initial render to avoid overwriting URL params
+    // Skip if still loading from URL
+    if (isLoadingFromURL) return
+
+    // Update URL with current state
     const timer = setTimeout(() => {
       updateURLWithViewState()
     }, 100)
     return () => clearTimeout(timer)
-  }, [filters, sortColumn, sortDirection, currentPage, pageSize])
+  }, [filters, sortColumn, sortDirection, currentPage, pageSize, isLoadingFromURL])
 
   // Copy current view URL to clipboard
   const handleShareView = async (e: React.MouseEvent) => {
