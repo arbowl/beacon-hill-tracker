@@ -66,6 +66,8 @@ const DashboardPage: React.FC = () => {
   const [showBillModal, setShowBillModal] = useState(false)
   const [currentPage, setCurrentPage] = useState(1)
   const [pageSize, setPageSize] = useState(25)
+  const [sortColumn, setSortColumn] = useState<string | null>(null)
+  const [sortDirection, setSortDirection] = useState<'asc' | 'desc' | null>(null)
   
   // Check if view name already exists
   const viewNameExists = savedViews && Array.isArray(savedViews) 
@@ -203,12 +205,90 @@ const DashboardPage: React.FC = () => {
     })
   }, [billsData, committees, committeeStats])
 
+  // Sorting handler
+  const handleSort = (column: string) => {
+    if (sortColumn === column) {
+      // Cycle through: asc -> desc -> null
+      if (sortDirection === 'asc') {
+        setSortDirection('desc')
+      } else if (sortDirection === 'desc') {
+        setSortColumn(null)
+        setSortDirection(null)
+      }
+    } else {
+      setSortColumn(column)
+      setSortDirection('asc')
+    }
+    setCurrentPage(1) // Reset to first page when sorting
+  }
+
+  // Sort bills
+  const sortedBills = useMemo(() => {
+    if (!billsData || !sortColumn || !sortDirection) return billsData
+
+    const sorted = [...billsData].sort((a, b) => {
+      let aValue: any
+      let bValue: any
+
+      switch (sortColumn) {
+        case 'bill_id':
+          aValue = a.bill_id || ''
+          bValue = b.bill_id || ''
+          break
+        case 'title':
+          aValue = a.bill_title || ''
+          bValue = b.bill_title || ''
+          break
+        case 'committee':
+          aValue = a.committee_name || ''
+          bValue = b.committee_name || ''
+          break
+        case 'status':
+          aValue = getEffectiveState(a)
+          bValue = getEffectiveState(b)
+          break
+        case 'hearing_date':
+          aValue = a.hearing_date || ''
+          bValue = b.hearing_date || ''
+          break
+        case 'deadline':
+          aValue = a.effective_deadline || ''
+          bValue = b.effective_deadline || ''
+          break
+        case 'summary':
+          aValue = a.summary_present ? 1 : 0
+          bValue = b.summary_present ? 1 : 0
+          break
+        case 'votes':
+          aValue = a.votes_present ? 1 : 0
+          bValue = b.votes_present ? 1 : 0
+          break
+        case 'reported_out':
+          aValue = a.reported_out ? 1 : 0
+          bValue = b.reported_out ? 1 : 0
+          break
+        case 'notice_gap':
+          aValue = a.notice_gap_days ?? -1
+          bValue = b.notice_gap_days ?? -1
+          break
+        default:
+          return 0
+      }
+
+      if (aValue < bValue) return sortDirection === 'asc' ? -1 : 1
+      if (aValue > bValue) return sortDirection === 'asc' ? 1 : -1
+      return 0
+    })
+
+    return sorted
+  }, [billsData, sortColumn, sortDirection])
+
   // Pagination calculations
-  const totalBills = billsData?.length || 0
+  const totalBills = sortedBills?.length || 0
   const totalPages = Math.ceil(totalBills / pageSize)
   const startIndex = (currentPage - 1) * pageSize
   const endIndex = startIndex + pageSize
-  const paginatedBills = billsData?.slice(startIndex, endIndex) || []
+  const paginatedBills = sortedBills?.slice(startIndex, endIndex) || []
 
   // Calculate contextual violation analysis
   const violationAnalysis = useMemo(() => {
@@ -233,6 +313,32 @@ const DashboardPage: React.FC = () => {
   React.useEffect(() => {
     setCurrentPage(1)
   }, [debouncedFilters])
+
+  // Sortable column header component
+  const SortableHeader = ({ column, label, children }: { column: string, label?: string, children?: React.ReactNode }) => {
+    const isActive = sortColumn === column
+    const content = children || label || column
+    
+    return (
+      <th 
+        className="cursor-pointer hover:bg-base-200 select-none transition-colors"
+        onClick={() => handleSort(column)}
+        title={`Click to sort by ${label || column}`}
+      >
+        <div className="flex items-center gap-1">
+          <span>{content}</span>
+          {isActive && (
+            <span className="text-primary">
+              {sortDirection === 'asc' ? '▲' : '▼'}
+            </span>
+          )}
+          {!isActive && (
+            <span className="text-base-content/30 text-xs">⇅</span>
+          )}
+        </div>
+      </th>
+    )
+  }
 
   const handlePageChange = (page: number) => {
     setCurrentPage(page)
@@ -1040,13 +1146,17 @@ const DashboardPage: React.FC = () => {
               <table className="table table-zebra">
                 <thead>
                   <tr>
-                    <th className="w-24">Bill ID</th>
-                    <th className="w-80">Title</th>
-                    <th className="w-48">Committee</th>
+                    <SortableHeader column="bill_id" label="Bill ID" />
+                    <SortableHeader column="title" label="Title" />
+                    <SortableHeader column="committee" label="Committee" />
                     <th className="w-32">Progress</th>
-                    <th className="w-24">Status</th>
-                    <th className="w-28">Hearing Date</th>
-                    <th className="w-28">Deadline</th>
+                    <SortableHeader column="status" label="Status" />
+                    <SortableHeader column="summary" label="Summary" />
+                    <SortableHeader column="votes" label="Votes" />
+                    <SortableHeader column="reported_out" label="Reported Out" />
+                    <SortableHeader column="notice_gap" label="Notice Gap" />
+                    <SortableHeader column="hearing_date" label="Hearing Date" />
+                    <SortableHeader column="deadline" label="Deadline" />
                   </tr>
                 </thead>
                 <tbody>
@@ -1082,6 +1192,71 @@ const DashboardPage: React.FC = () => {
                         <div className={`badge badge-lg whitespace-nowrap px-3 ${getStateBadgeClass(bill)}`}>
                           {getStateLabel(bill)}
                         </div>
+                      </td>
+                      <td className="text-center">
+                        {bill.summary_present ? (
+                          bill.summary_url ? (
+                            <a 
+                              href={bill.summary_url} 
+                              target="_blank" 
+                              rel="noopener noreferrer"
+                              className="text-success hover:text-success-focus text-xl inline-flex items-center"
+                              onClick={(e) => e.stopPropagation()}
+                              title="Summary available - Click to view"
+                            >
+                              ✓
+                            </a>
+                          ) : (
+                            <span className="text-success text-xl" title="Summary present">✓</span>
+                          )
+                        ) : (
+                          <span className="text-error text-xl" title="Summary missing">✗</span>
+                        )}
+                      </td>
+                      <td className="text-center">
+                        {bill.votes_present ? (
+                          bill.votes_url ? (
+                            <a 
+                              href={bill.votes_url} 
+                              target="_blank" 
+                              rel="noopener noreferrer"
+                              className="text-success hover:text-success-focus text-xl inline-flex items-center"
+                              onClick={(e) => e.stopPropagation()}
+                              title="Votes available - Click to view"
+                            >
+                              ✓
+                            </a>
+                          ) : (
+                            <span className="text-success text-xl" title="Votes present">✓</span>
+                          )
+                        ) : (
+                          <span className="text-error text-xl" title="Votes missing">✗</span>
+                        )}
+                      </td>
+                      <td className="text-center">
+                        {bill.reported_out ? (
+                          <span className="text-success text-xl" title="Reported out">✓</span>
+                        ) : (
+                          <span className="text-error text-xl" title="Not reported out">✗</span>
+                        )}
+                      </td>
+                      <td className="text-center">
+                        {bill.notice_gap_days !== undefined && bill.notice_gap_days !== null ? (
+                          <span 
+                            className={`font-medium ${
+                              bill.notice_gap_days >= 10 
+                                ? 'text-success' 
+                                : bill.notice_gap_days >= 0 
+                                ? 'text-warning' 
+                                : 'text-base-content/70'
+                            }`}
+                            title={`${bill.notice_gap_days} days notice given`}
+                          >
+                            {bill.notice_gap_days >= 0 ? bill.notice_gap_days : '—'}
+                          </span>
+                        ) : (
+                          <span className="text-base-content/50" title="Notice gap not available">—</span>
+                        )}
                       </td>
                       <td>{bill.hearing_date}</td>
                       <td>{bill.effective_deadline}</td>
