@@ -1667,6 +1667,26 @@ const DashboardPage: React.FC = () => {
                     </a>
                   )}
                 </div>
+                
+                {/* Chamber origin info */}
+                {selectedBill.bill_id && (
+                  <div className="mt-2 bg-info/10 border border-info/30 rounded-lg p-3">
+                    <div className="flex items-start gap-2">
+                      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" className="stroke-info shrink-0 w-5 h-5 mt-0.5">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                      </svg>
+                      <div className="text-sm text-base-content/90">
+                        {selectedBill.bill_id.startsWith('H') ? (
+                          <span><strong>House-originated bill</strong> — Only House members vote to report out.</span>
+                        ) : selectedBill.bill_id.startsWith('S') ? (
+                          <span><strong>Senate-originated bill</strong> — Only Senate members vote to report out.</span>
+                        ) : (
+                          <span><strong>Joint bill</strong> — Both chambers participate in the process.</span>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                )}
               </div>
               
               <div>
