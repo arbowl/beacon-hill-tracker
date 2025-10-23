@@ -10,7 +10,7 @@ import { getEffectiveState, getStateLabel, getStateBadgeClass } from '../utils/b
 
 const DashboardPage: React.FC = () => {
   const { user } = useAuth()
-  const [searchParams] = useSearchParams()
+  const [searchParams, setSearchParams] = useSearchParams()
   const { data: stats, loading: statsLoading, error: statsError } = useGlobalStats()
   const { committees, loading: committeesLoading, error: committeesError } = useCommittees()
   const { data: committeeStats, loading: committeeStatsLoading, error: committeeStatsError } = useCommitteeStats()
@@ -36,7 +36,7 @@ const DashboardPage: React.FC = () => {
     searchTerm: debouncedSearchTerm
   }), [filters.committees, filters.chambers, filters.states, filters.dateRange, debouncedSearchTerm])
 
-  // Load filters from URL parameters (for saved views)
+  // Load filters and view state from URL parameters (for saved views and shared links)
   useEffect(() => {
     const committees = searchParams.get('committees')?.split(',').filter(Boolean) || []
     const chambers = searchParams.get('chambers')?.split(',').filter(Boolean) || []
@@ -44,6 +44,10 @@ const DashboardPage: React.FC = () => {
     const searchTerm = searchParams.get('search') || ''
     const startDate = searchParams.get('startDate')
     const endDate = searchParams.get('endDate')
+    const sortCol = searchParams.get('sortBy')
+    const sortDir = searchParams.get('sortDir') as 'asc' | 'desc' | null
+    const page = searchParams.get('page')
+    const size = searchParams.get('pageSize')
 
     if (committees.length || chambers.length || states.length || searchTerm || startDate || endDate) {
       setFilters({
@@ -56,6 +60,26 @@ const DashboardPage: React.FC = () => {
         },
         searchTerm
       })
+    }
+
+    // Load sort state
+    if (sortCol && sortDir) {
+      setSortColumn(sortCol)
+      setSortDirection(sortDir)
+    }
+
+    // Load pagination state
+    if (page) {
+      const pageNum = parseInt(page, 10)
+      if (!isNaN(pageNum) && pageNum > 0) {
+        setCurrentPage(pageNum)
+      }
+    }
+    if (size) {
+      const sizeNum = parseInt(size, 10)
+      if (!isNaN(sizeNum) && [10, 25, 50, 100].includes(sizeNum)) {
+        setPageSize(sizeNum)
+      }
     }
   }, [searchParams])
 
@@ -349,6 +373,138 @@ const DashboardPage: React.FC = () => {
     setCurrentPage(1) // Reset to first page when changing page size
   }
 
+  // Update URL with current view state
+  const updateURLWithViewState = () => {
+    const params = new URLSearchParams()
+
+    // Add filters
+    if (filters.committees.length > 0) {
+      params.set('committees', filters.committees.join(','))
+    }
+    if (filters.chambers.length > 0) {
+      params.set('chambers', filters.chambers.join(','))
+    }
+    if (filters.states.length > 0) {
+      params.set('states', filters.states.join(','))
+    }
+    if (filters.searchTerm) {
+      params.set('search', filters.searchTerm)
+    }
+    if (filters.dateRange.start) {
+      params.set('startDate', filters.dateRange.start)
+    }
+    if (filters.dateRange.end) {
+      params.set('endDate', filters.dateRange.end)
+    }
+
+    // Add sort state
+    if (sortColumn && sortDirection) {
+      params.set('sortBy', sortColumn)
+      params.set('sortDir', sortDirection)
+    }
+
+    // Add pagination
+    if (currentPage > 1) {
+      params.set('page', currentPage.toString())
+    }
+    if (pageSize !== 25) {
+      params.set('pageSize', pageSize.toString())
+    }
+
+    setSearchParams(params, { replace: true })
+  }
+
+  // Update URL whenever view state changes (but not on initial load)
+  useEffect(() => {
+    // Skip initial render to avoid overwriting URL params
+    const timer = setTimeout(() => {
+      updateURLWithViewState()
+    }, 100)
+    return () => clearTimeout(timer)
+  }, [filters, sortColumn, sortDirection, currentPage, pageSize])
+
+  // Copy current view URL to clipboard
+  const handleShareView = async (e: React.MouseEvent) => {
+    e.preventDefault()
+    e.stopPropagation()
+    
+    const url = window.location.href
+    
+    try {
+      // Try modern clipboard API first
+      if (navigator.clipboard && window.isSecureContext) {
+        await navigator.clipboard.writeText(url)
+      } else {
+        // Fallback for older browsers or non-secure contexts
+        const textArea = document.createElement('textarea')
+        textArea.value = url
+        textArea.style.position = 'fixed'
+        textArea.style.left = '-999999px'
+        textArea.style.top = '-999999px'
+        document.body.appendChild(textArea)
+        textArea.focus()
+        textArea.select()
+        
+        try {
+          document.execCommand('copy')
+          textArea.remove()
+        } catch (err) {
+          textArea.remove()
+          throw err
+        }
+      }
+      
+      // Show success message
+      const alertDiv = document.createElement('div')
+      alertDiv.className = 'alert alert-success fixed top-4 right-4 w-auto z-50 shadow-lg'
+      alertDiv.innerHTML = `
+        <div class="flex items-center gap-2">
+          <svg xmlns="http://www.w3.org/2000/svg" class="stroke-current shrink-0 h-6 w-6" fill="none" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+          <span>Link copied to clipboard!</span>
+        </div>
+      `
+      document.body.appendChild(alertDiv)
+      
+      setTimeout(() => {
+        if (alertDiv.parentNode) {
+          document.body.removeChild(alertDiv)
+        }
+      }, 3000)
+    } catch (error) {
+      console.error('Failed to copy link:', error)
+      
+      // Show error message with the URL so user can copy manually
+      const alertDiv = document.createElement('div')
+      alertDiv.className = 'alert alert-warning fixed top-4 right-4 w-auto max-w-md z-50 shadow-lg'
+      alertDiv.innerHTML = `
+        <div>
+          <div class="flex items-center gap-2 mb-2">
+            <svg xmlns="http://www.w3.org/2000/svg" class="stroke-current shrink-0 h-6 w-6" fill="none" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+            </svg>
+            <span class="font-semibold">Copy manually:</span>
+          </div>
+          <input 
+            type="text" 
+            class="input input-bordered input-sm w-full font-mono text-xs" 
+            value="${url}" 
+            readonly 
+            onclick="this.select()"
+          />
+        </div>
+      `
+      document.body.appendChild(alertDiv)
+      
+      setTimeout(() => {
+        if (alertDiv.parentNode) {
+          document.body.removeChild(alertDiv)
+        }
+      }, 5000)
+    }
+  }
+
   const handleExportCSV = async () => {
     if (!billsData) return
     
@@ -573,6 +729,17 @@ const DashboardPage: React.FC = () => {
         </div>
         
         <div className="flex flex-col sm:flex-row gap-2 w-full lg:w-auto">
+          <button 
+            className="btn btn-outline w-full sm:w-auto"
+            onClick={handleShareView}
+            title="Copy shareable link to clipboard"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" />
+            </svg>
+            Share Link
+          </button>
+          
           <button 
             className={`btn btn-primary w-full sm:w-auto ${isExporting ? 'loading' : ''}`}
             onClick={handleExportCSV}
