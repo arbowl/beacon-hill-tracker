@@ -1367,14 +1367,17 @@ const DashboardPage: React.FC = () => {
                               href={bill.summary_url} 
                               target="_blank" 
                               rel="noopener noreferrer"
-                              className="text-success hover:text-success-focus text-xl inline-flex items-center"
+                              className="text-success hover:underline hover:text-success-focus text-xl inline-flex items-center gap-0.5 font-bold cursor-pointer transition-all"
                               onClick={(e) => e.stopPropagation()}
                               title="Summary available - Click to view"
                             >
                               ✓
+                              <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                              </svg>
                             </a>
                           ) : (
-                            <span className="text-success text-xl" title="Summary present">✓</span>
+                            <span className="text-success text-xl opacity-50" title="Summary present (no link available)">✓</span>
                           )
                         ) : (
                           <span className="text-error text-xl" title="Summary missing">✗</span>
@@ -1387,14 +1390,17 @@ const DashboardPage: React.FC = () => {
                               href={bill.votes_url} 
                               target="_blank" 
                               rel="noopener noreferrer"
-                              className="text-success hover:text-success-focus text-xl inline-flex items-center"
+                              className="text-success hover:underline hover:text-success-focus text-xl inline-flex items-center gap-0.5 font-bold cursor-pointer transition-all"
                               onClick={(e) => e.stopPropagation()}
                               title="Votes available - Click to view"
                             >
                               ✓
+                              <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                              </svg>
                             </a>
                           ) : (
-                            <span className="text-success text-xl" title="Votes present">✓</span>
+                            <span className="text-success text-xl opacity-50" title="Votes present (no link available)">✓</span>
                           )
                         ) : (
                           <span className="text-error text-xl" title="Votes missing">✗</span>
