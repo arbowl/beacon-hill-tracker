@@ -209,6 +209,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
           <div className="grid grid-flow-col gap-4">
             <Link to="/about" className="link link-hover">About</Link>
             <Link to="/contact" className="link link-hover">Contact</Link>
+            <Link to="/press" className="link link-hover">Press Kit</Link>
             <Link to="/privacy" className="link link-hover">Privacy Policy</Link>
             <Link to="/tos" className="link link-hover">Terms of Service</Link>
           </div>

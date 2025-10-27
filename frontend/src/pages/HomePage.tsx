@@ -49,7 +49,7 @@ const HomePage: React.FC = () => {
             However, these rules are often ignored or circumvented, leading to a lack of transparency about how decisions are made. When they are posted, the information is often hard to find.
           </p>
           <p>
-            Lack of transparency is a systemic issue, not a partisan one. My goal is simple: to cast a spotlight on the requirements, and give others the tools to enact change.
+            Lack of transparency is a systemic issue, not a partisan one. My goal is simple — to cast a spotlight on the requirements, and give others the tools to enact change.
           </p>
         </div>
         
@@ -140,6 +140,22 @@ const HomePage: React.FC = () => {
             </div>
           </>
         )}
+      </div>
+
+      {/* Press Kit Banner */}
+      <div className="alert bg-gradient-to-r from-blue-50 to-amber-50 border-l-4 border-blue-800">
+        <svg className="stroke-current flex-shrink-0 h-6 w-6 text-blue-800" fill="none" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+        </svg>
+        <div>
+          <div className="font-bold text-blue-900">Media & Press</div>
+          <div className="text-sm text-blue-800">Download our one-page press kit for interviews, articles, and reporting.</div>
+        </div>
+        <div className="flex-none">
+          <Link to="/press" className="btn btn-sm bg-blue-800 text-white hover:bg-blue-900">
+            View Press Kit
+          </Link>
+        </div>
       </div>
 
       {/* Features */}
