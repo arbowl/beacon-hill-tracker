@@ -139,7 +139,7 @@ const CommitteeComparisonChart: React.FC<CommitteeComparisonChartProps> = ({
     const isHighlighted = highlightedCommitteeId && d.committee_id === highlightedCommitteeId
     // Apply formatting for highlighted committee
     if (isHighlighted) {
-      return `<b>★ ${shortName}</b>`
+      return `★ ${shortName}`
     }
     return shortName
   })
