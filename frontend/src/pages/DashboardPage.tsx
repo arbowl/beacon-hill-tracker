@@ -5,7 +5,6 @@ import { useAuth } from '../contexts/AuthContext'
 import { DashboardFilters, Bill } from '../types'
 import { analyzeReasons, getTopViolationsForCommittee } from '../utils/reasonParser'
 import { ComplianceOverviewChart, CommitteeComparisonChart, ViolationAnalysisChart } from '../components/charts'
-import BillProgressBar from '../components/BillProgressBar'
 import { getEffectiveState, getStateLabel, getStateBadgeClass } from '../utils/billStatus'
 
 const DashboardPage: React.FC = () => {
@@ -37,6 +36,11 @@ const DashboardPage: React.FC = () => {
   const [sortColumn, setSortColumn] = useState<string | null>(null)
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc' | null>(null)
   const [isLoadingFromURL, setIsLoadingFromURL] = useState(true)
+  const [showCharts, setShowCharts] = useState(true)
+  const [showCommitteeContact, setShowCommitteeContact] = useState(false)
+  const [isScrollingUp, setIsScrollingUp] = useState(false)
+  const [lastScrollY, setLastScrollY] = useState(0)
+  const [isSticky, setIsSticky] = useState(false)
 
   // Debounce the search term to avoid too many API calls
   const debouncedSearchTerm = useDebounce(filters.searchTerm, 500)
@@ -181,60 +185,6 @@ const DashboardPage: React.FC = () => {
     }
   }, [billsData, billsLoading, filters.committees, stats, committees])
 
-  // Recalculate committee stats with provisional logic
-  const adjustedCommitteeStats = useMemo(() => {
-    if (!billsData || !committees) return committeeStats
-
-    // Group bills by committee and calculate effective stats
-    const committeeMap = new Map()
-    
-    billsData.forEach(bill => {
-      const committeeId = bill.committee_id
-      if (!committeeId) return
-      
-      if (!committeeMap.has(committeeId)) {
-        const committee = committees.find(c => c.committee_id === committeeId)
-        committeeMap.set(committeeId, {
-          committee_id: committeeId,
-          committee_name: committee?.name || committeeId,
-          compliant: 0,
-          provisional: 0,
-          nonCompliant: 0,
-          monitoring: 0,
-          total: 0
-        })
-      }
-      
-      const stats = committeeMap.get(committeeId)
-      const effectiveState = getEffectiveState(bill)
-      
-      stats.total++
-      if (effectiveState === 'compliant') stats.compliant++
-      else if (effectiveState === 'provisional') stats.provisional++
-      else if (effectiveState === 'non-compliant') stats.nonCompliant++
-      else if (effectiveState === 'monitoring') stats.monitoring++
-    })
-    
-    // Convert to array and calculate compliance rates
-    return Array.from(committeeMap.values()).map(stats => {
-      // Compliance rate includes provisional and monitoring bills (now consolidated as "Provisional")
-      const complianceRate = stats.total > 0
-        ? ((stats.compliant + stats.provisional + stats.monitoring) / stats.total) * 100
-        : 0
-      
-      return {
-        committee_id: stats.committee_id,
-        committee_name: stats.committee_name,
-        compliance_rate: Math.round(complianceRate * 100) / 100,
-        total_bills: stats.total,
-        compliant_count: stats.compliant,
-        provisional_count: stats.provisional,
-        incomplete_count: 0,
-        non_compliant_count: stats.nonCompliant,
-        unknown_count: stats.monitoring
-      }
-    })
-  }, [billsData, committees, committeeStats])
 
   // Sorting handler
   const handleSort = (column: string) => {
@@ -344,6 +294,44 @@ const DashboardPage: React.FC = () => {
   React.useEffect(() => {
     setCurrentPage(1)
   }, [debouncedFilters])
+
+  // Handle scroll behavior for filters
+  useEffect(() => {
+    let ticking = false
+    
+    const handleScroll = () => {
+      if (!ticking) {
+        window.requestAnimationFrame(() => {
+          const currentScrollY = window.scrollY
+          
+          // Determine scroll direction (only when scrolled down a bit)
+          if (currentScrollY > 150) {
+            if (currentScrollY > lastScrollY + 5) {
+              // Scrolling down - show filters
+              setIsScrollingUp(true)
+            } else if (currentScrollY < lastScrollY - 5) {
+              // Scrolling up - hide filters
+              setIsScrollingUp(false)
+            }
+          } else {
+            // Near top, always show filters
+            setIsScrollingUp(true)
+          }
+          
+          // Determine if filters are sticky (scrolled past initial position)
+          setIsSticky(currentScrollY > 150)
+          
+          setLastScrollY(currentScrollY)
+          ticking = false
+        })
+        
+        ticking = true
+      }
+    }
+    
+    window.addEventListener('scroll', handleScroll, { passive: true })
+    return () => window.removeEventListener('scroll', handleScroll)
+  }, [lastScrollY])
 
   // Sortable column header component
   const SortableHeader = ({ column, label, children }: { column: string, label?: string, children?: React.ReactNode }) => {
@@ -832,34 +820,55 @@ const DashboardPage: React.FC = () => {
       </div>
 
       {/* Filters Section */}
-      <div className="card bg-base-100 shadow-md">
-        <div className="card-body">
-          <h2 className="card-title">Filters</h2>
+      <div 
+        className={`sticky top-0 z-30 bg-base-100 shadow-md rounded-lg mb-8 backdrop-blur-sm bg-opacity-95 transition-all duration-300 ease-in-out ${
+          isSticky && isScrollingUp ? 'translate-y-0 opacity-100' : isSticky ? '-translate-y-full opacity-0 pointer-events-none' : 'translate-y-0 opacity-100'
+        }`}
+      >
+        <div className="card-body py-4">
+          <div className="flex items-center justify-between mb-3">
+            <h2 className="card-title text-lg">Filters</h2>
+            <button 
+              className="btn btn-ghost btn-xs"
+              onClick={() => setFilters({
+                committees: [],
+                chambers: [],
+                states: [],
+                dateRange: { start: null, end: null },
+                searchTerm: ''
+              })}
+              title="Clear all filters"
+            >
+              Clear All
+            </button>
+          </div>
           
-          {/* Helper text for filters */}
-          <div className="bg-base-200/50 p-3 rounded-lg mb-4">
-            <div className="flex items-start space-x-2">
-              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" className="stroke-primary shrink-0 w-5 h-5 mt-0.5">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-              </svg>
-              <div className="text-sm text-base-content/80">
-                Use the filters below to sort the data by title, ID, compliance state, and committee. 
-                Any changes you make will automatically update all statistics, charts, and the bills table below.
+          {/* Helper text - only show when not sticky */}
+          <div className={`overflow-hidden transition-all duration-300 ${!isSticky ? 'max-h-24 mb-4 opacity-100' : 'max-h-0 mb-0 opacity-0'}`}>
+            <div className="bg-base-200/50 p-3 rounded-lg">
+              <div className="flex items-start space-x-2">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" className="stroke-primary shrink-0 w-5 h-5 mt-0.5">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                </svg>
+                <div className="text-sm text-base-content/80">
+                  Use the filters below to sort the data by title, ID, compliance state, and committee. 
+                  Any changes you make will automatically update all statistics, charts, and the bills table below.
+                </div>
               </div>
             </div>
           </div>
           
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
             <div className="form-control">
-              <label className="label">
-                <span className="label-text">Search Bills</span>
+              <label className="label py-1">
+                <span className="label-text text-sm">Search Bills</span>
                 {filters.searchTerm !== debouncedSearchTerm && (
                   <span className="label-text-alt text-info">Typing...</span>
                 )}
               </label>
               <input
                 type="text"
-                className="input input-bordered"
+                className="input input-bordered input-sm"
                 placeholder="Search by bill ID or title..."
                 value={filters.searchTerm}
                 onChange={(e) => setFilters(prev => ({
@@ -870,11 +879,11 @@ const DashboardPage: React.FC = () => {
             </div>
             
             <div className="form-control">
-              <label className="label">
-                <span className="label-text">Compliance State</span>
+              <label className="label py-1">
+                <span className="label-text text-sm">Compliance State</span>
               </label>
               <select 
-                className="select select-bordered"
+                className="select select-bordered select-sm"
                 value={filters.states.length > 0 ? filters.states[0] : ''}
                 onChange={(e) => {
                   const value = e.target.value
@@ -892,11 +901,11 @@ const DashboardPage: React.FC = () => {
             </div>
             
             <div className="form-control">
-              <label className="label">
-                <span className="label-text">Committee</span>
+              <label className="label py-1">
+                <span className="label-text text-sm">Committee</span>
               </label>
               <select 
-                className="select select-bordered"
+                className="select select-bordered select-sm"
                 value={filters.committees.length > 0 ? filters.committees[0] : ''}
                 onChange={(e) => {
                   const value = e.target.value
@@ -1050,23 +1059,49 @@ const DashboardPage: React.FC = () => {
 
       {/* Committee Contact Details - Show when single committee is selected */}
       {selectedCommitteeId && selectedCommitteeDetails && (
-        <div className="card bg-base-100 shadow-md">
-          <div className="card-body">
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="card-title text-xl">
-                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" className="stroke-current shrink-0 w-6 h-6 mr-2">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
-                </svg>
-                Committee Contact Information
-              </h2>
-              <div className="badge badge-primary">{selectedCommitteeDetails.chamber}</div>
-            </div>
+        <div className="space-y-6">
+          {/* Committee Contact Header with Toggle */}
+          <div className="flex items-center justify-between">
+            <h2 className="text-2xl font-bold">Committee Contact Information</h2>
+            <button 
+              className="btn btn-outline btn-sm"
+              onClick={() => setShowCommitteeContact(!showCommitteeContact)}
+            >
+              {showCommitteeContact ? (
+                <>
+                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-4 h-4">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5" />
+                  </svg>
+                  Hide Contact Info
+                </>
+              ) : (
+                <>
+                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-4 h-4">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 15.75l7.5-7.5 7.5 7.5" />
+                  </svg>
+                  Show Contact Info
+                </>
+              )}
+            </button>
+          </div>
+
+          <div className={`transition-all duration-300 ease-in-out overflow-hidden ${showCommitteeContact ? 'max-h-[10000px] opacity-100' : 'max-h-0 opacity-0'}`}>
+            <div className="card bg-base-100 shadow-md">
+              <div className="card-body">
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="text-xl font-semibold">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" className="stroke-current shrink-0 w-6 h-6 mr-2 inline">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                    </svg>
+                    {selectedCommitteeDetails.name}
+                  </h3>
+                  <div className="badge badge-primary">{selectedCommitteeDetails.chamber}</div>
+                </div>
             
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               {/* Committee Info */}
               <div>
-                <h3 className="font-semibold text-lg mb-3">{selectedCommitteeDetails.name}</h3>
                 <div className="space-y-2">
                   <div className="flex items-center space-x-2">
                     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" className="stroke-current shrink-0 w-4 h-4">
@@ -1198,32 +1233,83 @@ const DashboardPage: React.FC = () => {
             </div>
           </div>
         </div>
+          </div>
+        </div>
       )}
 
          {/* Data Visualizations */}
-         <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
-           {/* Compliance Overview Chart */}
-           <div className="card bg-base-100 shadow-md">
-             <div className="card-body">
-               <h2 className="card-title">
-                 {contextualStats?.title === 'Global Overview' 
-                   ? 'Compliance Overview' 
-                   : `Compliance Overview - ${contextualStats?.title || 'Loading...'}`}
-               </h2>
-               <ComplianceOverviewChart 
-                 data={{
-                   compliant_bills: contextualStats?.compliant_bills || 0,
-                   provisional_bills: contextualStats?.provisional_bills || 0,
-                   incomplete_bills: contextualStats?.incomplete_bills || 0,
-                   non_compliant_bills: contextualStats?.non_compliant_bills || 0,
-                   unknown_bills: contextualStats?.unknown_bills || 0
-                 }}
-                 loading={statsLoading || billsLoading}
-               />
+         <div className="space-y-6">
+           {/* Charts Section Header with Toggle */}
+           <div className="flex items-center justify-between">
+             <h2 className="text-2xl font-bold">Data Visualizations</h2>
+             <button 
+               className="btn btn-outline btn-sm"
+               onClick={() => setShowCharts(!showCharts)}
+             >
+               {showCharts ? (
+                 <>
+                   <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-4 h-4">
+                     <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5" />
+                   </svg>
+                   Hide Charts
+                 </>
+               ) : (
+                 <>
+                   <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-4 h-4">
+                     <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 15.75l7.5-7.5 7.5 7.5" />
+                   </svg>
+                   Show Charts
+                 </>
+               )}
+             </button>
+           </div>
+
+           <div className={`transition-all duration-300 ease-in-out overflow-hidden ${showCharts ? 'max-h-[10000px] opacity-100' : 'max-h-0 opacity-0'}`}>
+             <div className="space-y-6">
+               {/* Top Row: Compliance Overview and Violation Analysis */}
+               <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+             {/* Compliance Overview Chart */}
+             <div className="card bg-base-100 shadow-md lg:col-span-1">
+               <div className="card-body">
+                 <h2 className="card-title">
+                   {contextualStats?.title === 'Global Overview' 
+                     ? 'Compliance Overview' 
+                     : `Compliance Overview - ${contextualStats?.title || 'Loading...'}`}
+                 </h2>
+                 <ComplianceOverviewChart 
+                   data={{
+                     compliant_bills: contextualStats?.compliant_bills || 0,
+                     provisional_bills: contextualStats?.provisional_bills || 0,
+                     incomplete_bills: contextualStats?.incomplete_bills || 0,
+                     non_compliant_bills: contextualStats?.non_compliant_bills || 0,
+                     unknown_bills: contextualStats?.unknown_bills || 0
+                   }}
+                   loading={statsLoading || billsLoading}
+                 />
+               </div>
+             </div>
+
+             {/* Violation Analysis Chart */}
+             <div className="card bg-base-100 shadow-md lg:col-span-2">
+               <div className="card-body">
+                 <h2 className="card-title">
+                   {filters.committees.length === 0 
+                     ? 'Top Non-Compliance Issues' 
+                     : filters.committees.length === 1
+                     ? `Non-Compliance Issues - ${committees?.find(c => c.committee_id === filters.committees[0])?.name || 'Selected Committee'}`
+                     : `Non-Compliance Issues - ${filters.committees.length} Selected Committees`}
+                 </h2>
+                 <ViolationAnalysisChart 
+                   data={violationAnalysis}
+                   loading={billsLoading}
+                   chartType="horizontal_bar"
+                   showDetails={false}
+                 />
+               </div>
              </div>
            </div>
 
-           {/* Committee Comparison Chart */}
+           {/* Bottom Row: Committee Performance (Full Width) */}
            <div className="card bg-base-100 shadow-md">
              <div className="card-body">
                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 gap-4">
@@ -1255,42 +1341,26 @@ const DashboardPage: React.FC = () => {
                  </div>
                </div>
                
-               <CommitteeComparisonChart 
-                 key={`committee-chart-${committeeViewMode}-${committeeLimit}`}
-                 data={adjustedCommitteeStats?.map(committee => ({
-                   committee_id: committee.committee_id,
-                   name: committee.committee_name,
-                   compliance_rate: committee.compliance_rate || 0,
-                   total_bills: committee.total_bills || 0,
-                   compliant_count: committee.compliant_count || 0,
-                   provisional_count: committee.provisional_count || 0,
-                   incomplete_count: committee.incomplete_count || 0,
-                   non_compliant_count: committee.non_compliant_count || 0
-                 })) || []}
-                 loading={committeeStatsLoading}
-                 chartType="horizontal_bar"
-                 viewMode={committeeViewMode}
-                 limit={committeeLimit}
-               />
+              <CommitteeComparisonChart 
+                key={`committee-chart-${committeeViewMode}-${committeeLimit}-${selectedCommitteeId || 'none'}`}
+                data={committeeStats?.map(committee => ({
+                  committee_id: committee.committee_id,
+                  name: committee.committee_name,
+                  compliance_rate: committee.compliance_rate || 0,
+                  total_bills: committee.total_bills || 0,
+                  compliant_count: committee.compliant_count || 0,
+                  provisional_count: committee.unknown_count || 0,  // Map unknown_count to provisional_count for display
+                  incomplete_count: committee.incomplete_count || 0,
+                  non_compliant_count: committee.non_compliant_count || 0
+                })) || []}
+                loading={committeeStatsLoading}
+                chartType="horizontal_bar"
+                viewMode={committeeViewMode}
+                limit={committeeLimit}
+                highlightedCommitteeId={selectedCommitteeId}
+              />
              </div>
            </div>
-
-           {/* Violation Analysis Chart */}
-           <div className="card bg-base-100 shadow-md xl:col-span-1 lg:col-span-2">
-             <div className="card-body">
-               <h2 className="card-title">
-                 {filters.committees.length === 0 
-                   ? 'Top Non-Compliance Issues' 
-                   : filters.committees.length === 1
-                   ? `Non-Compliance Issues - ${committees?.find(c => c.committee_id === filters.committees[0])?.name || 'Selected Committee'}`
-                   : `Non-Compliance Issues - ${filters.committees.length} Selected Committees`}
-               </h2>
-               <ViolationAnalysisChart 
-                 data={violationAnalysis}
-                 loading={billsLoading}
-                 chartType="horizontal_bar"
-                 showDetails={false}
-               />
              </div>
            </div>
          </div>
@@ -1326,7 +1396,6 @@ const DashboardPage: React.FC = () => {
                     <SortableHeader column="bill_id" label="Bill ID" />
                     <SortableHeader column="title" label="Title" />
                     <SortableHeader column="committee" label="Committee" />
-                    <th className="w-32">Progress</th>
                     <SortableHeader column="status" label="Status" />
                     <SortableHeader column="summary" label="Summary" />
                     <SortableHeader column="votes" label="Votes" />
@@ -1361,9 +1430,6 @@ const DashboardPage: React.FC = () => {
                       </td>
                       <td>
                         <div className="text-sm">{bill.committee_name}</div>
-                      </td>
-                      <td>
-                        <BillProgressBar bill={bill} />
                       </td>
                       <td>
                         <div className={`badge badge-lg whitespace-nowrap px-3 ${getStateBadgeClass(bill)}`}>

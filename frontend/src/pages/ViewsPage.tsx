@@ -266,7 +266,7 @@ const ViewsPage: React.FC = () => {
               )}
             </div>
           ) : (
-            <div className="overflow-x-auto">
+            <div className="overflow-x-auto pb-40">
               <table className="table table-zebra">
                 <thead>
                   <tr>
@@ -307,11 +307,9 @@ const ViewsPage: React.FC = () => {
                           >
                             Load
                           </button>
-                          <div className="dropdown dropdown-end">
-                            <div tabIndex={0} role="button" className="btn btn-sm btn-ghost">
-                              ⋮
-                            </div>
-                            <ul tabIndex={0} className="dropdown-content z-[1] menu p-2 shadow bg-base-100 rounded-box w-52">
+                          <details className="dropdown dropdown-end relative">
+                            <summary className="btn btn-sm btn-ghost">⋮</summary>
+                            <ul className="dropdown-content menu p-2 shadow-xl bg-base-100 rounded-box w-52 border border-base-300 z-[9999] mt-1">
                               <li>
                                 <a onClick={() => openEditModal(view)}>
                                   <span>📝</span> Rename
@@ -328,7 +326,7 @@ const ViewsPage: React.FC = () => {
                                 </a>
                               </li>
                             </ul>
-                          </div>
+                          </details>
                         </div>
                       </td>
                     </tr>

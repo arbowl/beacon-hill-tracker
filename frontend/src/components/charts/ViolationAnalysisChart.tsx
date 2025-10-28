@@ -139,7 +139,7 @@ const ViolationAnalysisChart: React.FC<ViolationAnalysisChartProps> = ({
           ],
           responsive: true
         }}
-        style={{ width: '100%', height: chartType === 'pie' ? '400px' : '350px' }}
+        style={{ width: '100%', height: chartType === 'pie' ? '200px' : '250px' }}
       />
       
       {showDetails && (

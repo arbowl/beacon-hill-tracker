@@ -73,7 +73,8 @@ const ComplianceOverviewChart: React.FC<ComplianceOverviewChartProps> = ({
             textposition: 'inside',
             textfont: {
               size: 14,
-              color: 'white'
+              color: 'white',
+              weight: 'bold'
             },
             hovertemplate: '<b>%{label}</b><br>' +
                           'Count: %{value}<br>' +
@@ -93,7 +94,7 @@ const ComplianceOverviewChart: React.FC<ComplianceOverviewChartProps> = ({
               size: 12
             }
           },
-          margin: { t: 40, b: 40, l: 20, r: 120 },
+          margin: { t: 10, b: 10, l: 10, r: 100 },
           paper_bgcolor: 'rgba(0,0,0,0)',
           plot_bgcolor: 'rgba(0,0,0,0)',
           font: {
@@ -105,7 +106,7 @@ const ComplianceOverviewChart: React.FC<ComplianceOverviewChartProps> = ({
           displayModeBar: false,
           responsive: true
         }}
-        style={{ width: '100%', height: '400px' }}
+        style={{ width: '100%', height: '250px' }}
       />
     </div>
   )
