@@ -218,4 +218,39 @@ export const sendContactMessage = (
   message: string
 ) => contactService.sendMessage(name, email, subject, message).then(res => res.data)
 
+// Changelog API endpoints
+const changelogApi = axios.create({
+  baseURL: import.meta.env.PROD
+    ? 'https://beacon-hill-tracker.onrender.com/api/changelog'
+    : '/api/changelog',
+  headers: {
+    'Content-Type': 'application/json',
+  },
+})
+
+export interface ChangelogEntry {
+  version: string
+  date: string
+  user_agent?: string
+  received_at?: string
+  changes: {
+    [category: string]: string[]
+  }
+}
+
+export const changelogService = {
+  getChangelog: (limit?: number) =>
+    changelogApi.get('', { params: { limit } }),
+  
+  getChangelogVersion: (version: string) =>
+    changelogApi.get('', { params: { version } }),
+}
+
+// Convenience exports
+export const getChangelog = (limit?: number) =>
+  changelogService.getChangelog(limit).then(res => res.data)
+
+export const getChangelogVersion = (version: string) =>
+  changelogService.getChangelogVersion(version).then(res => res.data)
+
 export default api

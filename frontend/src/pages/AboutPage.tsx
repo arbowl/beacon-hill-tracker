@@ -1,3 +1,5 @@
+import ChangelogDisplay from '../components/ChangelogDisplay'
+
 const AboutPage = () => {
   return (
     <div className="max-w-4xl mx-auto space-y-8">
@@ -320,6 +322,20 @@ const AboutPage = () => {
               </p>
             </div>
           </div>
+        </div>
+      </div>
+
+      <div className="card bg-base-100 shadow-md">
+        <div className="card-body">
+          <div className="flex items-center gap-3 mb-4">
+            <h2 className="card-title text-2xl">Scraping Algorithm Updates</h2>
+            <span className="badge badge-primary">Changelog</span>
+          </div>
+          <p className="text-base-content/80 mb-6">
+            The scraping algorithm is continuously improved to better track legislative compliance.
+            Here are the latest updates and improvements:
+          </p>
+          <ChangelogDisplay limit={5} />
         </div>
       </div>
 

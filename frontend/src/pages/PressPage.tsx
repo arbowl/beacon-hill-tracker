@@ -30,7 +30,7 @@ const PressPage: React.FC = () => {
         <h2 className="text-2xl font-bold text-gray-800 mb-4">Press Kit Available</h2>
         <p className="text-gray-600 mb-6">
           Our one-page press kit is optimized for desktop viewing and PDF download. 
-          Please use the button below to download the PDF, or visit this page on a desktop device to preview it.
+          Please use the button above to download the PDF, or visit this page on a desktop device to preview it.
         </p>
         <button 
           onClick={handlePrint}
@@ -665,5 +665,4 @@ const PressPage: React.FC = () => {
 }
 
 export default PressPage
-
 
