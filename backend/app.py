@@ -676,6 +676,204 @@ def create_app():
             logger.error(f"Exception in ingest_basic: {str(exc)}", exc_info=True)
             return jsonify({"status": "error", "message": str(exc)}), 500
 
+    @flask_app.route('/ingest/changelog', methods=['POST'])
+    def ingest_changelog():
+        """
+        Ingest endpoint for changelog data.
+        Expects: {
+            "current_version": "1.0.0",
+            "user_agent": "...",
+            "changelog": [
+                {
+                    "version": "1.0.0",
+                    "date": "2025-10-28",
+                    "changes": {
+                        "added": [...],
+                        "changed": [...],
+                        "fixed": [...],
+                        ...
+                    }
+                }
+            ]
+        }
+        Requires HMAC signature authentication.
+        """
+        logger = logging.getLogger(__name__)
+        logger.info("=== INGEST CHANGELOG ENDPOINT CALLED ===")
+        
+        try:
+            # Verify signature
+            logger.info("Verifying signature...")
+            is_valid, error_msg, key_record = verify_ingest_signature(request)
+            if not is_valid:
+                logger.warning(f"Authentication failed: {error_msg}")
+                return jsonify({
+                    "status": "error",
+                    "message": f"Authentication failed: {error_msg}"
+                }), 401
+            
+            logger.info("Signature verified successfully")
+            
+            data = request.get_json()
+            if not data:
+                logger.error("No JSON data provided")
+                return jsonify({
+                    "status": "error",
+                    "message": "No JSON data provided"
+                }), 400
+
+            if not isinstance(data, dict):
+                logger.error("Data is not a dictionary")
+                return jsonify({
+                    "status": "error",
+                    "message": "Expected JSON object with changelog data"
+                }), 400
+
+            # Validate required fields
+            current_version = data.get('current_version')
+            if not current_version:
+                logger.error("No current_version provided")
+                return jsonify({
+                    "status": "error",
+                    "message": "current_version is required"
+                }), 400
+
+            changelog_entries = data.get('changelog', [])
+            if not isinstance(changelog_entries, list):
+                logger.error("changelog is not a list")
+                return jsonify({
+                    "status": "error",
+                    "message": "Expected 'changelog' to be an array"
+                }), 400
+
+            logger.info(f"Processing changelog for version {current_version} with {len(changelog_entries)} entries")
+            
+            result = import_changelog_data(data)
+            logger.info(f"Import result: {result}")
+            
+            if result['status'] == 'success':
+                logger.info(f"SUCCESS: Returning 200 with result: {result}")
+                return jsonify(result), 200
+            
+            logger.error(f"Import failed with result: {result}")
+            return jsonify(result), 500
+
+        except Exception as exc:
+            logger.error(f"Exception in ingest_changelog: {str(exc)}", exc_info=True)
+            return jsonify({"status": "error", "message": str(exc)}), 500
+
+    @flask_app.route('/api/changelog', methods=['GET'])
+    def get_changelog():
+        """
+        Retrieve changelog entries.
+        Query params:
+            - limit: number of versions to return (default: 10)
+            - version: specific version to retrieve
+        """
+        try:
+            limit = request.args.get('limit', 10, type=int)
+            version = request.args.get('version')
+            
+            with get_db_connection() as conn:
+                cursor = conn.cursor()
+                db_type = get_database_type()
+                
+                if version:
+                    # Get specific version
+                    if db_type == 'postgresql':
+                        cursor.execute('''
+                            SELECT id, version, date, user_agent, received_at
+                            FROM changelog_versions
+                            WHERE version = %s
+                        ''', (version,))
+                    else:
+                        cursor.execute('''
+                            SELECT id, version, date, user_agent, received_at
+                            FROM changelog_versions
+                            WHERE version = ?
+                        ''', (version,))
+                    
+                    version_row = cursor.fetchone()
+                    if not version_row:
+                        return jsonify({"error": "Version not found"}), 404
+                    
+                    versions = [version_row]
+                else:
+                    # Get recent versions
+                    if db_type == 'postgresql':
+                        cursor.execute('''
+                            SELECT id, version, date, user_agent, received_at
+                            FROM changelog_versions
+                            ORDER BY received_at DESC
+                            LIMIT %s
+                        ''', (limit,))
+                    else:
+                        cursor.execute('''
+                            SELECT id, version, date, user_agent, received_at
+                            FROM changelog_versions
+                            ORDER BY received_at DESC
+                            LIMIT ?
+                        ''', (limit,))
+                    
+                    versions = cursor.fetchall()
+                
+                # Build response
+                changelog_data = []
+                for version_row in versions:
+                    if db_type == 'postgresql':
+                        version_id = version_row[0]
+                        version_info = {
+                            'version': version_row[1],
+                            'date': version_row[2],
+                            'user_agent': version_row[3],
+                            'received_at': version_row[4].isoformat() if version_row[4] else None
+                        }
+                    else:
+                        version_id = version_row['id']
+                        version_info = {
+                            'version': version_row['version'],
+                            'date': version_row['date'],
+                            'user_agent': version_row['user_agent'],
+                            'received_at': version_row['received_at']
+                        }
+                    
+                    # Get entries for this version
+                    placeholder = '%s' if db_type == 'postgresql' else '?'
+                    cursor.execute(f'''
+                        SELECT category, description
+                        FROM changelog_entries
+                        WHERE version_id = {placeholder}
+                        ORDER BY id
+                    ''', (version_id,))
+                    
+                    entries = cursor.fetchall()
+                    changes = {}
+                    for entry in entries:
+                        if db_type == 'postgresql':
+                            category = entry[0]
+                            description = entry[1]
+                        else:
+                            category = entry['category']
+                            description = entry['description']
+                        
+                        if category not in changes:
+                            changes[category] = []
+                        changes[category].append(description)
+                    
+                    version_info['changes'] = changes
+                    changelog_data.append(version_info)
+                
+                return jsonify({
+                    "status": "success",
+                    "count": len(changelog_data),
+                    "changelog": changelog_data
+                }), 200
+                
+        except Exception as exc:
+            logger = logging.getLogger(__name__)
+            logger.error(f"Exception in get_changelog: {str(exc)}", exc_info=True)
+            return jsonify({"error": str(exc)}), 500
+
     return flask_app
 
 # ========================================================================
@@ -903,6 +1101,113 @@ def import_cache_data(cache_data):
                 "status": "error",
                 "message": f"Database error: {str(e)}"
             }
+
+def import_changelog_data(data):
+    """
+    Import changelog data into the database.
+    
+    Args:
+        data: Dictionary containing current_version, user_agent, and changelog list
+    
+    Returns:
+        dict: Status and results of the import
+    """
+    logger = logging.getLogger(__name__)
+    logger.info(f"Starting changelog import for version {data.get('current_version')}")
+    
+    try:
+        with get_db_connection() as conn:
+            cursor = conn.cursor()
+            db_type = get_database_type()
+            placeholder = '%s' if db_type == 'postgresql' else '?'
+            
+            current_version = data.get('current_version')
+            user_agent = data.get('user_agent')
+            changelog_entries = data.get('changelog', [])
+            
+            versions_imported = 0
+            entries_imported = 0
+            
+            for entry in changelog_entries:
+                version = entry.get('version')
+                date = entry.get('date')
+                changes = entry.get('changes', {})
+                
+                if not version or not date:
+                    logger.warning(f"Skipping entry with missing version or date: {entry}")
+                    continue
+                
+                # Check if version already exists
+                cursor.execute(f'''
+                    SELECT id FROM changelog_versions WHERE version = {placeholder}
+                ''', (version,))
+                
+                existing = cursor.fetchone()
+                if existing:
+                    if db_type == 'postgresql':
+                        version_id = existing[0]
+                    else:
+                        version_id = existing['id']
+                    logger.info(f"Version {version} already exists (id={version_id}), updating...")
+                    
+                    # Delete old entries for this version
+                    cursor.execute(f'''
+                        DELETE FROM changelog_entries WHERE version_id = {placeholder}
+                    ''', (version_id,))
+                    
+                    # Update version info
+                    cursor.execute(f'''
+                        UPDATE changelog_versions
+                        SET date = {placeholder}, user_agent = {placeholder}, received_at = CURRENT_TIMESTAMP
+                        WHERE id = {placeholder}
+                    ''', (date, user_agent, version_id))
+                else:
+                    # Insert new version
+                    if db_type == 'postgresql':
+                        cursor.execute('''
+                            INSERT INTO changelog_versions (version, date, user_agent)
+                            VALUES (%s, %s, %s)
+                            RETURNING id
+                        ''', (version, date, user_agent))
+                        version_id = cursor.fetchone()[0]
+                    else:
+                        cursor.execute('''
+                            INSERT INTO changelog_versions (version, date, user_agent)
+                            VALUES (?, ?, ?)
+                        ''', (version, date, user_agent))
+                        version_id = cursor.lastrowid
+                    
+                    versions_imported += 1
+                    logger.info(f"Inserted new version {version} with id={version_id}")
+                
+                # Insert changelog entries
+                for category, descriptions in changes.items():
+                    if not isinstance(descriptions, list):
+                        descriptions = [descriptions]
+                    
+                    for description in descriptions:
+                        cursor.execute(f'''
+                            INSERT INTO changelog_entries (version_id, category, description)
+                            VALUES ({placeholder}, {placeholder}, {placeholder})
+                        ''', (version_id, category, description))
+                        entries_imported += 1
+            
+            logger.info(f"Changelog import complete: {versions_imported} versions, {entries_imported} entries")
+            
+            return {
+                'status': 'success',
+                'message': 'Changelog received successfully',
+                'version': current_version,
+                'versions_imported': versions_imported,
+                'entries_imported': entries_imported
+            }
+            
+    except Exception as e:
+        logger.error(f"Error importing changelog: {str(e)}", exc_info=True)
+        return {
+            'status': 'error',
+            'message': f"Failed to import changelog: {str(e)}"
+        }
 
 def import_compliance_report(committee_id, bills_data):
     """Import compliance report data for a specific committee"""

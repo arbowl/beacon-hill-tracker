@@ -161,6 +161,37 @@ def init_compliance_database():
                 ON bill_compliance(generated_at DESC)
             ''')
             
+            # Changelog tables (PostgreSQL)
+            cursor.execute('''
+                CREATE TABLE IF NOT EXISTS changelog_versions (
+                    id SERIAL PRIMARY KEY,
+                    version TEXT NOT NULL UNIQUE,
+                    date TEXT NOT NULL,
+                    user_agent TEXT,
+                    received_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                )
+            ''')
+            
+            cursor.execute('''
+                CREATE TABLE IF NOT EXISTS changelog_entries (
+                    id SERIAL PRIMARY KEY,
+                    version_id INTEGER NOT NULL,
+                    category TEXT NOT NULL CHECK(category IN ('added', 'changed', 'fixed', 'removed', 'deprecated', 'security')),
+                    description TEXT NOT NULL,
+                    FOREIGN KEY (version_id) REFERENCES changelog_versions(id) ON DELETE CASCADE
+                )
+            ''')
+            
+            cursor.execute('''
+                CREATE INDEX IF NOT EXISTS idx_changelog_versions_date 
+                ON changelog_versions(received_at DESC)
+            ''')
+            
+            cursor.execute('''
+                CREATE INDEX IF NOT EXISTS idx_changelog_entries_version 
+                ON changelog_entries(version_id)
+            ''')
+            
         else:
             # SQLite schema (original)
             cursor.execute('''
@@ -221,6 +252,37 @@ def init_compliance_database():
                     FOREIGN KEY (committee_id) REFERENCES committees(committee_id) ON DELETE CASCADE,
                     FOREIGN KEY (bill_id) REFERENCES bills(bill_id) ON DELETE CASCADE
                 )
+            ''')
+            
+            # Changelog tables (SQLite)
+            cursor.execute('''
+                CREATE TABLE IF NOT EXISTS changelog_versions (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    version TEXT NOT NULL UNIQUE,
+                    date TEXT NOT NULL,
+                    user_agent TEXT,
+                    received_at TEXT DEFAULT CURRENT_TIMESTAMP
+                )
+            ''')
+            
+            cursor.execute('''
+                CREATE TABLE IF NOT EXISTS changelog_entries (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    version_id INTEGER NOT NULL,
+                    category TEXT NOT NULL CHECK(category IN ('added', 'changed', 'fixed', 'removed', 'deprecated', 'security')),
+                    description TEXT NOT NULL,
+                    FOREIGN KEY (version_id) REFERENCES changelog_versions(id) ON DELETE CASCADE
+                )
+            ''')
+            
+            cursor.execute('''
+                CREATE INDEX IF NOT EXISTS idx_changelog_versions_date 
+                ON changelog_versions(received_at DESC)
+            ''')
+            
+            cursor.execute('''
+                CREATE INDEX IF NOT EXISTS idx_changelog_entries_version 
+                ON changelog_entries(version_id)
             ''')
         
         print(f"✅ Compliance database schema initialized ({db_type})")
