@@ -212,8 +212,8 @@ const PressPage: React.FC = () => {
 
       {/* Print Styles */}
       <style>{`
-        /* Mobile: Hide preview, show message */
-        @media (max-width: 1024px) {
+        /* Mobile: Hide preview, show message (but not when printing) */
+        @media screen and (max-width: 1024px) {
           .press-page {
             display: none !important;
           }
@@ -229,7 +229,7 @@ const PressPage: React.FC = () => {
         }
         
         /* Desktop: Show preview, hide message */
-        @media (min-width: 1025px) {
+        @media screen and (min-width: 1025px) {
           .mobile-only {
             display: none !important;
           }
@@ -404,13 +404,19 @@ const PressPage: React.FC = () => {
 
          /* Print Styles */
          @media print {
-           /* Hide navigation and buttons */
+           /* Hide navigation, buttons, and mobile message */
            .no-print,
+           .mobile-only,
            nav,
            .navbar,
            footer.footer,
            button {
              display: none !important;
+           }
+
+           /* Always show desktop press page when printing */
+           .press-page {
+             display: block !important;
            }
 
            /* Remove page margins and optimize layout */
