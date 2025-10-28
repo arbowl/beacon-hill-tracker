@@ -131,12 +131,12 @@ const CommitteeComparisonChart: React.FC<CommitteeComparisonChartProps> = ({
   }
   
   const charLimit = getCharLimit()
-  const names = displayData.map((d, idx) => {
-    const shortName = d.name.length > charLimit ? d.name.substring(0, charLimit) + '...' : d.name
-    // For horizontal bar, the highlighted committee will be at the bottom (reversed), otherwise at top
-    const isHighlighted = highlightedCommitteeId && d.committee_id === highlightedCommitteeId
-    return isHighlighted ? `<b>★ ${shortName}</b>` : shortName
-  })
+const names = displayData.map((d) => {
+  const shortName = d.name.length > charLimit ? d.name.substring(0, charLimit) + '...' : d.name;
+  // For horizontal bar, the highlighted committee will be at the bottom (reversed), otherwise at top
+  const isHighlighted = highlightedCommitteeId && d.committee_id === highlightedCommitteeId;
+  return isHighlighted ? `<b>★ ${shortName}</b>` : shortName;
+});
   
   // Store full names for hover tooltips (after reversal for horizontal bar)
   const fullNames = displayData.map(d => d.name)
