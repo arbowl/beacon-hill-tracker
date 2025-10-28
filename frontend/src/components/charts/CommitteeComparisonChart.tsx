@@ -263,14 +263,18 @@ const CommitteeComparisonChart: React.FC<CommitteeComparisonChartProps> = ({
             orientation: 'h',
             x: 0.5,
             xanchor: 'center',
-            y: isHorizontal ? (windowWidth < 640 ? -0.05 : -0.08) : 1.1,
+            y: isHorizontal 
+              ? (windowWidth < 640 ? -0.55 : -0.08) 
+              : (windowWidth < 640 ? -0.5 : 1.1),
             font: {
               size: windowWidth < 640 ? 10 : 12
             }
           },
           margin: { 
             t: 80, 
-            b: isHorizontal ? (windowWidth < 640 ? 50 : 60) : 120, 
+            b: isHorizontal 
+              ? (windowWidth < 640 ? 140 : 60) 
+              : (windowWidth < 640 ? 250 : 120), 
             l: isHorizontal ? (windowWidth < 640 ? 140 : windowWidth < 1024 ? 220 : 320) : 60, 
             r: 60 
           },
