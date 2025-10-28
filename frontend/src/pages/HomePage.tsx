@@ -149,7 +149,7 @@ const HomePage: React.FC = () => {
         </svg>
         <div>
           <div className="font-bold text-blue-900">Media & Press</div>
-          <div className="text-sm text-blue-800">Download our one-page press kit for interviews, articles, and reporting.</div>
+          <div className="text-sm text-blue-800">Download the one-page press kit for interviews, articles, and reporting.</div>
         </div>
         <div className="flex-none">
           <Link to="/press" className="btn btn-sm bg-blue-800 text-white hover:bg-blue-900">
