@@ -38,9 +38,6 @@ const DashboardPage: React.FC = () => {
   const [isLoadingFromURL, setIsLoadingFromURL] = useState(true)
   const [showCharts, setShowCharts] = useState(true)
   const [showCommitteeContact, setShowCommitteeContact] = useState(false)
-  const [isScrollingUp, setIsScrollingUp] = useState(false)
-  const [lastScrollY, setLastScrollY] = useState(0)
-  const [isSticky, setIsSticky] = useState(false)
 
   // Debounce the search term to avoid too many API calls
   const debouncedSearchTerm = useDebounce(filters.searchTerm, 500)
@@ -294,44 +291,6 @@ const DashboardPage: React.FC = () => {
   React.useEffect(() => {
     setCurrentPage(1)
   }, [debouncedFilters])
-
-  // Handle scroll behavior for filters
-  useEffect(() => {
-    let ticking = false
-    
-    const handleScroll = () => {
-      if (!ticking) {
-        window.requestAnimationFrame(() => {
-          const currentScrollY = window.scrollY
-          
-          // Determine scroll direction (only when scrolled down a bit)
-          if (currentScrollY > 150) {
-            if (currentScrollY > lastScrollY + 5) {
-              // Scrolling down - show filters
-              setIsScrollingUp(true)
-            } else if (currentScrollY < lastScrollY - 5) {
-              // Scrolling up - hide filters
-              setIsScrollingUp(false)
-            }
-          } else {
-            // Near top, always show filters
-            setIsScrollingUp(true)
-          }
-          
-          // Determine if filters are sticky (scrolled past initial position)
-          setIsSticky(currentScrollY > 150)
-          
-          setLastScrollY(currentScrollY)
-          ticking = false
-        })
-        
-        ticking = true
-      }
-    }
-    
-    window.addEventListener('scroll', handleScroll, { passive: true })
-    return () => window.removeEventListener('scroll', handleScroll)
-  }, [lastScrollY])
 
   // Sortable column header component
   const SortableHeader = ({ column, label, children }: { column: string, label?: string, children?: React.ReactNode }) => {
@@ -791,41 +750,81 @@ const DashboardPage: React.FC = () => {
         </div>
       </div>
 
-      {/* Accuracy Notice Banner */}
-      <div className="bg-base-200/50 border border-base-300 rounded-lg p-4">
-        <div className="flex items-center space-x-3">
-          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" className="stroke-base-content/60 shrink-0 w-5 h-5">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-          </svg>
-          <div className="text-sm text-base-content/80">
-            <span className="font-medium">Notice an error? Accuracy is important!</span> Shoot me an email, or submit a pull request on GitHub.
+      {/* Understanding Compliance States */}
+      <div className="card bg-base-100 shadow-md">
+        <div className="card-body">
+          <h2 className="card-title text-lg mb-3">Understanding Compliance States</h2>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="flex items-start space-x-3">
+              <div className="badge badge-success badge-lg shrink-0 mt-1">Compliant</div>
+              <div className="text-sm text-base-content/80">
+                All requirements met: 10+ days advance notice, summary posted, votes posted, and reported out.
+              </div>
+            </div>
+            <div className="flex items-start space-x-3">
+              <div className="badge badge-success badge-outline badge-lg shrink-0 mt-1">Provisional</div>
+              <div className="text-sm text-base-content/80">
+                On track or insufficient data to fully evaluate. Includes bills with adequate notice and some progress, as well as bills lacking sufficient data. Counts toward compliance.
+              </div>
+            </div>
+            <div className="flex items-start space-x-3">
+              <div className="badge badge-error badge-lg shrink-0 mt-1">Non-Compliant</div>
+              <div className="text-sm text-base-content/80">
+                Missing requirements, insufficient notice, or deadline passed without completion.
+              </div>
+            </div>
           </div>
-        </div>
-        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 w-full sm:w-auto mt-2">
-          <a href="/contact" className="btn btn-xs btn-outline">
-            Contact
-          </a>
-          <a 
-            href="https://github.com/arbowl/beacon-hill-compliance-tracker" 
-            target="_blank" 
-            rel="noopener noreferrer"
-            className="btn btn-xs btn-ghost"
-          >
-            <svg xmlns="http://www.w3.org/2000/svg" className="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 24 24">
-              <path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/>
-            </svg>
-            GitHub
-          </a>
+          <div className="mt-4 pt-4 border-t border-base-300">
+            <div className="bg-warning/10 border border-warning/30 rounded-lg p-3 mb-3">
+              <div className="flex items-start space-x-2">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" className="stroke-warning shrink-0 w-4 h-4 mt-0.5">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                </svg>
+                <div className="text-xs text-base-content/80">
+                  <strong>Disclaimer:</strong> This dashboard is a passion project and analytical tool designed to promote transparency. 
+                  While every effort is made to ensure accuracy, it should not be considered a definitive source of truth. 
+                  Please use this tool as a guide and verify critical information through official legislative sources.
+                </div>
+              </div>
+            </div>
+            <div className="text-xs text-base-content/60 flex items-center justify-between">
+              <span>
+                For detailed compliance rules and methodology, visit the <a href="/about" className="link link-primary">About page</a>.
+              </span>
+              {stats?.latest_report_date && (
+                <span className="flex items-center gap-1">
+                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" className="w-3 h-3">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" stroke="currentColor" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                  </svg>
+                  Last updated: {new Date(stats.latest_report_date).toLocaleDateString('en-US', { 
+                    year: 'numeric', 
+                    month: 'short', 
+                    day: 'numeric',
+                    hour: '2-digit',
+                    minute: '2-digit'
+                  })}
+                </span>
+              )}
+              {!stats?.latest_report_date && billsData && billsData.length > 0 && billsData[0].generated_at && (
+                <span className="flex items-center gap-1">
+                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" className="w-3 h-3">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" stroke="currentColor" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                  </svg>
+                  Data generated: {new Date(billsData[0].generated_at).toLocaleDateString('en-US', { 
+                    year: 'numeric', 
+                    month: 'short', 
+                    day: 'numeric'
+                  })}
+                </span>
+              )}
+            </div>
+          </div>
         </div>
       </div>
 
       {/* Filters Section */}
-      <div 
-        className={`sticky top-0 z-30 bg-base-100 shadow-md rounded-lg mb-8 backdrop-blur-sm bg-opacity-95 transition-all duration-300 ease-in-out ${
-          isSticky && isScrollingUp ? 'translate-y-0 opacity-100' : isSticky ? '-translate-y-full opacity-0 pointer-events-none' : 'translate-y-0 opacity-100'
-        }`}
-      >
-        <div className="card-body py-4">
+      <div className="card bg-base-100 shadow-md">
+        <div className="card-body">
           <div className="flex items-center justify-between mb-3">
             <h2 className="card-title text-lg">Filters</h2>
             <button 
@@ -843,17 +842,15 @@ const DashboardPage: React.FC = () => {
             </button>
           </div>
           
-          {/* Helper text - only show when not sticky */}
-          <div className={`overflow-hidden transition-all duration-300 ${!isSticky ? 'max-h-24 mb-4 opacity-100' : 'max-h-0 mb-0 opacity-0'}`}>
-            <div className="bg-base-200/50 p-3 rounded-lg">
-              <div className="flex items-start space-x-2">
-                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" className="stroke-primary shrink-0 w-5 h-5 mt-0.5">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                </svg>
-                <div className="text-sm text-base-content/80">
-                  Use the filters below to sort the data by title, ID, compliance state, and committee. 
-                  Any changes you make will automatically update all statistics, charts, and the bills table below.
-                </div>
+          {/* Helper text */}
+          <div className="bg-base-200/50 p-3 rounded-lg mb-4">
+            <div className="flex items-start space-x-2">
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" className="stroke-primary shrink-0 w-5 h-5 mt-0.5">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+              </svg>
+              <div className="text-sm text-base-content/80">
+                Use the filters below to sort the data by title, ID, compliance state, and committee. 
+                Any changes you make will automatically update all statistics, charts, and the bills table below.
               </div>
             </div>
           </div>
@@ -922,78 +919,6 @@ const DashboardPage: React.FC = () => {
                   </option>
                 ))}
               </select>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Understanding Compliance States */}
-      <div className="card bg-base-100 shadow-md">
-        <div className="card-body">
-          <h2 className="card-title text-lg mb-3">Understanding Compliance States</h2>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div className="flex items-start space-x-3">
-              <div className="badge badge-success badge-lg shrink-0 mt-1">Compliant</div>
-              <div className="text-sm text-base-content/80">
-                All requirements met: 10+ days advance notice, summary posted, votes posted, and reported out.
-              </div>
-            </div>
-            <div className="flex items-start space-x-3">
-              <div className="badge badge-success badge-outline badge-lg shrink-0 mt-1">Provisional</div>
-              <div className="text-sm text-base-content/80">
-                On track or insufficient data to fully evaluate. Includes bills with adequate notice and some progress, as well as bills lacking sufficient data. Counts toward compliance.
-              </div>
-            </div>
-            <div className="flex items-start space-x-3">
-              <div className="badge badge-error badge-lg shrink-0 mt-1">Non-Compliant</div>
-              <div className="text-sm text-base-content/80">
-                Missing requirements, insufficient notice, or deadline passed without completion.
-              </div>
-            </div>
-          </div>
-          <div className="mt-4 pt-4 border-t border-base-300">
-            <div className="bg-warning/10 border border-warning/30 rounded-lg p-3 mb-3">
-              <div className="flex items-start space-x-2">
-                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" className="stroke-warning shrink-0 w-4 h-4 mt-0.5">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-                </svg>
-                <div className="text-xs text-base-content/80">
-                  <strong>Disclaimer:</strong> This dashboard is a passion project and analytical tool designed to promote transparency. 
-                  While every effort is made to ensure accuracy, it should not be considered a definitive source of truth. 
-                  Please use this tool as a guide and verify critical information through official legislative sources.
-                </div>
-              </div>
-            </div>
-            <div className="text-xs text-base-content/60 flex items-center justify-between">
-              <span>
-                For detailed compliance rules and methodology, visit the <a href="/about" className="link link-primary">About page</a>.
-              </span>
-              {stats?.latest_report_date && (
-                <span className="flex items-center gap-1">
-                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" className="w-3 h-3">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" stroke="currentColor" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                  </svg>
-                  Last updated: {new Date(stats.latest_report_date).toLocaleDateString('en-US', { 
-                    year: 'numeric', 
-                    month: 'short', 
-                    day: 'numeric',
-                    hour: '2-digit',
-                    minute: '2-digit'
-                  })}
-                </span>
-              )}
-              {!stats?.latest_report_date && billsData && billsData.length > 0 && billsData[0].generated_at && (
-                <span className="flex items-center gap-1">
-                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" className="w-3 h-3">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" stroke="currentColor" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                  </svg>
-                  Data generated: {new Date(billsData[0].generated_at).toLocaleDateString('en-US', { 
-                    year: 'numeric', 
-                    month: 'short', 
-                    day: 'numeric'
-                  })}
-                </span>
-              )}
             </div>
           </div>
         </div>
@@ -1596,6 +1521,34 @@ const DashboardPage: React.FC = () => {
               </div>
             </div>
           )}
+        </div>
+      </div>
+
+      {/* Accuracy Notice Banner */}
+      <div className="bg-base-200/50 border border-base-300 rounded-lg p-4">
+        <div className="flex items-center space-x-3">
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" className="stroke-base-content/60 shrink-0 w-5 h-5">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+          </svg>
+          <div className="text-sm text-base-content/80">
+            <span className="font-medium">Notice an error? Accuracy is important!</span> Shoot me an email, or submit a pull request on GitHub.
+          </div>
+        </div>
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 w-full sm:w-auto mt-2">
+          <a href="/contact" className="btn btn-xs btn-outline">
+            Contact
+          </a>
+          <a 
+            href="https://github.com/arbowl/beacon-hill-compliance-tracker" 
+            target="_blank" 
+            rel="noopener noreferrer"
+            className="btn btn-xs btn-ghost"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" className="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 24 24">
+              <path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/>
+            </svg>
+            GitHub
+          </a>
         </div>
       </div>
 
