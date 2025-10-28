@@ -139,7 +139,7 @@ const CommitteeComparisonChart: React.FC<CommitteeComparisonChartProps> = ({
     const isHighlighted = highlightedCommitteeId && d.committee_id === highlightedCommitteeId
     // Apply formatting for highlighted committee
     if (isHighlighted) {
-      return `★ ${shortName}`
+      return `⭐ ${shortName}`
     }
     return shortName
   })
@@ -253,8 +253,13 @@ const CommitteeComparisonChart: React.FC<CommitteeComparisonChartProps> = ({
             title: isHorizontal ? '' : 'Number of Bills',
             gridcolor: '#f3f4f6',
             color: '#6b7280',
+            automargin: true,
+            type: isHorizontal ? 'category' : 'linear',
+            categoryorder: isHorizontal ? 'array' : undefined,
+            categoryarray: isHorizontal ? names : undefined,
             tickfont: {
-              size: windowWidth < 640 ? 9 : 11
+              size: windowWidth < 640 ? 9 : 11,
+              family: 'system-ui, -apple-system, sans-serif'
             }
           },
           showlegend: true,
