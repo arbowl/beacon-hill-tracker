@@ -101,10 +101,11 @@ const CommitteeComparisonChart: React.FC<CommitteeComparisonChartProps> = ({
   
   // If a committee is highlighted, ensure it's in the display data and pin it to the top
   if (highlightedCommitteeId) {
-    const highlightedCommittee = sortedData.find(c => c.committee_id === highlightedCommitteeId)
+    // Search in original data array (not filteredData) to find committees even if they have 0 bills
+    const highlightedCommittee = data.find(c => c.committee_id === highlightedCommitteeId)
     const isAlreadyInDisplay = displayData.some(c => c.committee_id === highlightedCommitteeId)
     
-    if (highlightedCommittee) {
+    if (highlightedCommittee && highlightedCommittee.total_bills > 0) {
       if (isAlreadyInDisplay) {
         // Remove from current position and add to top
         displayData = [
