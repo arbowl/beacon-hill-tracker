@@ -99,22 +99,18 @@ const CommitteeComparisonChart: React.FC<CommitteeComparisonChartProps> = ({
       chartTitle = ``
   }
   
-  // If a committee is highlighted, ensure it's in the display data and pin it to the top
+  // If a committee is highlighted but not in the display (due to limit), include it
   if (highlightedCommitteeId) {
-    // Search in original data array (not filteredData) to find committees even if they have 0 bills
-    const highlightedCommittee = data.find(c => c.committee_id === highlightedCommitteeId)
     const isAlreadyInDisplay = displayData.some(c => c.committee_id === highlightedCommitteeId)
     
-    if (highlightedCommittee && highlightedCommittee.total_bills > 0) {
-      if (isAlreadyInDisplay) {
-        // Remove from current position and add to top
-        displayData = [
-          highlightedCommittee,
-          ...displayData.filter(c => c.committee_id !== highlightedCommitteeId)
-        ]
-      } else {
-        // Add to top even if it wasn't in the limited view
-        displayData = [highlightedCommittee, ...displayData]
+    if (!isAlreadyInDisplay) {
+      // Find the highlighted committee in the full sorted data
+      const highlightedCommittee = sortedData.find(c => c.committee_id === highlightedCommitteeId)
+      
+      if (highlightedCommittee && highlightedCommittee.total_bills > 0) {
+        // Add it to the display data and re-sort to maintain compliance rate order
+        displayData = [...displayData, highlightedCommittee]
+        displayData.sort((a, b) => b.compliance_rate - a.compliance_rate)
       }
     }
   }
