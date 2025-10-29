@@ -138,7 +138,7 @@ const DashboardPage: React.FC = () => {
         : 0
       
       return {
-        title: 'Global Overview',
+        title: 'All Committees',
         total_committees: stats.total_committees,
         total_bills: total,
         compliant_bills: compliant,
@@ -764,7 +764,7 @@ const DashboardPage: React.FC = () => {
             <div className="flex items-start space-x-3">
               <div className="badge badge-success badge-outline badge-lg shrink-0 mt-1">Provisional</div>
               <div className="text-sm text-base-content/80">
-                On track or insufficient data to fully evaluate. Includes bills with adequate notice and some progress, as well as bills lacking sufficient data. Counts toward compliance.
+                On-track to be fully compliant; some requirements still pending but within allowable timeframes, and no violations detected.
               </div>
             </div>
             <div className="flex items-start space-x-3">
@@ -1197,7 +1197,7 @@ const DashboardPage: React.FC = () => {
              <div className="card bg-base-100 shadow-md lg:col-span-1">
                <div className="card-body">
                  <h2 className="card-title">
-                   {contextualStats?.title === 'Global Overview' 
+                   {contextualStats?.title === 'All Committees' 
                      ? 'Compliance Overview' 
                      : `Compliance Overview - ${contextualStats?.title || 'Loading...'}`}
                  </h2>
