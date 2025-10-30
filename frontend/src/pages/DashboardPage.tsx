@@ -1,11 +1,12 @@
 import React, { useState, useMemo, useEffect } from 'react'
 import { useSearchParams } from 'react-router-dom'
-import { useGlobalStats, useCommittees, useBills, useCommitteeStats, useSavedViews, useCommitteeDetails, useDebounce } from '../hooks/useData'
+import { useGlobalStats, useCommittees, useBills, useCommitteeStats, useSavedViews, useCommitteeDetails, useDebounce, useCommitteeMetadata, useGlobalMetadata } from '../hooks/useData'
 import { useAuth } from '../contexts/AuthContext'
 import { DashboardFilters, Bill } from '../types'
 import { analyzeReasons, getTopViolationsForCommittee } from '../utils/reasonParser'
 import { ComplianceOverviewChart, CommitteeComparisonChart, ViolationAnalysisChart } from '../components/charts'
 import { getEffectiveState, getStateLabel, getStateBadgeClass } from '../utils/billStatus'
+import CommitteeChangeWidget from '../components/CommitteeChangeWidget'
 
 const DashboardPage: React.FC = () => {
   const { user } = useAuth()
@@ -116,6 +117,12 @@ const DashboardPage: React.FC = () => {
   // Fetch committee details when a single committee is selected
   const selectedCommitteeId = filters.committees.length === 1 ? filters.committees[0] : null
   const { committee: selectedCommitteeDetails } = useCommitteeDetails(selectedCommitteeId)
+  const { metadata: committeeMetadata, loading: metadataLoading } = useCommitteeMetadata(selectedCommitteeId)
+  const { metadata: globalMetadata, loading: globalMetadataLoading } = useGlobalMetadata()
+  
+  // Use committee metadata if a committee is selected, otherwise use global aggregated metadata
+  const displayMetadata = selectedCommitteeId ? committeeMetadata : globalMetadata
+  const displayMetadataLoading = selectedCommitteeId ? metadataLoading : globalMetadataLoading
 
   // Calculate contextual stats based on current filters
   const contextualStats = useMemo(() => {
@@ -1290,7 +1297,7 @@ const DashboardPage: React.FC = () => {
            </div>
          </div>
 
-         {/* Results Summary */}
+      {/* Results Summary */}
       {billsData && (
         <div className="alert alert-info">
           <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" className="stroke-current shrink-0 w-6 h-6">
@@ -1523,6 +1530,15 @@ const DashboardPage: React.FC = () => {
           )}
         </div>
       </div>
+
+      {/* Committee Change Widget - shown when committee selected or for global view */}
+      {(selectedCommitteeId || displayMetadata?.diff_report) && (
+        <CommitteeChangeWidget
+          diffReport={displayMetadata?.diff_report || null}
+          analysis={displayMetadata?.analysis || null}
+          loading={displayMetadataLoading}
+        />
+      )}
 
       {/* Accuracy Notice Banner */}
       <div className="bg-base-200/50 border border-base-300 rounded-lg p-4">

@@ -151,6 +151,25 @@ export interface PaginatedResponse<T> {
   total_pages?: number
 }
 
+// Compliance Scan Metadata Types (for new API format)
+export interface DiffReport {
+  time_interval: string
+  previous_date: string
+  current_date: string
+  compliance_delta: number
+  new_bills_count: number
+  new_bills: string[]
+  bills_with_new_hearings: string[]
+  bills_reported_out: string[]
+  bills_with_new_summaries: string[]
+}
+
+export interface ComplianceReportResponse {
+  bills: Bill[]
+  diff_report?: DiffReport | null
+  analysis?: string | null
+}
+
 // Filter and Search Types
 export interface DashboardFilters {
   committees: string[]

@@ -5,7 +5,8 @@ import {
   Bill, 
   GlobalStats, 
   DashboardFilters,
-  SavedView
+  SavedView,
+  DiffReport
 } from '../types'
 
 // Custom hook for fetching committees
@@ -186,7 +187,9 @@ export const useCommitteeCompliance = (committeeId?: string) => {
         setLoading(true)
         setError(null)
         const response = await apiService.getCommitteeCompliance(committeeId)
-        setComplianceData(response.data)
+        // Handle both old format (array) and new format (object with bills array)
+        const complianceDataArray = response.data.bills || response.data || []
+        setComplianceData(Array.isArray(complianceDataArray) ? complianceDataArray : [])
       } catch (err: any) {
         setError(err.response?.data?.error || 'Failed to fetch compliance data')
       } finally {
@@ -235,7 +238,9 @@ export const useComplianceData = (filters?: DashboardFilters) => {
         }
 
         const response = await apiService.getComplianceData(params)
-        setComplianceData(response.data)
+        // Handle both old format (array) and new format (object with bills array)
+        const complianceDataArray = response.data.bills || response.data || []
+        setComplianceData(Array.isArray(complianceDataArray) ? complianceDataArray : [])
       } catch (err: any) {
         setError(err.response?.data?.error || 'Failed to fetch compliance data')
       } finally {
@@ -500,4 +505,69 @@ export const useCommitteeDetails = (committeeId: string | null) => {
   }, [committeeId])
 
   return { committee, loading, error }
+}
+
+// Custom hook for fetching committee scan metadata (diff_report and analysis)
+export const useCommitteeMetadata = (committeeId: string | null) => {
+  const [metadata, setMetadata] = useState<{ diff_report: DiffReport | null; analysis: string | null; scan_date: string | null } | null>(null)
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+
+  useEffect(() => {
+    if (!committeeId) {
+      setMetadata(null)
+      setLoading(false)
+      setError(null)
+      return
+    }
+
+    const fetchMetadata = async () => {
+      try {
+        setLoading(true)
+        setError(null)
+        const response = await apiService.getCommitteeMetadata(committeeId)
+        console.log('Committee metadata response:', response.data)
+        setMetadata(response.data)
+      } catch (err: any) {
+        console.error('Error fetching committee metadata:', err)
+        setError(err.response?.data?.error || 'Failed to fetch committee metadata')
+        setMetadata(null)
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    fetchMetadata()
+  }, [committeeId])
+
+  return { metadata, loading, error }
+}
+
+// Hook for fetching global aggregated metadata (all committees)
+export const useGlobalMetadata = () => {
+  const [metadata, setMetadata] = useState<{ diff_report: DiffReport | null; analysis: string | null; scan_date: string | null } | null>(null)
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+
+  useEffect(() => {
+    const fetchMetadata = async () => {
+      try {
+        setLoading(true)
+        setError(null)
+        const response = await apiService.getGlobalMetadata()
+        console.log('Global metadata response:', response.data)
+        setMetadata(response.data)
+      } catch (err: any) {
+        console.error('Error fetching global metadata:', err)
+        setError(err.response?.data?.error || 'Failed to fetch global metadata')
+        setMetadata(null)
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    fetchMetadata()
+  }, [])
+
+  return { metadata, loading, error }
 }

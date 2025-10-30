@@ -63,6 +63,8 @@ export const apiService = {
   // Compliance data
   getComplianceData: (params?: any) => api.get('/compliance', { params }),
   getCommitteeCompliance: (committeeId: string) => api.get(`/compliance/${committeeId}`),
+  getCommitteeMetadata: (committeeId: string) => api.get(`/compliance/${committeeId}/metadata`),
+  getGlobalMetadata: () => api.get('/compliance/metadata'),
   
   // Export
   exportData: (params?: any) => api.get('/export', { params, responseType: 'blob' }),

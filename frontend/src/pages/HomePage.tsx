@@ -1,13 +1,15 @@
 import { Link } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
-import { useGlobalStats, useBills } from '../hooks/useData'
+import { useGlobalStats, useBills, useGlobalMetadata } from '../hooks/useData'
 import { useMemo } from 'react'
 import { getEffectiveState } from '../utils/billStatus'
+import CommitteeChangeWidget from '../components/CommitteeChangeWidget'
 
 const HomePage: React.FC = () => {
   const { user } = useAuth()
   const { data: stats, loading: statsLoading, error: statsError } = useGlobalStats()
   const { bills: billsData, loading: billsLoading } = useBills()
+  const { metadata: globalMetadata, loading: globalMetadataLoading } = useGlobalMetadata()
 
   // Recalculate stats with provisional logic
   const adjustedStats = useMemo(() => {
@@ -141,6 +143,15 @@ const HomePage: React.FC = () => {
           </>
         )}
       </div>
+
+      {/* Recent Changes Widget - Global aggregated stats */}
+      {globalMetadata?.diff_report && (
+        <CommitteeChangeWidget
+          diffReport={globalMetadata.diff_report}
+          analysis={globalMetadata.analysis}
+          loading={globalMetadataLoading}
+        />
+      )}
 
       {/* Press Kit Banner */}
       <div className="alert bg-gradient-to-r from-blue-50 to-amber-50 border-l-4 border-blue-800">
