@@ -562,6 +562,192 @@ def create_app():
         except Exception as e:
             return jsonify({'error': str(e)}), 500
 
+    # Scan metadata endpoint - get latest diff_report and analysis for a committee
+    @flask_app.route('/api/compliance/<committee_id>/metadata', methods=['GET'])
+    def get_committee_metadata(committee_id):
+        """Get latest scan metadata (diff_report and analysis) for a committee"""
+        try:
+            with get_db_connection() as conn:
+                cursor = conn.cursor()
+                db_type = get_database_type()
+                placeholder = '%s' if db_type == 'postgresql' else '?'
+                
+                # Debug: Check if table exists
+                if db_type == 'sqlite':
+                    cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='compliance_scan_metadata'")
+                    table_check = cursor.fetchone()
+                    logger = logging.getLogger(__name__)
+                    if not table_check:
+                        logger.error(f"compliance_scan_metadata table does not exist for committee {committee_id}")
+                
+                # Get the latest scan metadata for this committee
+                cursor.execute(f'''
+                    SELECT diff_report, analysis, scan_date
+                    FROM compliance_scan_metadata
+                    WHERE committee_id = {placeholder}
+                    ORDER BY scan_date DESC
+                    LIMIT 1
+                ''', (committee_id,))
+                
+                result = cursor.fetchone()
+                
+                if not result:
+                    return jsonify({
+                        'diff_report': None,
+                        'analysis': None,
+                        'scan_date': None
+                    }), 200
+                
+                if db_type == 'postgresql':
+                    diff_report_json = result[0]
+                    analysis = result[1]
+                    scan_date = result[2]
+                else:
+                    diff_report_json = result[0]
+                    analysis = result[1]
+                    scan_date = result[2]
+                
+                # Parse diff_report JSON if it exists
+                diff_report = None
+                if diff_report_json:
+                    try:
+                        diff_report = json.loads(diff_report_json) if isinstance(diff_report_json, str) else diff_report_json
+                    except (json.JSONDecodeError, TypeError):
+                        diff_report = None
+                
+                return jsonify({
+                    'diff_report': diff_report,
+                    'analysis': analysis,
+                    'scan_date': scan_date.isoformat() if hasattr(scan_date, 'isoformat') else scan_date
+                }), 200
+        
+        except Exception as e:
+            logger = logging.getLogger(__name__)
+            logger.error(f"Error fetching committee metadata for {committee_id}: {str(e)}", exc_info=True)
+            # Check if table exists
+            try:
+                cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='compliance_scan_metadata'")
+                table_exists = cursor.fetchone() is not None
+                if not table_exists:
+                    logger.error("compliance_scan_metadata table does not exist! Database schema may need to be initialized.")
+            except Exception:
+                pass
+            return jsonify({'error': str(e)}), 500
+
+    # Global aggregated metadata endpoint - sums stats across all committees
+    @flask_app.route('/api/compliance/metadata', methods=['GET'])
+    def get_global_metadata():
+        """Get aggregated scan metadata (diff_report summed across all committees)"""
+        try:
+            with get_db_connection() as conn:
+                cursor = conn.cursor()
+                db_type = get_database_type()
+                
+                # Get the latest scan metadata for each committee
+                cursor.execute('''
+                    SELECT committee_id, diff_report, scan_date
+                    FROM compliance_scan_metadata
+                    WHERE diff_report IS NOT NULL
+                    ORDER BY committee_id, scan_date DESC
+                ''')
+                
+                results = cursor.fetchall()
+                
+                if not results:
+                    return jsonify({
+                        'diff_report': None,
+                        'analysis': None,
+                        'scan_date': None
+                    }), 200
+                
+                # Group by committee_id and get the latest for each
+                latest_by_committee = {}
+                for result in results:
+                    committee_id = result[0]
+                    diff_report_json = result[1]
+                    scan_date = result[2]
+                    
+                    if committee_id not in latest_by_committee:
+                        # Parse diff_report
+                        try:
+                            if db_type == 'postgresql':
+                                diff_report = diff_report_json if isinstance(diff_report_json, dict) else json.loads(diff_report_json)
+                            else:
+                                diff_report = json.loads(diff_report_json) if isinstance(diff_report_json, str) else diff_report_json
+                            
+                            if diff_report:
+                                latest_by_committee[committee_id] = {
+                                    'diff_report': diff_report,
+                                    'scan_date': scan_date
+                                }
+                        except (json.JSONDecodeError, TypeError):
+                            continue
+                
+                # Aggregate all diff_reports
+                aggregated = {
+                    'time_interval': None,
+                    'previous_date': None,
+                    'current_date': None,
+                    'compliance_delta': 0.0,
+                    'new_bills_count': 0,
+                    'new_bills': [],
+                    'bills_with_new_hearings': [],
+                    'bills_reported_out': [],
+                    'bills_with_new_summaries': []
+                }
+                
+                latest_scan_date = None
+                for committee_data in latest_by_committee.values():
+                    dr = committee_data['diff_report']
+                    
+                    # Sum numeric values
+                    if dr.get('compliance_delta') is not None:
+                        aggregated['compliance_delta'] += dr['compliance_delta']
+                    if dr.get('new_bills_count') is not None:
+                        aggregated['new_bills_count'] += dr['new_bills_count']
+                    
+                    # Collect unique bill IDs
+                    if dr.get('new_bills'):
+                        aggregated['new_bills'].extend(dr['new_bills'])
+                    if dr.get('bills_with_new_hearings'):
+                        aggregated['bills_with_new_hearings'].extend(dr['bills_with_new_hearings'])
+                    if dr.get('bills_reported_out'):
+                        aggregated['bills_reported_out'].extend(dr['bills_reported_out'])
+                    if dr.get('bills_with_new_summaries'):
+                        aggregated['bills_with_new_summaries'].extend(dr['bills_with_new_summaries'])
+                    
+                    # Use first time_interval, previous_date, current_date (they should be consistent)
+                    if not aggregated['time_interval'] and dr.get('time_interval'):
+                        aggregated['time_interval'] = dr['time_interval']
+                    if not aggregated['previous_date'] and dr.get('previous_date'):
+                        aggregated['previous_date'] = dr['previous_date']
+                    if not aggregated['current_date'] and dr.get('current_date'):
+                        aggregated['current_date'] = dr['current_date']
+                    
+                    # Track latest scan date
+                    scan_date = committee_data['scan_date']
+                    if scan_date:
+                        scan_date_str = scan_date.isoformat() if hasattr(scan_date, 'isoformat') else str(scan_date)
+                        if not latest_scan_date or scan_date_str > latest_scan_date:
+                            latest_scan_date = scan_date_str
+                
+                # Remove duplicates from lists
+                aggregated['new_bills'] = list(set(aggregated['new_bills']))
+                aggregated['bills_with_new_hearings'] = list(set(aggregated['bills_with_new_hearings']))
+                aggregated['bills_reported_out'] = list(set(aggregated['bills_reported_out']))
+                aggregated['bills_with_new_summaries'] = list(set(aggregated['bills_with_new_summaries']))
+                
+                return jsonify({
+                    'diff_report': aggregated,
+                    'analysis': None,  # No analysis for aggregated view
+                    'scan_date': latest_scan_date
+                }), 200
+        
+        except Exception as e:
+            logger = logging.getLogger(__name__)
+            logger.error(f"Error fetching global metadata: {str(e)}", exc_info=True)
+            return jsonify({'error': str(e)}), 500
+
     # Data ingestion endpoints
     @flask_app.route('/ingest/cache', methods=['POST'])
     def ingest_cache():
@@ -640,6 +826,12 @@ def create_app():
             committee_id = data.get('committee_id') or request.args.get('committee_id')
             logger.info(f"Committee ID: {committee_id}")
             
+            # Debug: Log top-level keys to see what we received
+            logger.info(f"Top-level keys in data: {list(data.keys())}")
+            logger.info(f"Has 'bills' key: {'bills' in data}")
+            logger.info(f"Has 'diff_report' key: {'diff_report' in data}")
+            logger.info(f"Has 'analysis' key: {'analysis' in data}")
+            
             if not committee_id:
                 logger.error("No committee_id provided")
                 return jsonify({
@@ -647,19 +839,47 @@ def create_app():
                     "message": "committee_id is required"
                 }), 400
 
-            # Extract items/bills array
-            items = data.get('items', data.get('bills', []))
-            logger.info(f"Number of items to ingest: {len(items)}")
+            # Extract items/bills array - handle both old and new formats
+            # Old format: data is array directly, or has 'items' or 'bills' array
+            # New format: has 'bills' array, optional 'diff_report' and 'analysis'
+            items = None
+            diff_report = None
+            analysis = None
             
-            if not isinstance(items, list):
-                logger.error("Items is not a list")
+            # Check if data itself is an array (old format)
+            if isinstance(data, list):
+                items = data
+            else:
+                # Check for new format with bills, diff_report, analysis
+                # First check if 'bills' key exists (could be new or old format)
+                if 'bills' in data and isinstance(data['bills'], list):
+                    items = data['bills']
+                    # Check if this is the new format (has diff_report or analysis at top level)
+                    if 'diff_report' in data or 'analysis' in data:
+                        diff_report = data.get('diff_report')  # Can be None
+                        analysis = data.get('analysis')  # Can be None
+                        logger.info(f"New format detected: has diff_report={diff_report is not None}, analysis={analysis is not None}")
+                        if diff_report:
+                            logger.info(f"Diff report keys: {list(diff_report.keys()) if isinstance(diff_report, dict) else 'not a dict'}")
+                # Fall back to old format: 'items' or 'bills' as direct key
+                elif 'items' in data and isinstance(data['items'], list):
+                    items = data['items']
+                elif 'bills' in data and isinstance(data['bills'], list):
+                    items = data['bills']
+            
+            if items is None:
+                logger.error("Could not find 'items' or 'bills' array in data")
                 return jsonify({
                     "status": "error",
                     "message": "Expected 'items' or 'bills' to be an array"
                 }), 400
+            
+            logger.info(f"Number of items to ingest: {len(items)}")
+            if diff_report:
+                logger.info(f"Diff report present with compliance_delta: {diff_report.get('compliance_delta')}")
 
             logger.info("Calling import_compliance_report...")
-            result = import_compliance_report(committee_id, items)
+            result = import_compliance_report(committee_id, items, diff_report, analysis)
             logger.info(f"Import result: {result}")
             
             if result['status'] == 'success':
@@ -1209,7 +1429,7 @@ def import_changelog_data(data):
             'message': f"Failed to import changelog: {str(e)}"
         }
 
-def import_compliance_report(committee_id, bills_data):
+def import_compliance_report(committee_id, bills_data, diff_report=None, analysis=None):
     """Import compliance report data for a specific committee"""
     logger = logging.getLogger(__name__)
     logger.info(f"Starting compliance report import for committee {committee_id}")
@@ -1364,6 +1584,46 @@ def import_compliance_report(committee_id, bills_data):
                             datetime.utcnow().isoformat() + 'Z'
                         ))
                 imported_count += 1
+
+            # Store diff_report and analysis metadata if present
+            if diff_report is not None or analysis is not None:
+                logger.info("Storing scan metadata (diff_report and/or analysis)")
+                try:
+                    scan_date = datetime.utcnow().isoformat() + 'Z'
+                    
+                    # Serialize diff_report to JSON string for storage
+                    diff_report_json = None
+                    if diff_report is not None:
+                        diff_report_json = json.dumps(diff_report)
+                    
+                    if db_type == 'postgresql':
+                        # PostgreSQL: Store as JSONB (cast string to jsonb)
+                        cursor.execute(f'''
+                            INSERT INTO compliance_scan_metadata 
+                            (committee_id, scan_date, diff_report, analysis)
+                            VALUES ({placeholder}, {placeholder}, {placeholder}::jsonb, {placeholder})
+                        ''', (
+                            committee_id,
+                            scan_date,
+                            diff_report_json,
+                            analysis
+                        ))
+                    else:
+                        # SQLite: Store as TEXT
+                        cursor.execute('''
+                            INSERT INTO compliance_scan_metadata 
+                            (committee_id, scan_date, diff_report, analysis)
+                            VALUES (?, ?, ?, ?)
+                        ''', (
+                            committee_id,
+                            scan_date,
+                            diff_report_json,
+                            analysis
+                        ))
+                    logger.info(f"Successfully stored scan metadata for committee {committee_id}")
+                except Exception as metadata_error:
+                    logger.error(f"Failed to store scan metadata for committee {committee_id}: {str(metadata_error)}", exc_info=True)
+                    # Don't fail the whole import if metadata storage fails
 
             conn.commit()  # Explicit commit
             logger.info(f"Successfully imported {imported_count} bills for committee {committee_id}")

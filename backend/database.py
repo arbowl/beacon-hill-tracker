@@ -192,6 +192,23 @@ def init_compliance_database():
                 ON changelog_entries(version_id)
             ''')
             
+            # Compliance scan metadata table (stores diff_report and analysis)
+            cursor.execute('''
+                CREATE TABLE IF NOT EXISTS compliance_scan_metadata (
+                    id SERIAL PRIMARY KEY,
+                    committee_id TEXT NOT NULL,
+                    scan_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    diff_report JSONB,
+                    analysis TEXT,
+                    FOREIGN KEY (committee_id) REFERENCES committees(committee_id) ON DELETE CASCADE
+                )
+            ''')
+            
+            cursor.execute('''
+                CREATE INDEX IF NOT EXISTS idx_compliance_scan_metadata_committee 
+                ON compliance_scan_metadata(committee_id, scan_date DESC)
+            ''')
+            
         else:
             # SQLite schema (original)
             cursor.execute('''
@@ -283,6 +300,23 @@ def init_compliance_database():
             cursor.execute('''
                 CREATE INDEX IF NOT EXISTS idx_changelog_entries_version 
                 ON changelog_entries(version_id)
+            ''')
+            
+            # Compliance scan metadata table (stores diff_report and analysis)
+            cursor.execute('''
+                CREATE TABLE IF NOT EXISTS compliance_scan_metadata (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    committee_id TEXT NOT NULL,
+                    scan_date TEXT DEFAULT CURRENT_TIMESTAMP,
+                    diff_report TEXT,
+                    analysis TEXT,
+                    FOREIGN KEY (committee_id) REFERENCES committees(committee_id) ON DELETE CASCADE
+                )
+            ''')
+            
+            cursor.execute('''
+                CREATE INDEX IF NOT EXISTS idx_compliance_scan_metadata_committee 
+                ON compliance_scan_metadata(committee_id, scan_date DESC)
             ''')
         
         print(f"✅ Compliance database schema initialized ({db_type})")
