@@ -696,13 +696,18 @@ def create_app():
                     'bills_with_new_summaries': []
                 }
                 
+                # Track count for averaging compliance_delta
+                compliance_delta_count = 0
+                compliance_delta_sum = 0.0
+                
                 latest_scan_date = None
                 for committee_data in latest_by_committee.values():
                     dr = committee_data['diff_report']
                     
-                    # Sum numeric values
+                    # Average compliance_delta (track count and sum separately)
                     if dr.get('compliance_delta') is not None:
-                        aggregated['compliance_delta'] += dr['compliance_delta']
+                        compliance_delta_sum += dr['compliance_delta']
+                        compliance_delta_count += 1
                     if dr.get('new_bills_count') is not None:
                         aggregated['new_bills_count'] += dr['new_bills_count']
                     
@@ -730,6 +735,12 @@ def create_app():
                         scan_date_str = scan_date.isoformat() if hasattr(scan_date, 'isoformat') else str(scan_date)
                         if not latest_scan_date or scan_date_str > latest_scan_date:
                             latest_scan_date = scan_date_str
+                
+                # Calculate average compliance_delta
+                if compliance_delta_count > 0:
+                    aggregated['compliance_delta'] = compliance_delta_sum / compliance_delta_count
+                else:
+                    aggregated['compliance_delta'] = None
                 
                 # Remove duplicates from lists
                 aggregated['new_bills'] = list(set(aggregated['new_bills']))
