@@ -162,6 +162,7 @@ export interface DiffReport {
   bills_with_new_hearings: string[]
   bills_reported_out: string[]
   bills_with_new_summaries: string[]
+  bills_with_new_votes: string[]
 }
 
 export interface ComplianceReportResponse {
