@@ -643,13 +643,29 @@ def create_app():
                 cursor = conn.cursor()
                 db_type = get_database_type()
                 
-                # Get the latest scan metadata for each committee
-                cursor.execute('''
-                    SELECT committee_id, diff_report, scan_date
-                    FROM compliance_scan_metadata
-                    WHERE diff_report IS NOT NULL
-                    ORDER BY committee_id, scan_date DESC
-                ''')
+                # Optimized query: Get only the latest scan metadata for each committee
+                # This avoids fetching all historical records and filtering in Python
+                if db_type == 'postgresql':
+                    # PostgreSQL: Use DISTINCT ON for efficient latest-per-group query
+                    cursor.execute('''
+                        SELECT DISTINCT ON (committee_id) 
+                            committee_id, diff_report, scan_date
+                        FROM compliance_scan_metadata
+                        WHERE diff_report IS NOT NULL
+                        ORDER BY committee_id, scan_date DESC
+                    ''')
+                else:
+                    # SQLite: Use window function to get latest per committee
+                    cursor.execute('''
+                        SELECT committee_id, diff_report, scan_date
+                        FROM (
+                            SELECT committee_id, diff_report, scan_date,
+                                   ROW_NUMBER() OVER (PARTITION BY committee_id ORDER BY scan_date DESC) as rn
+                            FROM compliance_scan_metadata
+                            WHERE diff_report IS NOT NULL
+                        ) ranked
+                        WHERE rn = 1
+                    ''')
                 
                 results = cursor.fetchall()
                 
@@ -660,28 +676,27 @@ def create_app():
                         'scan_date': None
                     }), 200
                 
-                # Group by committee_id and get the latest for each
+                # Parse diff_reports (no need to group since SQL already filtered)
                 latest_by_committee = {}
                 for result in results:
                     committee_id = result[0]
                     diff_report_json = result[1]
                     scan_date = result[2]
                     
-                    if committee_id not in latest_by_committee:
-                        # Parse diff_report
-                        try:
-                            if db_type == 'postgresql':
-                                diff_report = diff_report_json if isinstance(diff_report_json, dict) else json.loads(diff_report_json)
-                            else:
-                                diff_report = json.loads(diff_report_json) if isinstance(diff_report_json, str) else diff_report_json
-                            
-                            if diff_report:
-                                latest_by_committee[committee_id] = {
-                                    'diff_report': diff_report,
-                                    'scan_date': scan_date
-                                }
-                        except (json.JSONDecodeError, TypeError):
-                            continue
+                    # Parse diff_report
+                    try:
+                        if db_type == 'postgresql':
+                            diff_report = diff_report_json if isinstance(diff_report_json, dict) else json.loads(diff_report_json)
+                        else:
+                            diff_report = json.loads(diff_report_json) if isinstance(diff_report_json, str) else diff_report_json
+                        
+                        if diff_report:
+                            latest_by_committee[committee_id] = {
+                                'diff_report': diff_report,
+                                'scan_date': scan_date
+                            }
+                    except (json.JSONDecodeError, TypeError):
+                        continue
                 
                 # Aggregate all diff_reports
                 aggregated = {
@@ -693,7 +708,8 @@ def create_app():
                     'new_bills': [],
                     'bills_with_new_hearings': [],
                     'bills_reported_out': [],
-                    'bills_with_new_summaries': []
+                    'bills_with_new_summaries': [],
+                    'bills_with_new_votes': []
                 }
                 
                 # Track count for averaging compliance_delta
@@ -720,6 +736,8 @@ def create_app():
                         aggregated['bills_reported_out'].extend(dr['bills_reported_out'])
                     if dr.get('bills_with_new_summaries'):
                         aggregated['bills_with_new_summaries'].extend(dr['bills_with_new_summaries'])
+                    if dr.get('bills_with_new_votes'):
+                        aggregated['bills_with_new_votes'].extend(dr['bills_with_new_votes'])
                     
                     # Use first time_interval, previous_date, current_date (they should be consistent)
                     if not aggregated['time_interval'] and dr.get('time_interval'):
@@ -747,6 +765,7 @@ def create_app():
                 aggregated['bills_with_new_hearings'] = list(set(aggregated['bills_with_new_hearings']))
                 aggregated['bills_reported_out'] = list(set(aggregated['bills_reported_out']))
                 aggregated['bills_with_new_summaries'] = list(set(aggregated['bills_with_new_summaries']))
+                aggregated['bills_with_new_votes'] = list(set(aggregated['bills_with_new_votes']))
                 
                 return jsonify({
                     'diff_report': aggregated,
