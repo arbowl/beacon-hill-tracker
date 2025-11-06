@@ -11,7 +11,6 @@ const HomePage: React.FC = () => {
   // Use stats directly from API (same as DashboardPage)
   // Do NOT recalculate from bills - that would only use paginated data (25 bills by default)
   // The backend /api/stats endpoint already returns correct aggregated stats for all bills
-  const displayStats = stats
 
   return (
     <div className="space-y-8">
@@ -62,8 +61,8 @@ const HomePage: React.FC = () => {
 
       {/* Real-time Stats */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-        {statsLoading ? (
-          // Loading skeleton - only show while stats are loading
+        {statsLoading || !stats ? (
+          // Loading skeleton - only show while stats are loading or not available
           Array.from({ length: 4 }).map((_, i) => (
             <div key={i} className="card bg-base-100 shadow-md">
               <div className="card-body text-center">
@@ -81,7 +80,7 @@ const HomePage: React.FC = () => {
             <div className="card bg-base-100 shadow-md">
               <div className="card-body text-center">
                 <div className="text-3xl font-bold text-primary mb-2">
-                  {displayStats?.total_committees || 0}
+                  {stats.total_committees || 0}
                 </div>
                 <div className="text-base-content/70">Committees Tracked</div>
               </div>
@@ -90,7 +89,7 @@ const HomePage: React.FC = () => {
             <div className="card bg-base-100 shadow-md">
               <div className="card-body text-center">
                 <div className="text-3xl font-bold text-success mb-2">
-                  {displayStats?.total_bills || 0}
+                  {stats.total_bills || 0}
                 </div>
                 <div className="text-base-content/70">Bills Analyzed</div>
               </div>
@@ -99,11 +98,11 @@ const HomePage: React.FC = () => {
             <div className="card bg-base-100 shadow-md">
               <div className="card-body text-center">
                 <div className={`text-3xl font-bold mb-2 ${
-                  (displayStats?.overall_compliance_rate || 0) >= 80 ? 'text-success' :
-                  (displayStats?.overall_compliance_rate || 0) >= 60 ? 'text-warning' :
+                  (stats.overall_compliance_rate || 0) >= 80 ? 'text-success' :
+                  (stats.overall_compliance_rate || 0) >= 60 ? 'text-warning' :
                   'text-error'
                 }`}>
-                  {displayStats?.overall_compliance_rate || 0}%
+                  {stats.overall_compliance_rate || 0}%
                 </div>
                 <div className="text-base-content/70">Compliance Rate</div>
               </div>
@@ -112,7 +111,7 @@ const HomePage: React.FC = () => {
             <div className="card bg-base-100 shadow-md">
               <div className="card-body text-center">
                 <div className="text-3xl font-bold text-error mb-2">
-                  {displayStats?.non_compliant_bills || 0}
+                  {stats.non_compliant_bills || 0}
                 </div>
                 <div className="text-base-content/70">Non-Compliant Bills</div>
               </div>
@@ -229,7 +228,7 @@ const HomePage: React.FC = () => {
               <div>
                 <div className="font-medium">Database</div>
                 <div className="text-sm text-base-content/70">
-                  {displayStats ? `Last updated: ${displayStats.latest_report_date || 'Recently'}` : 'Connected'}
+                  {stats ? `Last updated: ${stats.latest_report_date || 'Recently'}` : 'Connected'}
                 </div>
               </div>
             </div>
