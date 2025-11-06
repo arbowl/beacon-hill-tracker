@@ -168,6 +168,12 @@ def init_compliance_database():
                 ON bill_compliance(bill_id, committee_id, generated_at DESC)
             ''')
             
+            # Index for state filtering (PostgreSQL)
+            cursor.execute('''
+                CREATE INDEX IF NOT EXISTS idx_bill_compliance_state 
+                ON bill_compliance(state)
+            ''')
+            
             # Changelog tables (PostgreSQL)
             cursor.execute('''
                 CREATE TABLE IF NOT EXISTS changelog_versions (
@@ -297,6 +303,12 @@ def init_compliance_database():
             cursor.execute('''
                 CREATE INDEX IF NOT EXISTS idx_bill_compliance_bill_committee_date 
                 ON bill_compliance(bill_id, committee_id, generated_at DESC)
+            ''')
+            
+            # Index for state filtering (SQLite)
+            cursor.execute('''
+                CREATE INDEX IF NOT EXISTS idx_bill_compliance_state 
+                ON bill_compliance(state)
             ''')
             
             # Changelog tables (SQLite)
