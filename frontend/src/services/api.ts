@@ -59,6 +59,8 @@ export const apiService = {
   // Bills
   getBills: (params?: any) => api.get('/bills', { params }),
   getBill: (id: string) => api.get(`/bills/${id}`),
+  getBillsStats: (params?: any) => api.get('/bills/stats', { params }),
+  getBillsViolations: (params?: any) => api.get('/bills/violations', { params }),
   
   // Compliance data
   getComplianceData: (params?: any) => api.get('/compliance', { params }),
