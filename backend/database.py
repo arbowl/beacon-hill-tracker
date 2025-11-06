@@ -222,6 +222,24 @@ def init_compliance_database():
                 ON compliance_scan_metadata(committee_id, scan_date DESC)
             ''')
             
+            # Global stats cache table (stores pre-calculated global statistics)
+            cursor.execute('''
+                CREATE TABLE IF NOT EXISTS global_stats_cache (
+                    id INTEGER PRIMARY KEY DEFAULT 1,
+                    total_committees INTEGER NOT NULL,
+                    total_bills INTEGER NOT NULL,
+                    compliant_bills INTEGER NOT NULL,
+                    incomplete_bills INTEGER NOT NULL,
+                    non_compliant_bills INTEGER NOT NULL,
+                    unknown_bills INTEGER NOT NULL,
+                    overall_compliance_rate NUMERIC(5, 2) NOT NULL,
+                    latest_report_date TIMESTAMP,
+                    data_timestamp TIMESTAMP NOT NULL,
+                    cache_generated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    CONSTRAINT single_row CHECK (id = 1)
+                )
+            ''')
+            
         else:
             # SQLite schema (original)
             cursor.execute('''
@@ -357,6 +375,24 @@ def init_compliance_database():
             cursor.execute('''
                 CREATE INDEX IF NOT EXISTS idx_compliance_scan_metadata_committee 
                 ON compliance_scan_metadata(committee_id, scan_date DESC)
+            ''')
+            
+            # Global stats cache table (stores pre-calculated global statistics)
+            cursor.execute('''
+                CREATE TABLE IF NOT EXISTS global_stats_cache (
+                    id INTEGER PRIMARY KEY DEFAULT 1,
+                    total_committees INTEGER NOT NULL,
+                    total_bills INTEGER NOT NULL,
+                    compliant_bills INTEGER NOT NULL,
+                    incomplete_bills INTEGER NOT NULL,
+                    non_compliant_bills INTEGER NOT NULL,
+                    unknown_bills INTEGER NOT NULL,
+                    overall_compliance_rate NUMERIC(5, 2) NOT NULL,
+                    latest_report_date TEXT,
+                    data_timestamp TEXT NOT NULL,
+                    cache_generated_at TEXT DEFAULT CURRENT_TIMESTAMP,
+                    CONSTRAINT single_row CHECK (id = 1)
+                )
             ''')
         
         print(f"✅ Compliance database schema initialized ({db_type})")
