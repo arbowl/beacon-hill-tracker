@@ -627,11 +627,14 @@ def create_app():
                     where_params.extend([f'%{search_term}%', f'%{search_term}%'])
                 
                 # Only get non-compliant bills for violation analysis
-                # Add non-compliant filter to WHERE clause
-                where_clauses.append("LOWER(state) = 'non-compliant'")
-                where_clause = " AND " + " AND ".join(where_clauses) if where_clauses else " AND LOWER(state) = 'non-compliant'"
+                # Filter non-compliant in CTE for better performance and correctness
+                non_compliant_filter = " AND LOWER(bc.state) = 'non-compliant'"
+                
+                # Build WHERE clause for outer query (chamber and search filters)
+                where_clause = " AND " + " AND ".join(where_clauses) if where_clauses else ""
                 
                 # Get non-compliant bills with their reasons
+                # Filter non-compliant in CTE - this ensures we only process non-compliant bills
                 violations_query = f'''
                     WITH latest_bills AS (
                         SELECT bc.bill_id, bc.reason, bc.state,
@@ -639,7 +642,7 @@ def create_app():
                         FROM bill_compliance bc
                         LEFT JOIN bills b ON bc.bill_id = b.bill_id
                         LEFT JOIN committees c ON bc.committee_id = c.committee_id
-                        WHERE 1=1 {filter_clause}
+                        WHERE 1=1 {filter_clause} {non_compliant_filter}
                     )
                     SELECT bill_id, reason
                     FROM latest_bills
@@ -647,13 +650,19 @@ def create_app():
                 '''
                 
                 violations_params = filter_params.copy() + where_params
+                
+                # Debug logging
+                logger = logging.getLogger(__name__)
+                logger.debug(f"Violation query - Filter: {filter_clause}, Where: {where_clause}, Params count: {len(violations_params)}")
+                
                 cursor.execute(violations_query, violations_params)
                 results = cursor.fetchall()
                 
-                # Debug: Log if no results found
+                # Debug: Log results
                 if len(results) == 0:
-                    logger = logging.getLogger(__name__)
-                    logger.debug(f"No non-compliant bills found for violation analysis. Filter: {filter_clause}, Where: {where_clause}")
+                    logger.debug(f"No non-compliant bills found for violation analysis")
+                else:
+                    logger.debug(f"Found {len(results)} non-compliant bills for violation analysis")
                 
                 # Parse violation types from reasons (matching frontend logic)
                 violation_counts = {
