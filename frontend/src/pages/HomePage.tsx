@@ -8,7 +8,7 @@ import CommitteeChangeWidget from '../components/CommitteeChangeWidget'
 const HomePage: React.FC = () => {
   const { user } = useAuth()
   const { data: stats, loading: statsLoading, error: statsError } = useGlobalStats()
-  const { bills: billsData, loading: billsLoading } = useBills()
+  const { bills: billsData } = useBills()
   const { metadata: globalMetadata, loading: globalMetadataLoading } = useGlobalMetadata()
 
   // Recalculate stats with provisional logic
