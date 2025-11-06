@@ -1,9 +1,8 @@
 import React, { useState, useMemo, useEffect } from 'react'
 import { useSearchParams } from 'react-router-dom'
-import { useGlobalStats, useCommittees, useBills, useCommitteeStats, useSavedViews, useCommitteeDetails, useDebounce, useCommitteeMetadata, useGlobalMetadata } from '../hooks/useData'
+import { useGlobalStats, useCommittees, useBills, useCommitteeStats, useSavedViews, useCommitteeDetails, useDebounce, useCommitteeMetadata, useGlobalMetadata, useFilteredStats, useViolationAnalysis } from '../hooks/useData'
 import { useAuth } from '../contexts/AuthContext'
 import { DashboardFilters, Bill } from '../types'
-import { analyzeReasons, getTopViolationsForCommittee } from '../utils/reasonParser'
 import { ComplianceOverviewChart, CommitteeComparisonChart, ViolationAnalysisChart } from '../components/charts'
 import { getEffectiveState, getStateLabel, getStateBadgeClass } from '../utils/billStatus'
 import CommitteeChangeWidget from '../components/CommitteeChangeWidget'
@@ -111,8 +110,14 @@ const DashboardPage: React.FC = () => {
   const [committeeViewMode, setCommitteeViewMode] = useState<'top_performers' | 'all_committees'>('top_performers')
   const [committeeLimit, setCommitteeLimit] = useState(15)
 
-  // Fetch bills with debounced filters, pagination, and sorting
+  // Fetch bills with debounced filters, pagination, and sorting (for table display only)
   const { bills: billsData, loading: billsLoading, error: billsError, totalCount: totalBillsCount, totalPages: billsTotalPages } = useBills(debouncedFilters, currentPage, pageSize, sortColumn, sortDirection)
+  
+  // Fetch filtered stats (efficient - only returns counts, not bill data)
+  const { data: filteredStats, loading: filteredStatsLoading } = useFilteredStats(debouncedFilters)
+  
+  // Fetch violation analysis (efficient - only returns violation counts, not bill data)
+  const { data: violationAnalysis, loading: violationsLoading } = useViolationAnalysis(debouncedFilters)
 
   // Fetch committee details when a single committee is selected
   const selectedCommitteeId = filters.committees.length === 1 ? filters.committees[0] : null
@@ -125,10 +130,9 @@ const DashboardPage: React.FC = () => {
   const displayMetadataLoading = selectedCommitteeId ? metadataLoading : globalMetadataLoading
 
   // Calculate contextual stats based on current filters
-  // Note: Since bills are now paginated, we use API stats for accuracy
-  // For filtered views, we show the total count from the API response
+  // Use filteredStats endpoint for accurate calculations when filters are applied
   const contextualStats = useMemo(() => {
-    // If no committees selected, show global stats from API
+    // If no committees selected, show global stats from API (most accurate)
     if (!filters.committees || filters.committees.length === 0) {
       if (!stats) return null
       
@@ -145,43 +149,28 @@ const DashboardPage: React.FC = () => {
       }
     }
 
-    // For filtered committees, use the total count from API
-    // Note: We can't calculate exact stats from paginated data, so we show totals
-    // The actual breakdown would require a separate stats endpoint for filtered data
+    // For filtered committees, use filteredStats endpoint (efficient)
+    if (!filteredStats) return null
+    
     const selectedCommittees = committees?.filter(c => filters.committees.includes(c.committee_id))
     const committeeNames = selectedCommittees?.map(c => c.name) || []
     const title = committeeNames.length === 1 
       ? `${committeeNames[0]}`
       : `${filters.committees.length} Selected Committees`
 
-    // Calculate approximate stats from current page data (for display purposes)
-    // This is not perfectly accurate but gives a rough idea
-    const compliant = billsData?.filter(bill => getEffectiveState(bill) === 'compliant').length || 0
-    const provisional = billsData?.filter(bill => getEffectiveState(bill) === 'provisional').length || 0
-    const nonCompliant = billsData?.filter(bill => getEffectiveState(bill) === 'non-compliant').length || 0
-    const monitoring = billsData?.filter(bill => getEffectiveState(bill) === 'monitoring').length || 0
-    
-    // Use total count from API for accurate total
-    const total = totalBillsCount || 0
-    
-    // Calculate rate from current page as approximation (not perfect but better than nothing)
-    const pageTotal = billsData?.length || 1
-    const pageCompliantRate = pageTotal > 0 
-      ? Math.round(((compliant + provisional + monitoring) / pageTotal) * 100) 
-      : 0
-
+    // Use stats from filteredStats endpoint (provisional = unknown_bills in this context)
     return {
       title,
       total_committees: filters.committees.length,
-      total_bills: total,
-      compliant_bills: Math.round((compliant / pageTotal) * total) || 0,
-      provisional_bills: Math.round((provisional / pageTotal) * total) || 0,
+      total_bills: filteredStats.total_bills || 0,
+      compliant_bills: filteredStats.compliant_bills || 0,
+      provisional_bills: filteredStats.unknown_bills || 0,
       incomplete_bills: 0,
-      non_compliant_bills: Math.round((nonCompliant / pageTotal) * total) || 0,
-      unknown_bills: Math.round((monitoring / pageTotal) * total) || 0,
-      overall_compliance_rate: pageCompliantRate
+      non_compliant_bills: filteredStats.non_compliant_bills || 0,
+      unknown_bills: filteredStats.unknown_bills || 0,
+      overall_compliance_rate: filteredStats.overall_compliance_rate || 0
     }
-  }, [billsData, billsLoading, filters.committees, stats, committees, totalBillsCount])
+  }, [filteredStats, filters.committees, stats, committees])
 
 
   // Sorting handler
@@ -204,26 +193,8 @@ const DashboardPage: React.FC = () => {
   // Bills are now sorted and paginated on the backend
   // No client-side sorting/pagination needed
 
-  // Calculate contextual violation analysis from current page
-  // Note: This is approximate since we only have paginated data
-  const violationAnalysis = useMemo(() => {
-    if (!billsData || billsData.length === 0) return []
-    
-    // Analyze current page data (not perfect but better than nothing)
-    if (filters.committees.length === 0) {
-      // Global analysis from current page
-      return analyzeReasons(billsData)
-    } else if (filters.committees.length === 1) {
-      // Single committee analysis from current page
-      return getTopViolationsForCommittee(billsData, filters.committees[0], 10)
-    } else {
-      // Multiple committees - analyze current page
-      const filteredBills = billsData.filter(bill => 
-        bill.committee_id && filters.committees.includes(bill.committee_id)
-      )
-      return analyzeReasons(filteredBills)
-    }
-  }, [billsData, filters.committees])
+  // Violation analysis is now fetched from backend endpoint (efficient)
+  // No need to calculate from bill data - backend returns violation counts directly
 
   // Reset to first page when debounced filters change
   React.useEffect(() => {
@@ -1138,16 +1109,16 @@ const DashboardPage: React.FC = () => {
                      ? 'Compliance Overview' 
                      : `Compliance Overview - ${contextualStats?.title || 'Loading...'}`}
                  </h2>
-                 <ComplianceOverviewChart 
-                   data={{
-                     compliant_bills: contextualStats?.compliant_bills || 0,
-                     provisional_bills: contextualStats?.provisional_bills || 0,
-                     incomplete_bills: contextualStats?.incomplete_bills || 0,
-                     non_compliant_bills: contextualStats?.non_compliant_bills || 0,
-                     unknown_bills: contextualStats?.unknown_bills || 0
-                   }}
-                   loading={statsLoading || billsLoading}
-                 />
+                <ComplianceOverviewChart 
+                  data={{
+                    compliant_bills: contextualStats?.compliant_bills || 0,
+                    provisional_bills: contextualStats?.provisional_bills || 0,
+                    incomplete_bills: contextualStats?.incomplete_bills || 0,
+                    non_compliant_bills: contextualStats?.non_compliant_bills || 0,
+                    unknown_bills: contextualStats?.unknown_bills || 0
+                  }}
+                  loading={statsLoading || (filters.committees.length > 0 && filteredStatsLoading)}
+                />
                </div>
              </div>
 
@@ -1161,12 +1132,12 @@ const DashboardPage: React.FC = () => {
                      ? `Non-Compliance Issues - ${committees?.find(c => c.committee_id === filters.committees[0])?.name || 'Selected Committee'}`
                      : `Non-Compliance Issues - ${filters.committees.length} Selected Committees`}
                  </h2>
-                 <ViolationAnalysisChart 
-                   data={violationAnalysis}
-                   loading={billsLoading}
-                   chartType="horizontal_bar"
-                   showDetails={false}
-                 />
+                <ViolationAnalysisChart 
+                  data={violationAnalysis || []}
+                  loading={violationsLoading}
+                  chartType="horizontal_bar"
+                  showDetails={false}
+                />
                </div>
              </div>
            </div>
