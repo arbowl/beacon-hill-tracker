@@ -26,6 +26,288 @@ from database import get_db_connection, get_database_type, init_compliance_datab
 # Load environment variables
 load_dotenv()
 
+# In-memory cache for stats (additional performance layer)
+_stats_cache = {
+    'data': None,
+    'data_timestamp': None,
+    'cache_timestamp': None
+}
+
+def _get_max_generated_at():
+    """Get the maximum generated_at timestamp from bill_compliance table (fast query)"""
+    try:
+        with get_db_connection() as conn:
+            cursor = conn.cursor()
+            cursor.execute('SELECT MAX(generated_at) FROM bill_compliance')
+            result = cursor.fetchone()
+            return result[0] if result and result[0] else None
+    except Exception as e:
+        logger = logging.getLogger(__name__)
+        logger.error(f"Error getting max generated_at: {str(e)}")
+        return None
+
+def _get_cached_stats_from_db():
+    """Get cached stats from database cache table"""
+    try:
+        with get_db_connection() as conn:
+            cursor = conn.cursor()
+            cursor.execute('SELECT * FROM global_stats_cache WHERE id = 1')
+            result = cursor.fetchone()
+            if result:
+                # Convert result to dict
+                return {
+                    'total_committees': result[1],
+                    'total_bills': result[2],
+                    'compliant_bills': result[3],
+                    'incomplete_bills': result[4],
+                    'non_compliant_bills': result[5],
+                    'unknown_bills': result[6],
+                    'overall_compliance_rate': float(result[7]) if result[7] else 0,
+                    'latest_report_date': result[8],
+                    'data_timestamp': result[9],
+                    'cache_generated_at': result[10]
+                }
+    except Exception as e:
+        logger = logging.getLogger(__name__)
+        logger.debug(f"No cached stats found or error reading cache: {str(e)}")
+    return None
+
+def _calculate_stats_from_db():
+    """Calculate stats directly from database (expensive operation)"""
+    with get_db_connection() as conn:
+        cursor = conn.cursor()
+        
+        # Get overall statistics with deduplication
+        cursor.execute('''
+            WITH latest_bills AS (
+                SELECT bc.*, 
+                       ROW_NUMBER() OVER (PARTITION BY bc.bill_id, bc.committee_id ORDER BY bc.generated_at DESC) as rn
+                FROM bill_compliance bc
+            )
+            SELECT 
+                COUNT(DISTINCT committee_id) as total_committees,
+                COUNT(CASE WHEN rn = 1 THEN 1 END) as total_bills,
+                SUM(CASE WHEN rn = 1 AND LOWER(state) = 'compliant' THEN 1 ELSE 0 END) as compliant_bills,
+                SUM(CASE WHEN rn = 1 AND LOWER(state) IN ('incomplete') THEN 1 ELSE 0 END) as incomplete_bills,
+                SUM(CASE WHEN rn = 1 AND LOWER(state) = 'non-compliant' THEN 1 ELSE 0 END) as non_compliant_bills,
+                SUM(CASE WHEN rn = 1 AND (LOWER(state) IN ('unknown') OR state = 'Unknown') THEN 1 ELSE 0 END) as unknown_bills,
+                ROUND(
+                    CASE
+                        WHEN COUNT(CASE WHEN rn = 1 THEN 1 END) > 0
+                        THEN 100.0 * (SUM(CASE WHEN rn = 1 AND LOWER(state) = 'compliant' THEN 1 ELSE 0 END) + 
+                                     SUM(CASE WHEN rn = 1 AND (LOWER(state) IN ('unknown') OR state = 'Unknown') THEN 1 ELSE 0 END)) 
+                                     / COUNT(CASE WHEN rn = 1 THEN 1 END)
+                        ELSE 0
+                    END, 2
+                ) as overall_compliance_rate,
+                MAX(generated_at) as latest_report_date
+            FROM latest_bills
+        ''')
+        
+        result = cursor.fetchone()
+        
+        if result:
+            incomplete_count = result[3] or 0
+            non_compliant_count = result[4] or 0
+            max_generated_at = result[7]
+            
+            stats = {
+                'total_committees': result[0] or 0,
+                'total_bills': result[1] or 0,
+                'compliant_bills': result[2] or 0,
+                'incomplete_bills': 0,
+                'non_compliant_bills': non_compliant_count + incomplete_count,
+                'unknown_bills': result[5] or 0,
+                'overall_compliance_rate': result[6] or 0,
+                'latest_report_date': max_generated_at,
+                'data_timestamp': max_generated_at  # Use max_generated_at as data timestamp
+            }
+            
+            # Cache in database
+            _save_stats_to_cache(stats, max_generated_at)
+            
+            return stats
+        else:
+            return {
+                'total_committees': 0,
+                'total_bills': 0,
+                'compliant_bills': 0,
+                'incomplete_bills': 0,
+                'non_compliant_bills': 0,
+                'unknown_bills': 0,
+                'overall_compliance_rate': 0,
+                'latest_report_date': None,
+                'data_timestamp': None
+            }
+
+def _save_stats_to_cache(stats, data_timestamp):
+    """Save calculated stats to database cache table"""
+    try:
+        db_type = get_database_type()
+        placeholder = '%s' if db_type == 'postgresql' else '?'
+        cache_timestamp = datetime.utcnow()
+        
+        with get_db_connection() as conn:
+            cursor = conn.cursor()
+            
+            if db_type == 'postgresql':
+                cursor.execute(f'''
+                    INSERT INTO global_stats_cache (
+                        id, total_committees, total_bills, compliant_bills, 
+                        incomplete_bills, non_compliant_bills, unknown_bills,
+                        overall_compliance_rate, latest_report_date, data_timestamp, cache_generated_at
+                    ) VALUES (
+                        1, {placeholder}, {placeholder}, {placeholder}, {placeholder}, 
+                        {placeholder}, {placeholder}, {placeholder}, {placeholder}, {placeholder}, {placeholder}
+                    )
+                    ON CONFLICT (id) DO UPDATE SET
+                        total_committees = EXCLUDED.total_committees,
+                        total_bills = EXCLUDED.total_bills,
+                        compliant_bills = EXCLUDED.compliant_bills,
+                        incomplete_bills = EXCLUDED.incomplete_bills,
+                        non_compliant_bills = EXCLUDED.non_compliant_bills,
+                        unknown_bills = EXCLUDED.unknown_bills,
+                        overall_compliance_rate = EXCLUDED.overall_compliance_rate,
+                        latest_report_date = EXCLUDED.latest_report_date,
+                        data_timestamp = EXCLUDED.data_timestamp,
+                        cache_generated_at = EXCLUDED.cache_generated_at
+                ''', (
+                    stats['total_committees'],
+                    stats['total_bills'],
+                    stats['compliant_bills'],
+                    stats['incomplete_bills'],
+                    stats['non_compliant_bills'],
+                    stats['unknown_bills'],
+                    stats['overall_compliance_rate'],
+                    stats['latest_report_date'],
+                    data_timestamp,
+                    cache_timestamp
+                ))
+            else:
+                cursor.execute('''
+                    INSERT OR REPLACE INTO global_stats_cache (
+                        id, total_committees, total_bills, compliant_bills, 
+                        incomplete_bills, non_compliant_bills, unknown_bills,
+                        overall_compliance_rate, latest_report_date, data_timestamp, cache_generated_at
+                    ) VALUES (
+                        1, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?
+                    )
+                ''', (
+                    stats['total_committees'],
+                    stats['total_bills'],
+                    stats['compliant_bills'],
+                    stats['incomplete_bills'],
+                    stats['non_compliant_bills'],
+                    stats['unknown_bills'],
+                    stats['overall_compliance_rate'],
+                    stats['latest_report_date'],
+                    data_timestamp.isoformat() if hasattr(data_timestamp, 'isoformat') else str(data_timestamp),
+                    cache_timestamp.isoformat() if hasattr(cache_timestamp, 'isoformat') else str(cache_timestamp)
+                ))
+            
+            conn.commit()
+            
+            # Update in-memory cache
+            global _stats_cache
+            _stats_cache = {
+                'data': stats,
+                'data_timestamp': data_timestamp,
+                'cache_timestamp': cache_timestamp
+            }
+            
+    except Exception as e:
+        logger = logging.getLogger(__name__)
+        logger.error(f"Error saving stats to cache: {str(e)}", exc_info=True)
+
+def _get_cached_stats():
+    """Get stats from cache (database or memory) with validation"""
+    # First check in-memory cache
+    global _stats_cache
+    if _stats_cache['data'] and _stats_cache['data_timestamp']:
+        # Validate in-memory cache is still valid
+        current_max_timestamp = _get_max_generated_at()
+        if current_max_timestamp:
+            # Compare timestamps
+            cache_timestamp = _stats_cache['data_timestamp']
+            if isinstance(cache_timestamp, str):
+                # Parse string timestamp for comparison
+                try:
+                    from dateutil.parser import parse as parse_date
+                    cache_timestamp = parse_date(cache_timestamp)
+                except Exception:
+                    pass
+            
+            if hasattr(current_max_timestamp, 'isoformat') and hasattr(cache_timestamp, 'isoformat'):
+                if current_max_timestamp <= cache_timestamp:
+                    # Cache is valid
+                    return _stats_cache['data']
+            elif str(current_max_timestamp) <= str(cache_timestamp):
+                # String comparison fallback
+                return _stats_cache['data']
+    
+    # Check database cache
+    cached_stats = _get_cached_stats_from_db()
+    if cached_stats:
+        current_max_timestamp = _get_max_generated_at()
+        if current_max_timestamp:
+            cache_data_timestamp = cached_stats['data_timestamp']
+            
+            # Compare timestamps (handle both datetime objects and strings)
+            if isinstance(cache_data_timestamp, str):
+                try:
+                    from dateutil.parser import parse as parse_date
+                    cache_data_timestamp = parse_date(cache_data_timestamp)
+                except Exception:
+                    pass
+            
+            if hasattr(current_max_timestamp, 'isoformat') and hasattr(cache_data_timestamp, 'isoformat'):
+                if current_max_timestamp <= cache_data_timestamp:
+                    # Update in-memory cache
+                    _stats_cache = {
+                        'data': cached_stats,
+                        'data_timestamp': cache_data_timestamp,
+                        'cache_timestamp': cached_stats.get('cache_generated_at')
+                    }
+                    return cached_stats
+            elif str(current_max_timestamp) <= str(cache_data_timestamp):
+                # String comparison fallback
+                _stats_cache = {
+                    'data': cached_stats,
+                    'data_timestamp': cache_data_timestamp,
+                    'cache_timestamp': cached_stats.get('cache_generated_at')
+                }
+                return cached_stats
+    
+    # Cache miss or invalid - calculate fresh
+    return None
+
+def _invalidate_stats_cache():
+    """Invalidate both in-memory and database cache"""
+    global _stats_cache
+    _stats_cache = {
+        'data': None,
+        'data_timestamp': None,
+        'cache_timestamp': None
+    }
+    # Note: We don't delete from database cache, just mark as stale
+    # The next request will recalculate and update it
+
+def _warm_stats_cache():
+    """Warm the cache on application startup (optional - runs in background)"""
+    try:
+        # Check if cache exists and is valid
+        cached = _get_cached_stats()
+        if not cached:
+            # Cache doesn't exist or is invalid - calculate it
+            logger = logging.getLogger(__name__)
+            logger.info("Warming stats cache on startup...")
+            _calculate_stats_from_db()
+            logger.info("Stats cache warmed successfully")
+    except Exception as e:
+        logger = logging.getLogger(__name__)
+        logger.warning(f"Failed to warm stats cache: {str(e)}")
+        # Don't fail startup if cache warming fails
+
 def create_app():
     """Application factory pattern"""
     flask_app = Flask(__name__)
@@ -84,6 +366,9 @@ def create_app():
 
     # Initialize main database (existing functionality)
     init_compliance_database()
+    
+    # Initialize stats cache (warm cache on startup if needed)
+    _warm_stats_cache()
 
     # Define API routes within the app context
     @flask_app.route('/health', methods=['GET'])
@@ -216,73 +501,45 @@ def create_app():
                 'timestamp': datetime.utcnow().isoformat()
             }), 500
 
-    # Stats endpoint for dashboard
+    # Stats endpoint for dashboard (with caching)
     @flask_app.route('/api/stats', methods=['GET'])
     def get_stats():
-        """Get global statistics for the dashboard"""
+        """Get global statistics for the dashboard (uses cached stats for performance)"""
         try:
-            with get_db_connection() as conn:
-                cursor = conn.cursor()
-                
-                # Get overall statistics with deduplication
-                cursor.execute('''
-                    WITH latest_bills AS (
-                        SELECT bc.*, 
-                               ROW_NUMBER() OVER (PARTITION BY bc.bill_id, bc.committee_id ORDER BY bc.generated_at DESC) as rn
-                        FROM bill_compliance bc
-                    )
-                    SELECT 
-                        COUNT(DISTINCT committee_id) as total_committees,
-                        COUNT(CASE WHEN rn = 1 THEN 1 END) as total_bills,
-                        SUM(CASE WHEN rn = 1 AND LOWER(state) = 'compliant' THEN 1 ELSE 0 END) as compliant_bills,
-                        SUM(CASE WHEN rn = 1 AND LOWER(state) IN ('incomplete') THEN 1 ELSE 0 END) as incomplete_bills,
-                        SUM(CASE WHEN rn = 1 AND LOWER(state) = 'non-compliant' THEN 1 ELSE 0 END) as non_compliant_bills,
-                        SUM(CASE WHEN rn = 1 AND (LOWER(state) IN ('unknown') OR state = 'Unknown') THEN 1 ELSE 0 END) as unknown_bills,
-                        ROUND(
-                            CASE
-                                WHEN COUNT(CASE WHEN rn = 1 THEN 1 END) > 0
-                                THEN 100.0 * (SUM(CASE WHEN rn = 1 AND LOWER(state) = 'compliant' THEN 1 ELSE 0 END) + 
-                                             SUM(CASE WHEN rn = 1 AND (LOWER(state) IN ('unknown') OR state = 'Unknown') THEN 1 ELSE 0 END)) 
-                                             / COUNT(CASE WHEN rn = 1 THEN 1 END)
-                                ELSE 0
-                            END, 2
-                        ) as overall_compliance_rate,
-                        MAX(generated_at) as latest_report_date
-                    FROM latest_bills
-                ''')
-                
-                result = cursor.fetchone()
-                
-                if result:
-                    # Merge incomplete into non_compliant for presentation
-                    incomplete_count = result[3] or 0
-                    non_compliant_count = result[4] or 0
-                    
-                    stats = {
-                        'total_committees': result[0] or 0,
-                        'total_bills': result[1] or 0,
-                        'compliant_bills': result[2] or 0,
-                        'incomplete_bills': 0,  # Always 0 - merged into non_compliant
-                        'non_compliant_bills': non_compliant_count + incomplete_count,  # Merge incomplete here
-                        'unknown_bills': result[5] or 0,
-                        'overall_compliance_rate': result[6] or 0,
-                        'latest_report_date': result[7]
-                    }
-                else:
-                    stats = {
-                        'total_committees': 0,
-                        'total_bills': 0,
-                        'compliant_bills': 0,
-                        'incomplete_bills': 0,
-                        'non_compliant_bills': 0,
-                        'unknown_bills': 0,
-                        'overall_compliance_rate': 0,
-                        'latest_report_date': None
-                    }
-                
-                return jsonify(stats)
+            # Try to get from cache first (fast path)
+            cached_stats = _get_cached_stats()
+            
+            if cached_stats:
+                # Return cached stats (exclude internal cache fields)
+                return jsonify({
+                    'total_committees': cached_stats['total_committees'],
+                    'total_bills': cached_stats['total_bills'],
+                    'compliant_bills': cached_stats['compliant_bills'],
+                    'incomplete_bills': cached_stats['incomplete_bills'],
+                    'non_compliant_bills': cached_stats['non_compliant_bills'],
+                    'unknown_bills': cached_stats['unknown_bills'],
+                    'overall_compliance_rate': cached_stats['overall_compliance_rate'],
+                    'latest_report_date': cached_stats['latest_report_date']
+                })
+            
+            # Cache miss or invalid - calculate fresh (slow path)
+            stats = _calculate_stats_from_db()
+            
+            # Return stats (exclude internal cache fields)
+            return jsonify({
+                'total_committees': stats['total_committees'],
+                'total_bills': stats['total_bills'],
+                'compliant_bills': stats['compliant_bills'],
+                'incomplete_bills': stats['incomplete_bills'],
+                'non_compliant_bills': stats['non_compliant_bills'],
+                'unknown_bills': stats['unknown_bills'],
+                'overall_compliance_rate': stats['overall_compliance_rate'],
+                'latest_report_date': stats['latest_report_date']
+            })
             
         except Exception as e:
+            logger = logging.getLogger(__name__)
+            logger.error(f"Error in get_stats: {str(e)}", exc_info=True)
             return jsonify({'error': str(e)}), 500
 
     # Committees endpoint
@@ -2029,6 +2286,11 @@ def import_compliance_report(committee_id, bills_data, diff_report=None, analysi
 
             conn.commit()  # Explicit commit
             logger.info(f"Successfully imported {imported_count} bills for committee {committee_id}")
+            
+            # Invalidate stats cache after data import (next request will recalculate)
+            _invalidate_stats_cache()
+            logger.debug("Stats cache invalidated after data import")
+            
             return {
                 "status": "success",
                 "message": f"Successfully imported {imported_count} bills for committee {committee_id}",
