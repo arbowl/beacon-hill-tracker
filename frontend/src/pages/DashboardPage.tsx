@@ -138,15 +138,18 @@ const DashboardPage: React.FC = () => {
       if (!stats || statsLoading) return null
       
       // Always use global stats - ignore any other filters for global view
+      // Backend returns unknown_bills (not provisional_bills), so use that for provisional
+      // IMPORTANT: unknown_bills is set to 0 because it's already included in provisional_bills
+      // The chart component adds provisional_bills + unknown_bills, so we must not double-count
       return {
         title: 'All Committees',
         total_committees: stats.total_committees,
         total_bills: stats.total_bills,
         compliant_bills: stats.compliant_bills,
-        provisional_bills: stats.provisional_bills || 0,
+        provisional_bills: stats.unknown_bills || 0, // Backend uses unknown_bills, frontend calls it provisional
         incomplete_bills: 0,
         non_compliant_bills: stats.non_compliant_bills,
-        unknown_bills: stats.unknown_bills,
+        unknown_bills: 0, // Set to 0 - already included in provisional_bills to avoid double-counting in chart
         overall_compliance_rate: stats.overall_compliance_rate
       }
     }
@@ -163,6 +166,8 @@ const DashboardPage: React.FC = () => {
 
     // Use stats from filteredStats endpoint (provisional = unknown_bills in this context)
     // This endpoint returns stats for ALL bills matching filters, not just paginated ones
+    // IMPORTANT: unknown_bills is set to 0 because it's already included in provisional_bills
+    // The chart component adds provisional_bills + unknown_bills, so we must not double-count
     return {
       title,
       total_committees: filters.committees.length,
@@ -171,7 +176,7 @@ const DashboardPage: React.FC = () => {
       provisional_bills: filteredStats.unknown_bills || 0,
       incomplete_bills: 0,
       non_compliant_bills: filteredStats.non_compliant_bills || 0,
-      unknown_bills: filteredStats.unknown_bills || 0,
+      unknown_bills: 0, // Set to 0 - already included in provisional_bills to avoid double-counting in chart
       overall_compliance_rate: filteredStats.overall_compliance_rate || 0
     }
   }, [filteredStats, filteredStatsLoading, filters.committees, stats, statsLoading, committees])
