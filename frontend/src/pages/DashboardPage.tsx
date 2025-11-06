@@ -126,11 +126,24 @@ const DashboardPage: React.FC = () => {
 
   // Calculate contextual stats based on current filters
   const contextualStats = useMemo(() => {
-    if (!billsData || billsLoading) return null
-
-    // If no committees selected, recalculate global stats with provisional logic
+    // If no committees selected, show global stats from API while bills are loading
     if (!filters.committees || filters.committees.length === 0) {
       if (!stats) return null
+      
+      // If bills are still loading, return API stats as-is
+      if (!billsData || billsLoading) {
+        return {
+          title: 'All Committees',
+          total_committees: stats.total_committees,
+          total_bills: stats.total_bills,
+          compliant_bills: stats.compliant_bills,
+          provisional_bills: stats.provisional_bills || 0,
+          incomplete_bills: 0,
+          non_compliant_bills: stats.non_compliant_bills,
+          unknown_bills: stats.unknown_bills,
+          overall_compliance_rate: stats.overall_compliance_rate
+        }
+      }
       
       // Recalculate using effective states from all bills
       const compliant = billsData.filter(bill => getEffectiveState(bill) === 'compliant').length
@@ -662,7 +675,9 @@ const DashboardPage: React.FC = () => {
     }
   }
 
-  if (statsLoading || committeesLoading) {
+  // Only block on stats loading - committees can load in background
+  // (filters will show loading state if committees aren't ready)
+  if (statsLoading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <div className="loading loading-spinner loading-lg"></div>
@@ -918,13 +933,18 @@ const DashboardPage: React.FC = () => {
                     committees: value ? [value] : []
                   }))
                 }}
+                disabled={committeesLoading}
               >
                 <option value="">All Committees</option>
-                {committees?.map(committee => (
-                  <option key={committee.committee_id} value={committee.committee_id}>
-                    {committee.name}
-                  </option>
-                ))}
+                {committeesLoading ? (
+                  <option disabled>Loading committees...</option>
+                ) : (
+                  committees?.map(committee => (
+                    <option key={committee.committee_id} value={committee.committee_id}>
+                      {committee.name}
+                    </option>
+                  ))
+                )}
               </select>
             </div>
           </div>
