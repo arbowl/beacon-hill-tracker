@@ -240,8 +240,10 @@ def create_app():
                         SUM(CASE WHEN rn = 1 AND (LOWER(state) IN ('unknown') OR state = 'Unknown') THEN 1 ELSE 0 END) as unknown_bills,
                         ROUND(
                             CASE
-                                WHEN COUNT(CASE WHEN rn = 1 AND LOWER(state) NOT IN ('unknown') AND state != 'Unknown' THEN 1 END) > 0
-                                THEN 100.0 * SUM(CASE WHEN rn = 1 AND LOWER(state) = 'compliant' THEN 1 ELSE 0 END) / COUNT(CASE WHEN rn = 1 AND LOWER(state) NOT IN ('unknown') AND state != 'Unknown' THEN 1 END)
+                                WHEN COUNT(CASE WHEN rn = 1 THEN 1 END) > 0
+                                THEN 100.0 * (SUM(CASE WHEN rn = 1 AND LOWER(state) = 'compliant' THEN 1 ELSE 0 END) + 
+                                             SUM(CASE WHEN rn = 1 AND (LOWER(state) IN ('unknown') OR state = 'Unknown') THEN 1 ELSE 0 END)) 
+                                             / COUNT(CASE WHEN rn = 1 THEN 1 END)
                                 ELSE 0
                             END, 2
                         ) as overall_compliance_rate,
@@ -529,10 +531,10 @@ def create_app():
                     compliant = result[1] or 0
                     unknown = result[4] or 0
                     
-                    # Calculate compliance rate
+                    # Calculate compliance rate (includes compliant + provisional/unknown)
                     compliance_rate = 0
-                    if total > 0 and (total - unknown) > 0:
-                        compliance_rate = round((compliant / (total - unknown)) * 100, 2)
+                    if total > 0:
+                        compliance_rate = round(((compliant + unknown) / total) * 100, 2)
                     
                     stats = {
                         'total_bills': total,
@@ -625,8 +627,9 @@ def create_app():
                     where_params.extend([f'%{search_term}%', f'%{search_term}%'])
                 
                 # Only get non-compliant bills for violation analysis
-                where_clauses.append("LOWER(bc.state) = 'non-compliant'")
-                where_clause = " AND " + " AND ".join(where_clauses) if where_clauses else ""
+                # Add non-compliant filter to WHERE clause
+                where_clauses.append("LOWER(state) = 'non-compliant'")
+                where_clause = " AND " + " AND ".join(where_clauses) if where_clauses else " AND LOWER(state) = 'non-compliant'"
                 
                 # Get non-compliant bills with their reasons
                 violations_query = f'''
@@ -646,6 +649,11 @@ def create_app():
                 violations_params = filter_params.copy() + where_params
                 cursor.execute(violations_query, violations_params)
                 results = cursor.fetchall()
+                
+                # Debug: Log if no results found
+                if len(results) == 0:
+                    logger = logging.getLogger(__name__)
+                    logger.debug(f"No non-compliant bills found for violation analysis. Filter: {filter_clause}, Where: {where_clause}")
                 
                 # Parse violation types from reasons (matching frontend logic)
                 violation_counts = {
