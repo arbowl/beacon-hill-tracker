@@ -153,37 +153,44 @@ export const useBills = (filters?: DashboardFilters, page?: number, pageSize?: n
 }
 
 // Custom hook for fetching filtered stats (without fetching all bills)
+// Only fetches when committees are selected (for committee-specific stats)
 export const useFilteredStats = (filters?: DashboardFilters) => {
   const [stats, setStats] = useState<any>(null)
-  const [loading, setLoading] = useState(true)
+  const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
+    // Only fetch if committees are selected - global stats should use /api/stats
+    if (!filters || !filters.committees || filters.committees.length === 0) {
+      setStats(null)
+      setLoading(false)
+      setError(null)
+      return
+    }
+
     const fetchStats = async () => {
       try {
         setLoading(true)
         setError(null)
         
         const params: any = {}
-        if (filters) {
-          if (filters.committees.length > 0) {
-            params.committees = filters.committees.join(',')
-          }
-          if (filters.chambers.length > 0) {
-            params.chambers = filters.chambers.join(',')
-          }
-          if (filters.states.length > 0) {
-            params.states = filters.states.join(',')
-          }
-          if (filters.dateRange.start) {
-            params.start_date = filters.dateRange.start
-          }
-          if (filters.dateRange.end) {
-            params.end_date = filters.dateRange.end
-          }
-          if (filters.searchTerm) {
-            params.search = filters.searchTerm
-          }
+        if (filters.committees.length > 0) {
+          params.committees = filters.committees.join(',')
+        }
+        if (filters.chambers.length > 0) {
+          params.chambers = filters.chambers.join(',')
+        }
+        if (filters.states.length > 0) {
+          params.states = filters.states.join(',')
+        }
+        if (filters.dateRange.start) {
+          params.start_date = filters.dateRange.start
+        }
+        if (filters.dateRange.end) {
+          params.end_date = filters.dateRange.end
+        }
+        if (filters.searchTerm) {
+          params.search = filters.searchTerm
         }
 
         const response = await apiService.getBillsStats(params)
@@ -202,6 +209,7 @@ export const useFilteredStats = (filters?: DashboardFilters) => {
 }
 
 // Custom hook for fetching violation analysis (without fetching all bills)
+// Works for both global view and filtered views
 export const useViolationAnalysis = (filters?: DashboardFilters) => {
   const [violations, setViolations] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
@@ -215,6 +223,7 @@ export const useViolationAnalysis = (filters?: DashboardFilters) => {
         
         const params: any = {}
         if (filters) {
+          // Always include all filter params, even if empty - backend handles empty filters
           if (filters.committees.length > 0) {
             params.committees = filters.committees.join(',')
           }
@@ -236,9 +245,17 @@ export const useViolationAnalysis = (filters?: DashboardFilters) => {
         }
 
         const response = await apiService.getBillsViolations(params)
-        setViolations(Array.isArray(response.data) ? response.data : [])
+        const violationsData = Array.isArray(response.data) ? response.data : []
+        setViolations(violationsData)
+        
+        // Log if no violations found for debugging
+        if (violationsData.length === 0) {
+          console.debug('No violations found for filters:', params)
+        }
       } catch (err: any) {
+        console.error('Error fetching violations:', err)
         setError(err.response?.data?.error || 'Failed to fetch violation analysis')
+        setViolations([]) // Ensure we always have an array
       } finally {
         setLoading(false)
       }
