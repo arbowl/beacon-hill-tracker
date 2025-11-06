@@ -4,7 +4,7 @@ import { useGlobalStats, useCommittees, useBills, useCommitteeStats, useSavedVie
 import { useAuth } from '../contexts/AuthContext'
 import { DashboardFilters, Bill } from '../types'
 import { ComplianceOverviewChart, CommitteeComparisonChart, ViolationAnalysisChart } from '../components/charts'
-import { getEffectiveState, getStateLabel, getStateBadgeClass } from '../utils/billStatus'
+import { getStateLabel, getStateBadgeClass } from '../utils/billStatus'
 import CommitteeChangeWidget from '../components/CommitteeChangeWidget'
 
 const DashboardPage: React.FC = () => {
