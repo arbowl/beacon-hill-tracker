@@ -85,8 +85,8 @@ const HomePage: React.FC = () => {
 
       {/* Real-time Stats */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-        {(statsLoading || billsLoading) ? (
-          // Loading skeleton
+        {statsLoading ? (
+          // Loading skeleton - only show while stats are loading
           Array.from({ length: 4 }).map((_, i) => (
             <div key={i} className="card bg-base-100 shadow-md">
               <div className="card-body text-center">
