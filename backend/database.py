@@ -161,6 +161,13 @@ def init_compliance_database():
                 ON bill_compliance(generated_at DESC)
             ''')
             
+            # Composite index for window function optimization (ROW_NUMBER OVER PARTITION BY)
+            # This dramatically improves performance for stats queries that deduplicate bills
+            cursor.execute('''
+                CREATE INDEX IF NOT EXISTS idx_bill_compliance_bill_committee_date 
+                ON bill_compliance(bill_id, committee_id, generated_at DESC)
+            ''')
+            
             # Changelog tables (PostgreSQL)
             cursor.execute('''
                 CREATE TABLE IF NOT EXISTS changelog_versions (
@@ -269,6 +276,27 @@ def init_compliance_database():
                     FOREIGN KEY (committee_id) REFERENCES committees(committee_id) ON DELETE CASCADE,
                     FOREIGN KEY (bill_id) REFERENCES bills(bill_id) ON DELETE CASCADE
                 )
+            ''')
+            
+            # Create indexes for better query performance (SQLite)
+            cursor.execute('''
+                CREATE INDEX IF NOT EXISTS idx_bill_compliance_committee 
+                ON bill_compliance(committee_id)
+            ''')
+            cursor.execute('''
+                CREATE INDEX IF NOT EXISTS idx_bill_compliance_bill 
+                ON bill_compliance(bill_id)
+            ''')
+            cursor.execute('''
+                CREATE INDEX IF NOT EXISTS idx_bill_compliance_date 
+                ON bill_compliance(generated_at DESC)
+            ''')
+            
+            # Composite index for window function optimization (ROW_NUMBER OVER PARTITION BY)
+            # This dramatically improves performance for stats queries that deduplicate bills
+            cursor.execute('''
+                CREATE INDEX IF NOT EXISTS idx_bill_compliance_bill_committee_date 
+                ON bill_compliance(bill_id, committee_id, generated_at DESC)
             ''')
             
             # Changelog tables (SQLite)
