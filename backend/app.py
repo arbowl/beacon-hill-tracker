@@ -445,11 +445,117 @@ def create_app():
                 state = request.args.get('state')                # For backward compatibility
                 search_term = request.args.get('search', '')
                 
+                # Pagination parameters
+                page = int(request.args.get('page', 1))
+                page_size = int(request.args.get('pageSize', 100))  # Default to 100 for better performance
+                page_size = min(page_size, 500)  # Cap at 500 to prevent abuse
+                offset = (page - 1) * page_size
+                
+                # Sorting parameters
+                sort_by = request.args.get('sortBy', 'generated_at')
+                sort_dir = request.args.get('sortDir', 'desc').upper()
+                if sort_dir not in ['ASC', 'DESC']:
+                    sort_dir = 'DESC'
+                
+                # Map frontend column names to database column names (whitelist for security)
+                sort_column_map = {
+                    'bill_id': 'bill_id',
+                    'title': 'bill_title',
+                    'committee': 'committee_name',
+                    'status': 'state',
+                    'hearing_date': 'hearing_date',
+                    'deadline': 'effective_deadline',
+                    'summary': 'summary_present',
+                    'votes': 'votes_present',
+                    'reported_out': 'reported_out',
+                    'notice_gap': 'notice_gap_days',
+                    'generated_at': 'generated_at'
+                }
+                db_sort_column = sort_column_map.get(sort_by, 'generated_at')
+                # Validate sort column is in whitelist to prevent SQL injection
+                if db_sort_column not in sort_column_map.values():
+                    db_sort_column = 'generated_at'
+                
                 # Get appropriate placeholder for database type
                 placeholder = '%s' if get_database_type() == 'postgresql' else '?'
                 
-                # Build the query with deduplication
-                base_query = '''
+                # Build filter conditions first to apply them in the CTE for better performance
+                filter_params = []
+                filter_conditions = []
+                
+                # Handle committee filtering (single or multiple)
+                if committee_id:
+                    filter_conditions.append(f"bc.committee_id = {placeholder}")
+                    filter_params.append(committee_id)
+                elif committees:
+                    # Handle comma-separated list of committee IDs
+                    committee_list = [c.strip() for c in committees.split(',') if c.strip()]
+                    if committee_list:
+                        placeholders = ','.join([placeholder for _ in committee_list])
+                        filter_conditions.append(f"bc.committee_id IN ({placeholders})")
+                        filter_params.extend(committee_list)
+                
+                # Handle chamber filtering - apply after JOIN
+                chamber_filter_params = []
+                chamber_conditions = []
+                if chamber:
+                    chamber_conditions.append(f"c.chamber = {placeholder}")
+                    chamber_filter_params.append(chamber)
+                elif chambers:
+                    chamber_list = [c.strip() for c in chambers.split(',') if c.strip()]
+                    if chamber_list:
+                        placeholders = ','.join([placeholder for _ in chamber_list])
+                        chamber_conditions.append(f"c.chamber IN ({placeholders})")
+                        chamber_filter_params.extend(chamber_list)
+                
+                # Handle state filtering
+                if state:
+                    filter_conditions.append(f"LOWER(bc.state) = LOWER({placeholder})")
+                    filter_params.append(state)
+                elif states:
+                    state_list = [s.strip() for s in states.split(',') if s.strip()]
+                    if state_list:
+                        state_placeholders = ' OR '.join([f"LOWER(bc.state) = LOWER({placeholder})" for _ in state_list])
+                        filter_conditions.append(f"({state_placeholders})")
+                        filter_params.extend(state_list)
+                
+                # Build the query with deduplication - apply filters in CTE for better performance
+                filter_clause = " AND " + " AND ".join(filter_conditions) if filter_conditions else ""
+                
+                # Build WHERE clause for chamber and search (applied after JOIN)
+                where_clauses = []
+                where_params = []
+                
+                if chamber_conditions:
+                    where_clauses.extend(chamber_conditions)
+                    where_params.extend(chamber_filter_params)
+                
+                if search_term:
+                    where_clauses.append(f"(bill_id LIKE {placeholder} OR bill_title LIKE {placeholder})")
+                    where_params.extend([f'%{search_term}%', f'%{search_term}%'])
+                
+                where_clause = " AND " + " AND ".join(where_clauses) if where_clauses else ""
+                
+                # First, get total count for pagination
+                count_query = f'''
+                    WITH latest_bills AS (
+                        SELECT bc.committee_id, bc.bill_id, bc.state,
+                               ROW_NUMBER() OVER (PARTITION BY bc.bill_id, bc.committee_id ORDER BY bc.generated_at DESC) as rn
+                        FROM bill_compliance bc
+                        LEFT JOIN committees c ON bc.committee_id = c.committee_id
+                        WHERE 1=1 {filter_clause}
+                    )
+                    SELECT COUNT(*)
+                    FROM latest_bills
+                    WHERE rn = 1 {where_clause}
+                '''
+                
+                count_params = filter_params.copy() + where_params
+                cursor.execute(count_query, count_params)
+                total_count = cursor.fetchone()[0]
+                
+                # Now get the paginated results
+                base_query = f'''
                     WITH latest_bills AS (
                         SELECT bc.committee_id, bc.bill_id, bc.hearing_date, bc.deadline_60, bc.effective_deadline,
                                bc.extension_order_url, bc.extension_date, bc.reported_out, bc.summary_present,
@@ -460,6 +566,7 @@ def create_app():
                         FROM bill_compliance bc
                         LEFT JOIN bills b ON bc.bill_id = b.bill_id
                         LEFT JOIN committees c ON bc.committee_id = c.committee_id
+                        WHERE 1=1 {filter_clause}
                     )
                     SELECT committee_id, bill_id, hearing_date, deadline_60, effective_deadline,
                            extension_order_url, extension_date, reported_out, summary_present,
@@ -467,57 +574,13 @@ def create_app():
                            notice_status, notice_gap_days, announcement_date, scheduled_hearing_date,
                            generated_at, bill_title, bill_url, committee_name, chamber
                     FROM latest_bills
-                    WHERE rn = 1
+                    WHERE rn = 1 {where_clause}
+                    ORDER BY {db_sort_column} {sort_dir}
+                    LIMIT {placeholder} OFFSET {placeholder}
                 '''
                 
-                params = []
-                conditions = []
-                
-                # Handle committee filtering (single or multiple)
-                if committee_id:
-                    conditions.append(f"committee_id = {placeholder}")
-                    params.append(committee_id)
-                elif committees:
-                    # Handle comma-separated list of committee IDs
-                    committee_list = [c.strip() for c in committees.split(',') if c.strip()]
-                    if committee_list:
-                        placeholders = ','.join([placeholder for _ in committee_list])
-                        conditions.append(f"committee_id IN ({placeholders})")
-                        params.extend(committee_list)
-                
-                # Handle chamber filtering (single or multiple)
-                if chamber:
-                    conditions.append(f"chamber = {placeholder}")
-                    params.append(chamber)
-                elif chambers:
-                    # Handle comma-separated list of chambers
-                    chamber_list = [c.strip() for c in chambers.split(',') if c.strip()]
-                    if chamber_list:
-                        placeholders = ','.join([placeholder for _ in chamber_list])
-                        conditions.append(f"chamber IN ({placeholders})")
-                        params.extend(chamber_list)
-                
-                # Handle state filtering (single or multiple)
-                if state:
-                    conditions.append(f"LOWER(state) = LOWER({placeholder})")
-                    params.append(state)
-                elif states:
-                    # Handle comma-separated list of states
-                    state_list = [s.strip() for s in states.split(',') if s.strip()]
-                    if state_list:
-                        # Create case-insensitive comparisons for each state
-                        state_placeholders = ' OR '.join([f"LOWER(state) = LOWER({placeholder})" for _ in state_list])
-                        conditions.append(f"({state_placeholders})")
-                        params.extend(state_list)
-                
-                if search_term:
-                    conditions.append(f"(bill_id LIKE {placeholder} OR bill_title LIKE {placeholder})")
-                    params.extend([f'%{search_term}%', f'%{search_term}%'])
-                
-                if conditions:
-                    base_query += " AND " + " AND ".join(conditions)
-                
-                base_query += " ORDER BY generated_at DESC"
+                # Combine all params
+                params = filter_params.copy() + where_params + [page_size, offset]
                 
                 cursor.execute(base_query, params)
                 
@@ -557,7 +620,13 @@ def create_app():
                     
                     bills.append(bill)
                 
-                return jsonify(bills)
+                return jsonify({
+                    'bills': bills,
+                    'total': total_count,
+                    'page': page,
+                    'pageSize': page_size,
+                    'totalPages': (total_count + page_size - 1) // page_size
+                })
             
         except Exception as e:
             return jsonify({'error': str(e)}), 500
