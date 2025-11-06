@@ -130,12 +130,14 @@ const DashboardPage: React.FC = () => {
   const displayMetadataLoading = selectedCommitteeId ? metadataLoading : globalMetadataLoading
 
   // Calculate contextual stats based on current filters
-  // Use filteredStats endpoint for accurate calculations when filters are applied
+  // CRITICAL: Always use dedicated stats endpoints, NEVER use paginated bill data
   const contextualStats = useMemo(() => {
-    // If no committees selected, show global stats from API (most accurate)
+    // If no committees selected, ALWAYS use global stats from API (never use filteredStats)
+    // This prevents issues where search terms or other filters might cause incorrect stats
     if (!filters.committees || filters.committees.length === 0) {
-      if (!stats) return null
+      if (!stats || statsLoading) return null
       
+      // Always use global stats - ignore any other filters for global view
       return {
         title: 'All Committees',
         total_committees: stats.total_committees,
@@ -149,8 +151,9 @@ const DashboardPage: React.FC = () => {
       }
     }
 
-    // For filtered committees, use filteredStats endpoint (efficient)
-    if (!filteredStats) return null
+    // For filtered committees, use filteredStats endpoint (includes ALL bills for that committee)
+    // Wait for loading to complete to avoid showing stale/wrong data
+    if (!filteredStats || filteredStatsLoading) return null
     
     const selectedCommittees = committees?.filter(c => filters.committees.includes(c.committee_id))
     const committeeNames = selectedCommittees?.map(c => c.name) || []
@@ -159,6 +162,7 @@ const DashboardPage: React.FC = () => {
       : `${filters.committees.length} Selected Committees`
 
     // Use stats from filteredStats endpoint (provisional = unknown_bills in this context)
+    // This endpoint returns stats for ALL bills matching filters, not just paginated ones
     return {
       title,
       total_committees: filters.committees.length,
@@ -170,7 +174,7 @@ const DashboardPage: React.FC = () => {
       unknown_bills: filteredStats.unknown_bills || 0,
       overall_compliance_rate: filteredStats.overall_compliance_rate || 0
     }
-  }, [filteredStats, filters.committees, stats, committees])
+  }, [filteredStats, filteredStatsLoading, filters.committees, stats, statsLoading, committees])
 
 
   // Sorting handler
