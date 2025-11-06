@@ -36,11 +36,12 @@ export const useCommittees = () => {
 }
 
 // Custom hook for fetching bills with filters
-export const useBills = (filters?: DashboardFilters) => {
+export const useBills = (filters?: DashboardFilters, page?: number, pageSize?: number, sortBy?: string | null, sortDir?: 'asc' | 'desc' | null) => {
   const [bills, setBills] = useState<Bill[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [totalCount, setTotalCount] = useState(0)
+  const [totalPages, setTotalPages] = useState(0)
 
   useEffect(() => {
     const fetchBills = async () => {
@@ -49,7 +50,16 @@ export const useBills = (filters?: DashboardFilters) => {
         setError(null)
         
         // Convert filters to API parameters
-        const params: any = {}
+        const params: any = {
+          page: page || 1,
+          pageSize: pageSize || 100
+        }
+        
+        if (sortBy && sortDir) {
+          params.sortBy = sortBy
+          params.sortDir = sortDir
+        }
+        
         if (filters) {
           if (filters.committees.length > 0) {
             params.committees = filters.committees.join(',')
@@ -72,9 +82,11 @@ export const useBills = (filters?: DashboardFilters) => {
         }
 
         const response = await apiService.getBills(params)
+        // Handle both old format (array) and new format (object with bills array)
         const billsData = response.data.bills || response.data || []
         setBills(Array.isArray(billsData) ? billsData : [])
-        setTotalCount(response.data.count || billsData.length || 0)
+        setTotalCount(response.data.total || response.data.count || billsData.length || 0)
+        setTotalPages(response.data.totalPages || Math.ceil((response.data.total || billsData.length || 0) / (pageSize || 100)))
       } catch (err: any) {
         setError(err.response?.data?.error || 'Failed to fetch bills')
       } finally {
@@ -83,7 +95,7 @@ export const useBills = (filters?: DashboardFilters) => {
     }
 
     fetchBills()
-  }, [filters])
+  }, [filters, page, pageSize, sortBy, sortDir])
 
   const refetch = () => {
     const fetchBills = async () => {
@@ -91,7 +103,16 @@ export const useBills = (filters?: DashboardFilters) => {
         setLoading(true)
         setError(null)
         
-        const params: any = {}
+        const params: any = {
+          page: page || 1,
+          pageSize: pageSize || 100
+        }
+        
+        if (sortBy && sortDir) {
+          params.sortBy = sortBy
+          params.sortDir = sortDir
+        }
+        
         if (filters) {
           if (filters.committees.length > 0) {
             params.committees = filters.committees.join(',')
@@ -116,7 +137,8 @@ export const useBills = (filters?: DashboardFilters) => {
         const response = await apiService.getBills(params)
         const billsData = response.data.bills || response.data || []
         setBills(Array.isArray(billsData) ? billsData : [])
-        setTotalCount(response.data.count || billsData.length || 0)
+        setTotalCount(response.data.total || response.data.count || billsData.length || 0)
+        setTotalPages(response.data.totalPages || Math.ceil((response.data.total || billsData.length || 0) / (pageSize || 100)))
       } catch (err: any) {
         setError(err.response?.data?.error || 'Failed to fetch bills')
       } finally {
@@ -127,7 +149,7 @@ export const useBills = (filters?: DashboardFilters) => {
     fetchBills()
   }
 
-  return { bills, loading, error, totalCount, refetch }
+  return { bills, loading, error, totalCount, totalPages, refetch }
 }
 
 // Custom hook for fetching global statistics
