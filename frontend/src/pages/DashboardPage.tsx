@@ -111,8 +111,8 @@ const DashboardPage: React.FC = () => {
   const [committeeViewMode, setCommitteeViewMode] = useState<'top_performers' | 'all_committees'>('top_performers')
   const [committeeLimit, setCommitteeLimit] = useState(15)
 
-  // Fetch bills with debounced filters to prevent rapid API calls during typing
-  const { bills: billsData, loading: billsLoading, error: billsError } = useBills(debouncedFilters)
+  // Fetch bills with debounced filters, pagination, and sorting
+  const { bills: billsData, loading: billsLoading, error: billsError, totalCount: totalBillsCount, totalPages: billsTotalPages } = useBills(debouncedFilters, currentPage, pageSize, sortColumn, sortDirection)
 
   // Fetch committee details when a single committee is selected
   const selectedCommitteeId = filters.committees.length === 1 ? filters.committees[0] : null
@@ -125,82 +125,63 @@ const DashboardPage: React.FC = () => {
   const displayMetadataLoading = selectedCommitteeId ? metadataLoading : globalMetadataLoading
 
   // Calculate contextual stats based on current filters
+  // Note: Since bills are now paginated, we use API stats for accuracy
+  // For filtered views, we show the total count from the API response
   const contextualStats = useMemo(() => {
-    // If no committees selected, show global stats from API while bills are loading
+    // If no committees selected, show global stats from API
     if (!filters.committees || filters.committees.length === 0) {
       if (!stats) return null
-      
-      // If bills are still loading, return API stats as-is
-      if (!billsData || billsLoading) {
-        return {
-          title: 'All Committees',
-          total_committees: stats.total_committees,
-          total_bills: stats.total_bills,
-          compliant_bills: stats.compliant_bills,
-          provisional_bills: stats.provisional_bills || 0,
-          incomplete_bills: 0,
-          non_compliant_bills: stats.non_compliant_bills,
-          unknown_bills: stats.unknown_bills,
-          overall_compliance_rate: stats.overall_compliance_rate
-        }
-      }
-      
-      // Recalculate using effective states from all bills
-      const compliant = billsData.filter(bill => getEffectiveState(bill) === 'compliant').length
-      const provisional = billsData.filter(bill => getEffectiveState(bill) === 'provisional').length
-      const nonCompliant = billsData.filter(bill => getEffectiveState(bill) === 'non-compliant').length
-      const monitoring = billsData.filter(bill => getEffectiveState(bill) === 'monitoring').length
-      const total = billsData.length
-      
-      // Compliance rate includes provisional and monitoring bills (now consolidated as "Provisional")
-      const complianceRate = total > 0 
-        ? Math.round(((compliant + provisional + monitoring) / total) * 100) 
-        : 0
       
       return {
         title: 'All Committees',
         total_committees: stats.total_committees,
-        total_bills: total,
-        compliant_bills: compliant,
-        provisional_bills: provisional,
+        total_bills: stats.total_bills,
+        compliant_bills: stats.compliant_bills,
+        provisional_bills: stats.provisional_bills || 0,
         incomplete_bills: 0,
-        non_compliant_bills: nonCompliant,
-        unknown_bills: monitoring,
-        overall_compliance_rate: complianceRate
+        non_compliant_bills: stats.non_compliant_bills,
+        unknown_bills: stats.unknown_bills,
+        overall_compliance_rate: stats.overall_compliance_rate
       }
     }
 
-    // Calculate stats for filtered data using effective states
-    const compliant = billsData.filter(bill => getEffectiveState(bill) === 'compliant').length
-    const provisional = billsData.filter(bill => getEffectiveState(bill) === 'provisional').length
-    const nonCompliant = billsData.filter(bill => getEffectiveState(bill) === 'non-compliant').length
-    const monitoring = billsData.filter(bill => getEffectiveState(bill) === 'monitoring').length
-    const total = billsData.length
-    
-    // Compliance rate includes provisional and monitoring bills (now consolidated as "Provisional")
-    const complianceRate = total > 0 
-      ? Math.round(((compliant + provisional + monitoring) / total) * 100) 
-      : 0
-
-    // Get selected committee names for title
+    // For filtered committees, use the total count from API
+    // Note: We can't calculate exact stats from paginated data, so we show totals
+    // The actual breakdown would require a separate stats endpoint for filtered data
     const selectedCommittees = committees?.filter(c => filters.committees.includes(c.committee_id))
     const committeeNames = selectedCommittees?.map(c => c.name) || []
     const title = committeeNames.length === 1 
       ? `${committeeNames[0]}`
       : `${filters.committees.length} Selected Committees`
 
+    // Calculate approximate stats from current page data (for display purposes)
+    // This is not perfectly accurate but gives a rough idea
+    const compliant = billsData?.filter(bill => getEffectiveState(bill) === 'compliant').length || 0
+    const provisional = billsData?.filter(bill => getEffectiveState(bill) === 'provisional').length || 0
+    const nonCompliant = billsData?.filter(bill => getEffectiveState(bill) === 'non-compliant').length || 0
+    const monitoring = billsData?.filter(bill => getEffectiveState(bill) === 'monitoring').length || 0
+    
+    // Use total count from API for accurate total
+    const total = totalBillsCount || 0
+    
+    // Calculate rate from current page as approximation (not perfect but better than nothing)
+    const pageTotal = billsData?.length || 1
+    const pageCompliantRate = pageTotal > 0 
+      ? Math.round(((compliant + provisional + monitoring) / pageTotal) * 100) 
+      : 0
+
     return {
       title,
       total_committees: filters.committees.length,
       total_bills: total,
-      compliant_bills: compliant,
-      provisional_bills: provisional,
-      incomplete_bills: 0,  // Deprecated: merged into non_compliant_bills
-      non_compliant_bills: nonCompliant,
-      unknown_bills: monitoring,
-      overall_compliance_rate: complianceRate
+      compliant_bills: Math.round((compliant / pageTotal) * total) || 0,
+      provisional_bills: Math.round((provisional / pageTotal) * total) || 0,
+      incomplete_bills: 0,
+      non_compliant_bills: Math.round((nonCompliant / pageTotal) * total) || 0,
+      unknown_bills: Math.round((monitoring / pageTotal) * total) || 0,
+      overall_compliance_rate: pageCompliantRate
     }
-  }, [billsData, billsLoading, filters.committees, stats, committees])
+  }, [billsData, billsLoading, filters.committees, stats, committees, totalBillsCount])
 
 
   // Sorting handler
@@ -220,86 +201,23 @@ const DashboardPage: React.FC = () => {
     setCurrentPage(1) // Reset to first page when sorting
   }
 
-  // Sort bills
-  const sortedBills = useMemo(() => {
-    if (!billsData || !sortColumn || !sortDirection) return billsData
+  // Bills are now sorted and paginated on the backend
+  // No client-side sorting/pagination needed
 
-    const sorted = [...billsData].sort((a, b) => {
-      let aValue: any
-      let bValue: any
-
-      switch (sortColumn) {
-        case 'bill_id':
-          aValue = a.bill_id || ''
-          bValue = b.bill_id || ''
-          break
-        case 'title':
-          aValue = a.bill_title || ''
-          bValue = b.bill_title || ''
-          break
-        case 'committee':
-          aValue = a.committee_name || ''
-          bValue = b.committee_name || ''
-          break
-        case 'status':
-          aValue = getEffectiveState(a)
-          bValue = getEffectiveState(b)
-          break
-        case 'hearing_date':
-          aValue = a.hearing_date || ''
-          bValue = b.hearing_date || ''
-          break
-        case 'deadline':
-          aValue = a.effective_deadline || ''
-          bValue = b.effective_deadline || ''
-          break
-        case 'summary':
-          aValue = a.summary_present ? 1 : 0
-          bValue = b.summary_present ? 1 : 0
-          break
-        case 'votes':
-          aValue = a.votes_present ? 1 : 0
-          bValue = b.votes_present ? 1 : 0
-          break
-        case 'reported_out':
-          aValue = a.reported_out ? 1 : 0
-          bValue = b.reported_out ? 1 : 0
-          break
-        case 'notice_gap':
-          aValue = a.notice_gap_days ?? -1
-          bValue = b.notice_gap_days ?? -1
-          break
-        default:
-          return 0
-      }
-
-      if (aValue < bValue) return sortDirection === 'asc' ? -1 : 1
-      if (aValue > bValue) return sortDirection === 'asc' ? 1 : -1
-      return 0
-    })
-
-    return sorted
-  }, [billsData, sortColumn, sortDirection])
-
-  // Pagination calculations
-  const totalBills = sortedBills?.length || 0
-  const totalPages = Math.ceil(totalBills / pageSize)
-  const startIndex = (currentPage - 1) * pageSize
-  const endIndex = startIndex + pageSize
-  const paginatedBills = sortedBills?.slice(startIndex, endIndex) || []
-
-  // Calculate contextual violation analysis
+  // Calculate contextual violation analysis from current page
+  // Note: This is approximate since we only have paginated data
   const violationAnalysis = useMemo(() => {
     if (!billsData || billsData.length === 0) return []
     
+    // Analyze current page data (not perfect but better than nothing)
     if (filters.committees.length === 0) {
-      // Global analysis
+      // Global analysis from current page
       return analyzeReasons(billsData)
     } else if (filters.committees.length === 1) {
-      // Single committee analysis
+      // Single committee analysis from current page
       return getTopViolationsForCommittee(billsData, filters.committees[0], 10)
     } else {
-      // Multiple committees - analyze filtered data
+      // Multiple committees - analyze current page
       const filteredBills = billsData.filter(bill => 
         bill.committee_id && filters.committees.includes(bill.committee_id)
       )
@@ -675,16 +593,8 @@ const DashboardPage: React.FC = () => {
     }
   }
 
-  // Only block on stats loading - committees can load in background
-  // (filters will show loading state if committees aren't ready)
-  if (statsLoading) {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="loading loading-spinner loading-lg"></div>
-      </div>
-    )
-  }
-
+  // Don't block rendering - show content as it loads
+  // Show errors inline if they occur
   if (statsError || committeesError || committeeStatsError) {
     return (
       <div className="alert alert-error">
@@ -1318,12 +1228,12 @@ const DashboardPage: React.FC = () => {
          </div>
 
       {/* Results Summary */}
-      {billsData && (
+      {billsData && totalBillsCount !== undefined && (
         <div className="alert alert-info">
           <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" className="stroke-current shrink-0 w-6 h-6">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
           </svg>
-          <span>Showing {billsData.length} bills matching your filters</span>
+          <span>Showing {totalBillsCount} bill{totalBillsCount !== 1 ? 's' : ''} matching your filters</span>
         </div>
       )}
 
@@ -1358,7 +1268,7 @@ const DashboardPage: React.FC = () => {
                   </tr>
                 </thead>
                 <tbody>
-                  {paginatedBills.map((bill: Bill) => (
+                  {billsData.map((bill: Bill) => (
                     <tr key={`${bill.bill_id}-${bill.committee_name || 'unknown'}`}>
                       <td>
                         <div className="font-mono font-bold">{bill.bill_id}</div>
@@ -1471,7 +1381,7 @@ const DashboardPage: React.FC = () => {
                 {/* Results Info and Page Size Selector */}
                 <div className="flex items-center gap-4">
                   <div className="text-sm text-base-content/70">
-                    Showing {startIndex + 1}-{Math.min(endIndex, totalBills)} of {totalBills} bills
+                    Showing {((currentPage - 1) * pageSize) + 1}-{Math.min(currentPage * pageSize, totalBillsCount)} of {totalBillsCount} bills
                   </div>
                   <div className="flex items-center gap-2">
                     <span className="text-sm text-base-content/70">Show:</span>
@@ -1490,7 +1400,7 @@ const DashboardPage: React.FC = () => {
                 </div>
 
                 {/* Pagination Buttons */}
-                {totalPages > 1 && (
+                {billsTotalPages > 1 && (
                   <div className="join">
                     <button 
                       className="join-item btn btn-sm"
@@ -1501,14 +1411,14 @@ const DashboardPage: React.FC = () => {
                     </button>
                     
                     {/* Page Numbers */}
-                    {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                    {Array.from({ length: Math.min(5, billsTotalPages) }, (_, i) => {
                       let pageNum;
-                      if (totalPages <= 5) {
+                      if (billsTotalPages <= 5) {
                         pageNum = i + 1;
                       } else if (currentPage <= 3) {
                         pageNum = i + 1;
-                      } else if (currentPage >= totalPages - 2) {
-                        pageNum = totalPages - 4 + i;
+                      } else if (currentPage >= billsTotalPages - 2) {
+                        pageNum = billsTotalPages - 4 + i;
                       } else {
                         pageNum = currentPage - 2 + i;
                       }
@@ -1528,7 +1438,7 @@ const DashboardPage: React.FC = () => {
                     
                     <button 
                       className="join-item btn btn-sm"
-                      disabled={currentPage === totalPages}
+                      disabled={currentPage === billsTotalPages}
                       onClick={() => handlePageChange(currentPage + 1)}
                     >
                       »
