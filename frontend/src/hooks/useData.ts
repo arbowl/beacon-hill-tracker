@@ -152,6 +152,104 @@ export const useBills = (filters?: DashboardFilters, page?: number, pageSize?: n
   return { bills, loading, error, totalCount, totalPages, refetch }
 }
 
+// Custom hook for fetching filtered stats (without fetching all bills)
+export const useFilteredStats = (filters?: DashboardFilters) => {
+  const [stats, setStats] = useState<any>(null)
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+
+  useEffect(() => {
+    const fetchStats = async () => {
+      try {
+        setLoading(true)
+        setError(null)
+        
+        const params: any = {}
+        if (filters) {
+          if (filters.committees.length > 0) {
+            params.committees = filters.committees.join(',')
+          }
+          if (filters.chambers.length > 0) {
+            params.chambers = filters.chambers.join(',')
+          }
+          if (filters.states.length > 0) {
+            params.states = filters.states.join(',')
+          }
+          if (filters.dateRange.start) {
+            params.start_date = filters.dateRange.start
+          }
+          if (filters.dateRange.end) {
+            params.end_date = filters.dateRange.end
+          }
+          if (filters.searchTerm) {
+            params.search = filters.searchTerm
+          }
+        }
+
+        const response = await apiService.getBillsStats(params)
+        setStats(response.data)
+      } catch (err: any) {
+        setError(err.response?.data?.error || 'Failed to fetch statistics')
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    fetchStats()
+  }, [filters])
+
+  return { data: stats, loading, error }
+}
+
+// Custom hook for fetching violation analysis (without fetching all bills)
+export const useViolationAnalysis = (filters?: DashboardFilters) => {
+  const [violations, setViolations] = useState<any[]>([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+
+  useEffect(() => {
+    const fetchViolations = async () => {
+      try {
+        setLoading(true)
+        setError(null)
+        
+        const params: any = {}
+        if (filters) {
+          if (filters.committees.length > 0) {
+            params.committees = filters.committees.join(',')
+          }
+          if (filters.chambers.length > 0) {
+            params.chambers = filters.chambers.join(',')
+          }
+          if (filters.states.length > 0) {
+            params.states = filters.states.join(',')
+          }
+          if (filters.dateRange.start) {
+            params.start_date = filters.dateRange.start
+          }
+          if (filters.dateRange.end) {
+            params.end_date = filters.dateRange.end
+          }
+          if (filters.searchTerm) {
+            params.search = filters.searchTerm
+          }
+        }
+
+        const response = await apiService.getBillsViolations(params)
+        setViolations(Array.isArray(response.data) ? response.data : [])
+      } catch (err: any) {
+        setError(err.response?.data?.error || 'Failed to fetch violation analysis')
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    fetchViolations()
+  }, [filters])
+
+  return { data: violations, loading, error }
+}
+
 // Custom hook for fetching global statistics
 export const useGlobalStats = () => {
   const [stats, setStats] = useState<GlobalStats | null>(null)
