@@ -1097,12 +1097,19 @@ def create_app():
                 where_clause = " AND " + " AND ".join(where_clauses) if where_clauses else ""
                 
                 # First, get total count for pagination
+                # Need to include bills table join if search_term is used (for bill_title)
+                count_query_cte_joins = "LEFT JOIN committees c ON bc.committee_id = c.committee_id"
+                count_query_cte_select = "bc.committee_id, bc.bill_id, bc.state"
+                if search_term:
+                    count_query_cte_joins += " LEFT JOIN bills b ON bc.bill_id = b.bill_id"
+                    count_query_cte_select += ", b.bill_title"
+                
                 count_query = f'''
                     WITH latest_bills AS (
-                        SELECT bc.committee_id, bc.bill_id, bc.state,
+                        SELECT {count_query_cte_select},
                                ROW_NUMBER() OVER (PARTITION BY bc.bill_id, bc.committee_id ORDER BY bc.generated_at DESC) as rn
                         FROM bill_compliance bc
-                        LEFT JOIN committees c ON bc.committee_id = c.committee_id
+                        {count_query_cte_joins}
                         WHERE 1=1 {filter_clause}
                     )
                     SELECT COUNT(*)
