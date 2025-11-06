@@ -428,6 +428,292 @@ def create_app():
         except Exception as e:
             return jsonify({'error': str(e)}), 500
 
+    # Filtered stats endpoint - get stats for bills matching filters
+    @flask_app.route('/api/bills/stats', methods=['GET'])
+    def get_filtered_stats():
+        """Get statistics for bills matching filters (without returning all bill data)"""
+        try:
+            with get_db_connection() as conn:
+                cursor = conn.cursor()
+                
+                # Get filter parameters (same as bills endpoint)
+                committee_id = request.args.get('committee_id')
+                committees = request.args.get('committees')
+                chambers = request.args.get('chambers')
+                chamber = request.args.get('chamber')
+                states = request.args.get('states')
+                state = request.args.get('state')
+                search_term = request.args.get('search', '')
+                
+                placeholder = '%s' if get_database_type() == 'postgresql' else '?'
+                
+                # Build filter conditions
+                filter_params = []
+                filter_conditions = []
+                
+                if committee_id:
+                    filter_conditions.append(f"bc.committee_id = {placeholder}")
+                    filter_params.append(committee_id)
+                elif committees:
+                    committee_list = [c.strip() for c in committees.split(',') if c.strip()]
+                    if committee_list:
+                        placeholders = ','.join([placeholder for _ in committee_list])
+                        filter_conditions.append(f"bc.committee_id IN ({placeholders})")
+                        filter_params.extend(committee_list)
+                
+                chamber_filter_params = []
+                chamber_conditions = []
+                if chamber:
+                    chamber_conditions.append(f"c.chamber = {placeholder}")
+                    chamber_filter_params.append(chamber)
+                elif chambers:
+                    chamber_list = [c.strip() for c in chambers.split(',') if c.strip()]
+                    if chamber_list:
+                        placeholders = ','.join([placeholder for _ in chamber_list])
+                        chamber_conditions.append(f"c.chamber IN ({placeholders})")
+                        chamber_filter_params.extend(chamber_list)
+                
+                if state:
+                    filter_conditions.append(f"LOWER(bc.state) = LOWER({placeholder})")
+                    filter_params.append(state)
+                elif states:
+                    state_list = [s.strip() for s in states.split(',') if s.strip()]
+                    if state_list:
+                        state_placeholders = ' OR '.join([f"LOWER(bc.state) = LOWER({placeholder})" for _ in state_list])
+                        filter_conditions.append(f"({state_placeholders})")
+                        filter_params.extend(state_list)
+                
+                filter_clause = " AND " + " AND ".join(filter_conditions) if filter_conditions else ""
+                
+                where_clauses = []
+                where_params = []
+                
+                if chamber_conditions:
+                    where_clauses.extend(chamber_conditions)
+                    where_params.extend(chamber_filter_params)
+                
+                if search_term:
+                    where_clauses.append(f"(b.bill_id LIKE {placeholder} OR b.bill_title LIKE {placeholder})")
+                    where_params.extend([f'%{search_term}%', f'%{search_term}%'])
+                
+                where_clause = " AND " + " AND ".join(where_clauses) if where_clauses else ""
+                
+                # Calculate stats for filtered bills
+                stats_query = f'''
+                    WITH latest_bills AS (
+                        SELECT bc.*, b.bill_id, b.bill_title,
+                               ROW_NUMBER() OVER (PARTITION BY bc.bill_id, bc.committee_id ORDER BY bc.generated_at DESC) as rn
+                        FROM bill_compliance bc
+                        LEFT JOIN bills b ON bc.bill_id = b.bill_id
+                        LEFT JOIN committees c ON bc.committee_id = c.committee_id
+                        WHERE 1=1 {filter_clause}
+                    )
+                    SELECT 
+                        COUNT(CASE WHEN rn = 1 THEN 1 END) as total_bills,
+                        SUM(CASE WHEN rn = 1 AND LOWER(state) = 'compliant' THEN 1 ELSE 0 END) as compliant_bills,
+                        SUM(CASE WHEN rn = 1 AND LOWER(state) IN ('incomplete') THEN 1 ELSE 0 END) as incomplete_bills,
+                        SUM(CASE WHEN rn = 1 AND LOWER(state) = 'non-compliant' THEN 1 ELSE 0 END) as non_compliant_bills,
+                        SUM(CASE WHEN rn = 1 AND (LOWER(state) IN ('unknown') OR state = 'Unknown') THEN 1 ELSE 0 END) as unknown_bills
+                    FROM latest_bills
+                    WHERE rn = 1 {where_clause}
+                '''
+                
+                stats_params = filter_params.copy() + where_params
+                cursor.execute(stats_query, stats_params)
+                result = cursor.fetchone()
+                
+                if result:
+                    incomplete_count = result[2] or 0
+                    non_compliant_count = result[3] or 0
+                    total = result[0] or 0
+                    compliant = result[1] or 0
+                    unknown = result[4] or 0
+                    
+                    # Calculate compliance rate
+                    compliance_rate = 0
+                    if total > 0 and (total - unknown) > 0:
+                        compliance_rate = round((compliant / (total - unknown)) * 100, 2)
+                    
+                    stats = {
+                        'total_bills': total,
+                        'compliant_bills': compliant,
+                        'non_compliant_bills': non_compliant_count + incomplete_count,
+                        'unknown_bills': unknown,
+                        'overall_compliance_rate': compliance_rate
+                    }
+                else:
+                    stats = {
+                        'total_bills': 0,
+                        'compliant_bills': 0,
+                        'non_compliant_bills': 0,
+                        'unknown_bills': 0,
+                        'overall_compliance_rate': 0
+                    }
+                
+                return jsonify(stats)
+            
+        except Exception as e:
+            return jsonify({'error': str(e)}), 500
+
+    # Violation analysis endpoint - get violation breakdown for filtered bills
+    @flask_app.route('/api/bills/violations', methods=['GET'])
+    def get_violation_analysis():
+        """Get violation analysis for bills matching filters (without returning all bill data)"""
+        try:
+            
+            with get_db_connection() as conn:
+                cursor = conn.cursor()
+                
+                # Get filter parameters
+                committee_id = request.args.get('committee_id')
+                committees = request.args.get('committees')
+                chambers = request.args.get('chambers')
+                chamber = request.args.get('chamber')
+                states = request.args.get('states')
+                state = request.args.get('state')
+                search_term = request.args.get('search', '')
+                
+                placeholder = '%s' if get_database_type() == 'postgresql' else '?'
+                
+                # Build filter conditions
+                filter_params = []
+                filter_conditions = []
+                
+                if committee_id:
+                    filter_conditions.append(f"bc.committee_id = {placeholder}")
+                    filter_params.append(committee_id)
+                elif committees:
+                    committee_list = [c.strip() for c in committees.split(',') if c.strip()]
+                    if committee_list:
+                        placeholders = ','.join([placeholder for _ in committee_list])
+                        filter_conditions.append(f"bc.committee_id IN ({placeholders})")
+                        filter_params.extend(committee_list)
+                
+                chamber_filter_params = []
+                chamber_conditions = []
+                if chamber:
+                    chamber_conditions.append(f"c.chamber = {placeholder}")
+                    chamber_filter_params.append(chamber)
+                elif chambers:
+                    chamber_list = [c.strip() for c in chambers.split(',') if c.strip()]
+                    if chamber_list:
+                        placeholders = ','.join([placeholder for _ in chamber_list])
+                        chamber_conditions.append(f"c.chamber IN ({placeholders})")
+                        chamber_filter_params.extend(chamber_list)
+                
+                if state:
+                    filter_conditions.append(f"LOWER(bc.state) = LOWER({placeholder})")
+                    filter_params.append(state)
+                elif states:
+                    state_list = [s.strip() for s in states.split(',') if s.strip()]
+                    if state_list:
+                        state_placeholders = ' OR '.join([f"LOWER(bc.state) = LOWER({placeholder})" for _ in state_list])
+                        filter_conditions.append(f"({state_placeholders})")
+                        filter_params.extend(state_list)
+                
+                filter_clause = " AND " + " AND ".join(filter_conditions) if filter_conditions else ""
+                
+                where_clauses = []
+                where_params = []
+                
+                if chamber_conditions:
+                    where_clauses.extend(chamber_conditions)
+                    where_params.extend(chamber_filter_params)
+                
+                if search_term:
+                    where_clauses.append(f"(b.bill_id LIKE {placeholder} OR b.bill_title LIKE {placeholder})")
+                    where_params.extend([f'%{search_term}%', f'%{search_term}%'])
+                
+                # Only get non-compliant bills for violation analysis
+                where_clauses.append("LOWER(bc.state) = 'non-compliant'")
+                where_clause = " AND " + " AND ".join(where_clauses) if where_clauses else ""
+                
+                # Get non-compliant bills with their reasons
+                violations_query = f'''
+                    WITH latest_bills AS (
+                        SELECT bc.bill_id, bc.reason, bc.state,
+                               ROW_NUMBER() OVER (PARTITION BY bc.bill_id, bc.committee_id ORDER BY bc.generated_at DESC) as rn
+                        FROM bill_compliance bc
+                        LEFT JOIN bills b ON bc.bill_id = b.bill_id
+                        LEFT JOIN committees c ON bc.committee_id = c.committee_id
+                        WHERE 1=1 {filter_clause}
+                    )
+                    SELECT bill_id, reason
+                    FROM latest_bills
+                    WHERE rn = 1 {where_clause}
+                '''
+                
+                violations_params = filter_params.copy() + where_params
+                cursor.execute(violations_query, violations_params)
+                results = cursor.fetchall()
+                
+                # Parse violation types from reasons (matching frontend logic)
+                violation_counts = {
+                    'not_reported_out': {'count': 0, 'bills': []},
+                    'no_votes_posted': {'count': 0, 'bills': []},
+                    'no_summaries_posted': {'count': 0, 'bills': []},
+                    'notice_violation': {'count': 0, 'bills': []},
+                    'deadline_passed': {'count': 0, 'bills': []}
+                }
+                
+                for row in results:
+                    bill_id = row[0]
+                    reason = (row[1] or '').lower()
+                    
+                    if 'not reported out' in reason:
+                        violation_counts['not_reported_out']['count'] += 1
+                        violation_counts['not_reported_out']['bills'].append(bill_id)
+                    
+                    if 'no votes posted' in reason:
+                        violation_counts['no_votes_posted']['count'] += 1
+                        violation_counts['no_votes_posted']['bills'].append(bill_id)
+                    
+                    if 'no summaries posted' in reason:
+                        violation_counts['no_summaries_posted']['count'] += 1
+                        violation_counts['no_summaries_posted']['bills'].append(bill_id)
+                    
+                    if 'notice' in reason and 'exempt from notice' not in reason:
+                        violation_counts['notice_violation']['count'] += 1
+                        violation_counts['notice_violation']['bills'].append(bill_id)
+                    
+                    if 'deadline' in reason and 'before deadline' not in reason:
+                        violation_counts['deadline_passed']['count'] += 1
+                        violation_counts['deadline_passed']['bills'].append(bill_id)
+                
+                # Convert to frontend format
+                total_violations = sum(v['count'] for v in violation_counts.values())
+                
+                violation_analysis = []
+                violation_labels = {
+                    'not_reported_out': {'label': 'Not Reported Out', 'description': 'Bills not reported out of committee', 'color': '#dc2626'},
+                    'no_votes_posted': {'label': 'No Votes Posted', 'description': 'Voting records not posted', 'color': '#ea580c'},
+                    'no_summaries_posted': {'label': 'No Summaries Posted', 'description': 'Meeting summaries not posted', 'color': '#d97706'},
+                    'notice_violation': {'label': 'Notice Violation', 'description': 'Insufficient advance notice', 'color': '#ca8a04'},
+                    'deadline_passed': {'label': 'Deadline Passed', 'description': 'Deadline passed without completion', 'color': '#65a30d'}
+                }
+                
+                for violation_id, data in violation_counts.items():
+                    if data['count'] > 0:
+                        violation_analysis.append({
+                            'violation': {
+                                'id': violation_id,
+                                'label': violation_labels[violation_id]['label'],
+                                'description': violation_labels[violation_id]['description'],
+                                'color': violation_labels[violation_id]['color']
+                            },
+                            'count': data['count'],
+                            'percentage': (data['count'] / total_violations * 100) if total_violations > 0 else 0,
+                            'bills': list(set(data['bills']))  # Remove duplicates
+                        })
+                
+                # Sort by count descending
+                violation_analysis.sort(key=lambda x: x['count'], reverse=True)
+                
+                return jsonify(violation_analysis)
+            
+        except Exception as e:
+            return jsonify({'error': str(e)}), 500
+
     # Bills endpoint with filtering
     @flask_app.route('/api/bills', methods=['GET'])
     def get_bills():
