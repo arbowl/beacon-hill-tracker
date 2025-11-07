@@ -50,7 +50,7 @@ const CommitteeChangeWidget: React.FC<CommitteeChangeWidgetProps> = ({
               {diffReport.compliance_delta !== undefined && diffReport.compliance_delta !== null && (
                 <div className="flex items-center gap-3 p-3 rounded-lg bg-base-200/50">
                   <div className={`badge badge-lg ${
-                    diffReport.compliance_delta > 0 ? 'badge-success' : 
+                    diffReport.compliance_delta > 0 ? 'badge-success text-white' : 
                     diffReport.compliance_delta < 0 ? 'badge-error' : 
                     'badge-neutral'
                   }`}>
