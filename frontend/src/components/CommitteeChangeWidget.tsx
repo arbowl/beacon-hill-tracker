@@ -1,5 +1,6 @@
-import React from 'react'
-import { DiffReport } from '../types'
+import React, { useState } from 'react'
+import type { DiffReport, IntervalType } from '../types'
+import IntervalSelector from './IntervalSelector'
 
 interface CommitteeChangeWidgetProps {
   diffReport: DiffReport | null
@@ -15,9 +16,27 @@ const CommitteeChangeWidget: React.FC<CommitteeChangeWidgetProps> = ({
   diffReports: _diffReports,
   analysis, 
   loading = false,
-  availableDates: _availableDates,
-  onIntervalChange: _onIntervalChange
+  availableDates = [],
+  onIntervalChange
 }) => {
+  const [selectedInterval, setSelectedInterval] = useState<IntervalType>('daily')
+  const [selectedDate, setSelectedDate] = useState<string | null>(null)
+
+  const handleIntervalChange = (interval: IntervalType) => {
+    setSelectedInterval(interval)
+    // Clear date when switching away from custom
+    if (interval !== 'custom') {
+      setSelectedDate(null)
+      onIntervalChange?.(interval, null)
+    } else {
+      onIntervalChange?.(interval, selectedDate)
+    }
+  }
+
+  const handleDateChange = (date: string | null) => {
+    setSelectedDate(date)
+    onIntervalChange?.(selectedInterval, date)
+  }
   // Show loading state
   if (loading) {
     return (
@@ -41,12 +60,26 @@ const CommitteeChangeWidget: React.FC<CommitteeChangeWidgetProps> = ({
     <div className="card bg-gradient-to-br from-base-100/95 via-primary/5 to-base-100/95 border border-primary/30 shadow-md mb-6 backdrop-blur-sm w-full">
       <div className="card-body py-5 px-6 w-full">
         {/* Header */}
-        <div className="flex items-center gap-2 mb-4 pb-3 border-b border-base-300/30">
-          <svg className="w-5 h-5 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
-          </svg>
-          <h3 className="text-lg font-semibold text-base-content">Recent Activity (Beta)</h3>
+        <div className="flex items-center justify-between mb-4 pb-3 border-b border-base-300/30">
+          <div className="flex items-center gap-2">
+            <svg className="w-5 h-5 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
+            </svg>
+            <h3 className="text-lg font-semibold text-base-content">Recent Activity (Beta)</h3>
+          </div>
         </div>
+
+        {/* Interval Selector */}
+        {onIntervalChange && (
+          <div className="mb-4">
+            <IntervalSelector
+              selectedInterval={selectedInterval}
+              onIntervalChange={handleIntervalChange}
+              onDateChange={handleDateChange}
+              availableDates={availableDates}
+            />
+          </div>
+        )}
 
         <div className="flex flex-col md:flex-row items-start gap-5 w-full">
           {/* Left side: Change indicators */}
