@@ -35,7 +35,8 @@ const CommitteeChangeWidget: React.FC<CommitteeChangeWidgetProps> = ({
 
   const handleDateChange = (date: string | null) => {
     setSelectedDate(date)
-    onIntervalChange?.(selectedInterval, date)
+    // When date changes, interval must be 'custom' (date picker only shows for custom)
+    onIntervalChange?.('custom', date)
   }
   // Show loading state
   if (loading) {
