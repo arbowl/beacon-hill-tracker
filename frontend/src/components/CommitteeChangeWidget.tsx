@@ -3,14 +3,20 @@ import { DiffReport } from '../types'
 
 interface CommitteeChangeWidgetProps {
   diffReport: DiffReport | null
+  diffReports?: any
   analysis: string | null
   loading?: boolean
+  availableDates?: string[]
+  onIntervalChange?: (interval: 'daily' | 'weekly' | 'monthly' | 'custom', date?: string | null) => void
 }
 
 const CommitteeChangeWidget: React.FC<CommitteeChangeWidgetProps> = ({ 
   diffReport, 
+  diffReports,
   analysis, 
-  loading = false 
+  loading = false,
+  availableDates,
+  onIntervalChange
 }) => {
   // Show loading state
   if (loading) {

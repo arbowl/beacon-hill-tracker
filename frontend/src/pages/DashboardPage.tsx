@@ -125,9 +125,9 @@ const DashboardPage: React.FC = () => {
   const [selectedInterval, setSelectedInterval] = useState<'daily' | 'weekly' | 'monthly' | 'custom'>('daily')
   const [selectedDate, setSelectedDate] = useState<string | null>(null)
   const { metadata: committeeMetadata, loading: metadataLoading } = useCommitteeMetadata(
-    selectedCommitteeId, 
+    selectedCommitteeId,
     selectedInterval === 'custom' ? undefined : selectedInterval,
-    selectedInterval === 'custom' ? selectedDate : undefined
+    selectedInterval === 'custom' ? selectedDate || undefined : undefined
   )
   const { scanDates } = useCommitteeScanDates(selectedCommitteeId)
   const { metadata: globalMetadata, loading: globalMetadataLoading } = useGlobalMetadata()
@@ -1456,7 +1456,7 @@ const DashboardPage: React.FC = () => {
           analysis={displayMetadata?.analysis || null}
           loading={displayMetadataLoading}
           availableDates={scanDates}
-          onIntervalChange={(interval, date) => {
+          onIntervalChange={(interval: 'daily' | 'weekly' | 'monthly' | 'custom', date?: string | null) => {
             setSelectedInterval(interval)
             setSelectedDate(date || null)
           }}

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react'
-import { IntervalType } from '../types'
+import type { IntervalType } from '../types'
 
 interface IntervalSelectorProps {
   selectedInterval: IntervalType
@@ -12,7 +12,7 @@ const IntervalSelector: React.FC<IntervalSelectorProps> = ({
   selectedInterval,
   onIntervalChange,
   onDateChange,
-  availableDates = []
+  availableDates = [] as string[]
 }) => {
   const [selectedDate, setSelectedDate] = useState<string>('')
 
