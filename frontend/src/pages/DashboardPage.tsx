@@ -1444,12 +1444,12 @@ const DashboardPage: React.FC = () => {
       </div>
 
       {/* Committee Change Widget - shown when committee selected or for global view */}
-      {(selectedCommitteeId || displayMetadata?.diff_report || displayMetadata?.diff_reports) && (
+      {(selectedCommitteeId || displayMetadata?.diff_report) && (
         <CommitteeChangeWidget
           diffReport={displayMetadata?.diff_report || null}
-          diffReports={displayMetadata?.diff_reports || null}
           analysis={displayMetadata?.analysis || null}
           loading={displayMetadataLoading}
+          committeeId={selectedCommitteeId}
         />
       )}
 
