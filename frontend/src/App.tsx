@@ -14,6 +14,7 @@ import KeysPage from './pages/KeysPage'
 import AdminPage from './pages/AdminPage'
 import ContactPage from './pages/ContactPage'
 import AboutPage from './pages/AboutPage'
+import FAQPage from './pages/FAQPage'
 import PrivacyPage from './pages/PrivacyPage'
 import TOSPage from './pages/TOSPage'
 import PressPage from './pages/PressPage'
@@ -35,6 +36,7 @@ function App() {
             <Route path="/reset-password" element={<ResetPasswordPage />} />
             <Route path="/contact" element={<ContactPage />} />
             <Route path="/about" element={<AboutPage />} />
+            <Route path="/faq" element={<FAQPage />} />
             <Route path="/privacy" element={<PrivacyPage />} />
             <Route path="/tos" element={<TOSPage />} />
             <Route path="/press" element={<PressPage />} />

@@ -56,6 +56,15 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
                     About
                   </Link>
                 </li>
+                <li>
+                  <Link
+                    to="/faq"
+                    className={isActive('/faq') ? 'active' : ''}
+                    onClick={() => setMobileMenuOpen(false)}
+                  >
+                    FAQ
+                  </Link>
+                </li>
                 {user && (
                   <li>
                     <Link 
@@ -119,6 +128,14 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
                 className={isActive('/about') ? 'active' : ''}
               >
                 About
+              </Link>
+            </li>
+            <li>
+              <Link
+                to="/faq"
+                className={isActive('/faq') ? 'active' : ''}
+              >
+                FAQ
               </Link>
             </li>
             {user && (
@@ -225,6 +242,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
         <nav>
           <div className="grid grid-flow-col gap-4">
             <Link to="/about" className="link link-hover">About</Link>
+            <Link to="/faq" className="link link-hover">FAQ</Link>
             <Link to="/contact" className="link link-hover">Contact</Link>
             <Link to="/press" className="link link-hover">Press Kit</Link>
             <Link to="/privacy" className="link link-hover">Privacy Policy</Link>
