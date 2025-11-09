@@ -6,15 +6,13 @@ interface IntervalSelectorProps {
   onIntervalChange: (interval: IntervalType) => void
   onDateChange?: (date: string | null) => void
   availableDates?: string[]
-  committeeId?: string | null
 }
 
 const IntervalSelector: React.FC<IntervalSelectorProps> = ({
   selectedInterval,
   onIntervalChange,
   onDateChange,
-  availableDates = [],
-  committeeId
+  availableDates = []
 }) => {
   const [selectedDate, setSelectedDate] = useState<string>('')
 

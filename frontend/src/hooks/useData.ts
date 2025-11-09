@@ -653,7 +653,7 @@ export const useCommitteeMetadata = (
 ) => {
   const [metadata, setMetadata] = useState<{ 
     diff_report?: DiffReport | null
-    diff_reports?: { daily?: DiffReport | null; weekly?: DiffReport | null; monthly?: DiffReport | null } | null
+    diff_reports?: DiffReports | null
     analysis?: string | null
     scan_date?: string | null 
   } | null>(null)
@@ -732,7 +732,7 @@ export const useCommitteeScanDates = (committeeId: string | null) => {
 export const useGlobalMetadata = () => {
   const [metadata, setMetadata] = useState<{ 
     diff_report?: DiffReport | null
-    diff_reports?: { daily?: DiffReport | null; weekly?: DiffReport | null; monthly?: DiffReport | null } | null
+    diff_reports?: DiffReports | null
     analysis?: string | null
     scan_date?: string | null 
   } | null>(null)

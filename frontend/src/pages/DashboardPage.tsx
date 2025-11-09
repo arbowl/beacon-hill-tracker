@@ -1455,7 +1455,6 @@ const DashboardPage: React.FC = () => {
           diffReports={displayMetadata?.diff_reports || null}
           analysis={displayMetadata?.analysis || null}
           loading={displayMetadataLoading}
-          committeeId={selectedCommitteeId}
           availableDates={scanDates}
           onIntervalChange={(interval, date) => {
             setSelectedInterval(interval)

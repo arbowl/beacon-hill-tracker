@@ -7,7 +7,6 @@ interface CommitteeChangeWidgetProps {
   diffReports?: DiffReports | null  // New structure
   analysis?: string | null  // Legacy support (top-level)
   loading?: boolean
-  committeeId?: string | null
   availableDates?: string[]
   onIntervalChange?: (interval: IntervalType, date?: string | null) => void
 }
@@ -17,7 +16,6 @@ const CommitteeChangeWidget: React.FC<CommitteeChangeWidgetProps> = ({
   diffReports,  // New structure
   analysis,  // Legacy support
   loading = false,
-  committeeId = null,
   availableDates = [],
   onIntervalChange
 }) => {
@@ -93,7 +91,6 @@ const CommitteeChangeWidget: React.FC<CommitteeChangeWidgetProps> = ({
             onIntervalChange={handleIntervalChange}
             onDateChange={handleDateChange}
             availableDates={availableDates}
-            committeeId={committeeId}
           />
         )}
 
