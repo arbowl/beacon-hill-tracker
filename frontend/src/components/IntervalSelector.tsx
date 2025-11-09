@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react'
-import { IntervalType } from '../types'
+import type { IntervalType } from '../types'
 
 interface IntervalSelectorProps {
   selectedInterval: IntervalType
+  selectedDate?: string | null
   onIntervalChange: (interval: IntervalType) => void
   onDateChange?: (date: string | null) => void
   availableDates?: string[]
@@ -10,29 +11,41 @@ interface IntervalSelectorProps {
 
 const IntervalSelector: React.FC<IntervalSelectorProps> = ({
   selectedInterval,
+  selectedDate: propSelectedDate,
   onIntervalChange,
   onDateChange,
   availableDates = [] as string[]
 }) => {
-  const [selectedDate, setSelectedDate] = useState<string>('')
+  // Use prop if provided (controlled), otherwise use local state (uncontrolled)
+  const [localDate, setLocalDate] = useState<string>('')
+  const selectedDate = propSelectedDate !== undefined ? (propSelectedDate || '') : localDate
 
   useEffect(() => {
     if (selectedInterval !== 'custom' && selectedDate) {
-      setSelectedDate('')
+      if (propSelectedDate === undefined) {
+        // Only update local state if uncontrolled
+        setLocalDate('')
+      }
       onDateChange?.(null)
     }
-  }, [selectedInterval, onDateChange])
+  }, [selectedInterval, propSelectedDate, selectedDate, onDateChange])
 
   const handleIntervalChange = (interval: IntervalType) => {
     onIntervalChange(interval)
     if (interval !== 'custom') {
-      setSelectedDate('')
+      if (propSelectedDate === undefined) {
+        // Only update local state if uncontrolled
+        setLocalDate('')
+      }
       onDateChange?.(null)
     }
   }
 
   const handleDateChange = (date: string) => {
-    setSelectedDate(date)
+    if (propSelectedDate === undefined) {
+      // Only update local state if uncontrolled
+      setLocalDate(date)
+    }
     onDateChange?.(date)
   }
 

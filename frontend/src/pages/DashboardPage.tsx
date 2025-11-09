@@ -1456,6 +1456,8 @@ const DashboardPage: React.FC = () => {
           analysis={displayMetadata?.analysis || null}
           loading={displayMetadataLoading}
           availableDates={scanDates}
+          selectedInterval={selectedInterval}
+          selectedDate={selectedDate}
           onIntervalChange={(interval: 'daily' | 'weekly' | 'monthly' | 'custom', date?: string | null) => {
             setSelectedInterval(interval)
             setSelectedDate(date || null)
