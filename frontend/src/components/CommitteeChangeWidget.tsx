@@ -12,11 +12,11 @@ interface CommitteeChangeWidgetProps {
 
 const CommitteeChangeWidget: React.FC<CommitteeChangeWidgetProps> = ({ 
   diffReport, 
-  diffReports,
+  diffReports: _diffReports,
   analysis, 
   loading = false,
-  availableDates,
-  onIntervalChange
+  availableDates: _availableDates,
+  onIntervalChange: _onIntervalChange
 }) => {
   // Show loading state
   if (loading) {

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react'
-import type { IntervalType } from '../types'
+import { IntervalType } from '../types'
 
 interface IntervalSelectorProps {
   selectedInterval: IntervalType
