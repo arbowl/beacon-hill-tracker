@@ -16,14 +16,13 @@ const IntervalSelector: React.FC<IntervalSelectorProps> = ({
   onDateChange,
   availableDates = [] as string[]
 }) => {
-  // Use prop if provided (controlled), otherwise use local state (uncontrolled)
   const [localDate, setLocalDate] = useState<string>('')
+  // Use prop if provided, otherwise use local state
   const selectedDate = propSelectedDate !== undefined ? (propSelectedDate || '') : localDate
 
   useEffect(() => {
     if (selectedInterval !== 'custom' && selectedDate) {
       if (propSelectedDate === undefined) {
-        // Only update local state if uncontrolled
         setLocalDate('')
       }
       onDateChange?.(null)
@@ -32,18 +31,15 @@ const IntervalSelector: React.FC<IntervalSelectorProps> = ({
 
   const handleIntervalChange = (interval: IntervalType) => {
     onIntervalChange(interval)
-    if (interval !== 'custom') {
-      if (propSelectedDate === undefined) {
-        // Only update local state if uncontrolled
-        setLocalDate('')
-      }
-      onDateChange?.(null)
+    // Clear local date state when switching away from custom
+    // Don't call onDateChange here - let the parent widget handle it
+    if (interval !== 'custom' && propSelectedDate === undefined) {
+      setLocalDate('')
     }
   }
 
   const handleDateChange = (date: string) => {
     if (propSelectedDate === undefined) {
-      // Only update local state if uncontrolled
       setLocalDate(date)
     }
     onDateChange?.(date)

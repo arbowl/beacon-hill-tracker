@@ -1,63 +1,19 @@
-import React, { useState } from 'react'
-import type { DiffReport, IntervalType } from '../types'
-import IntervalSelector from './IntervalSelector'
+import React from 'react'
+import type { DiffReport } from '../types'
 
 interface CommitteeChangeWidgetProps {
   diffReport: DiffReport | null
   diffReports?: any
   analysis: string | null
   loading?: boolean
-  availableDates?: string[]
-  selectedInterval?: IntervalType
-  selectedDate?: string | null
-  onIntervalChange?: (interval: 'daily' | 'weekly' | 'monthly' | 'custom', date?: string | null) => void
 }
 
 const CommitteeChangeWidget: React.FC<CommitteeChangeWidgetProps> = ({ 
   diffReport, 
   diffReports: _diffReports,
   analysis, 
-  loading = false,
-  availableDates = [],
-  selectedInterval: propSelectedInterval = 'daily',
-  selectedDate: propSelectedDate = null,
-  onIntervalChange
+  loading = false
 }) => {
-  // Use props if provided, otherwise fall back to local state
-  const [localInterval, setLocalInterval] = useState<IntervalType>('daily')
-  const [localDate, setLocalDate] = useState<string | null>(null)
-  
-  // Use controlled props if onIntervalChange is provided, otherwise use local state
-  const selectedInterval = onIntervalChange ? propSelectedInterval : localInterval
-  const selectedDate = onIntervalChange ? propSelectedDate : localDate
-
-  const handleIntervalChange = (interval: IntervalType) => {
-    if (onIntervalChange) {
-      // Controlled component - notify parent
-      // Clear date when switching away from custom
-      if (interval !== 'custom') {
-        onIntervalChange(interval, null)
-      } else {
-        onIntervalChange(interval, selectedDate)
-      }
-    } else {
-      // Uncontrolled component - update local state
-      setLocalInterval(interval)
-      if (interval !== 'custom') {
-        setLocalDate(null)
-      }
-    }
-  }
-
-  const handleDateChange = (date: string | null) => {
-    if (onIntervalChange) {
-      // Controlled component - when date changes, interval must be 'custom' (date picker only shows for custom)
-      onIntervalChange('custom', date)
-    } else {
-      // Uncontrolled component - update local state
-      setLocalDate(date)
-    }
-  }
   // Show loading state
   if (loading) {
     return (
@@ -89,19 +45,6 @@ const CommitteeChangeWidget: React.FC<CommitteeChangeWidgetProps> = ({
             <h3 className="text-lg font-semibold text-base-content">Recent Activity (Beta)</h3>
           </div>
         </div>
-
-        {/* Interval Selector */}
-        {onIntervalChange && (
-          <div className="mb-4">
-            <IntervalSelector
-              selectedInterval={selectedInterval}
-              selectedDate={selectedDate}
-              onIntervalChange={handleIntervalChange}
-              onDateChange={handleDateChange}
-              availableDates={availableDates}
-            />
-          </div>
-        )}
 
         <div className="flex flex-col md:flex-row items-start gap-5 w-full">
           {/* Left side: Change indicators */}
