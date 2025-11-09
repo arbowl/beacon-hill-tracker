@@ -1,6 +1,7 @@
 import React, { useState, useMemo } from 'react'
 import type { DiffReport } from '../types'
-import IntervalSelector, { type IntervalType } from './IntervalSelector'
+import IntervalSelector from './IntervalSelector'
+import type { IntervalType } from './IntervalSelector'
 import ComplianceTrendChart from './ComplianceTrendChart'
 import TrendIndicator from './TrendIndicator'
 import { useCommitteeMetadata, useCommitteeScanDates, useCommitteeTimeSeries } from '../hooks/useData'
@@ -194,7 +195,7 @@ const CommitteeChangeWidget: React.FC<CommitteeChangeWidgetProps> = ({
                       </div>
                       <ComplianceTrendChart
                         data={timeSeriesData && timeSeriesData.length > 0 
-                          ? timeSeriesData.map(d => ({ date: d.date, compliance_delta: d.compliance_delta }))
+                          ? timeSeriesData.map((d: { date: string; compliance_delta: number; diffReport: DiffReport | null }) => ({ date: d.date, compliance_delta: d.compliance_delta }))
                           : []
                         }
                         loading={timeSeriesLoading}
