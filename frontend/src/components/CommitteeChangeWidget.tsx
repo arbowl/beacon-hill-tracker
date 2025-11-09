@@ -12,7 +12,7 @@ const CommitteeChangeWidget: React.FC<CommitteeChangeWidgetProps> = ({
   diffReport, 
   analysis, 
   loading = false,
-  committeeId = null
+  committeeId: _committeeId = null // Reserved for future use (e.g., trend chart)
 }) => {
 
   // Calculate actual time interval from dates
