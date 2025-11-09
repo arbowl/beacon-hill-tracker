@@ -2561,13 +2561,15 @@ def import_compliance_report(committee_id, bills_data, diff_report=None, analysi
                 imported_count += 1
 
             # Calculate and store diff_reports metadata
-            # Always calculate diff_reports from historical data (even if client sent diff_report)
-            logger.info("Calculating diff_reports from historical data")
+            # CRITICAL: Use client's diff_report if provided - it matches the analysis
+            # Only calculate from historical data if client didn't send one
+            # Better to be slightly outdated than to show contradictory information
+            logger.info("Storing diff_reports metadata")
             try:
                 scan_date = datetime.utcnow()
                 scan_date_str = scan_date.isoformat() + 'Z'
                 
-                # Convert bills_data to format needed for diff calculation
+                # Convert bills_data to format needed for diff calculation (used for weekly/monthly)
                 current_bills = []
                 for bill in bills_data:
                     current_bills.append({
@@ -2579,18 +2581,37 @@ def import_compliance_report(committee_id, bills_data, diff_report=None, analysi
                         'state': bill.get('state', 'unknown')
                     })
                 
-                # Calculate diff_reports (daily, weekly, monthly)
-                diff_reports = _calculate_diff_reports(
-                    cursor, committee_id, current_bills, scan_date, analysis, db_type, placeholder
-                )
+                # Initialize diff_reports structure
+                diff_reports = {}
                 
-                # If client sent a diff_report, use it for daily if we don't have one
-                if diff_report is not None and diff_reports.get('daily') is None:
-                    # Convert old format to new format
-                    if isinstance(diff_report, dict):
-                        diff_reports['daily'] = diff_report
-                        if analysis and 'analysis' not in diff_reports['daily']:
-                            diff_reports['daily']['analysis'] = analysis
+                # If client sent a diff_report, use it for daily (it matches the analysis)
+                if diff_report is not None and isinstance(diff_report, dict):
+                    logger.info("Using client-provided diff_report for daily interval")
+                    diff_reports['daily'] = diff_report.copy()
+                    # Ensure analysis is attached to the diff_report
+                    if analysis and 'analysis' not in diff_reports['daily']:
+                        diff_reports['daily']['analysis'] = analysis
+                else:
+                    # Only calculate from historical data if client didn't send one
+                    logger.info("No client diff_report provided, calculating from historical data")
+                    # Calculate diff_reports (daily, weekly, monthly) from historical data
+                    calculated_reports = _calculate_diff_reports(
+                        cursor, committee_id, current_bills, scan_date, analysis, db_type, placeholder
+                    )
+                    diff_reports.update(calculated_reports)
+                
+                # Always calculate weekly and monthly from historical data (for consistency)
+                # But only if we don't already have them
+                if 'weekly' not in diff_reports or 'monthly' not in diff_reports:
+                    logger.info("Calculating weekly/monthly diff_reports from historical data")
+                    calculated_reports = _calculate_diff_reports(
+                        cursor, committee_id, current_bills, scan_date, None, db_type, placeholder
+                    )
+                    # Only add weekly/monthly if we don't already have them
+                    if 'weekly' not in diff_reports:
+                        diff_reports['weekly'] = calculated_reports.get('weekly')
+                    if 'monthly' not in diff_reports:
+                        diff_reports['monthly'] = calculated_reports.get('monthly')
                 
                 # Serialize diff_reports to JSON string for storage
                 diff_reports_json = json.dumps(diff_reports)
