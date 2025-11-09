@@ -121,10 +121,11 @@ const HomePage: React.FC = () => {
       </div>
 
       {/* Recent Changes Widget - Global aggregated stats */}
-      {globalMetadata?.diff_report && (
+      {(globalMetadata?.diff_report || globalMetadata?.diff_reports) && (
         <CommitteeChangeWidget
-          diffReport={globalMetadata.diff_report}
-          analysis={globalMetadata.analysis}
+          diffReport={globalMetadata.diff_report || null}
+          diffReports={globalMetadata.diff_reports || null}
+          analysis={globalMetadata.analysis || null}
           loading={globalMetadataLoading}
         />
       )}

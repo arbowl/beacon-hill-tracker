@@ -1,6 +1,6 @@
 import React, { useState, useMemo, useEffect } from 'react'
 import { useSearchParams } from 'react-router-dom'
-import { useGlobalStats, useCommittees, useBills, useCommitteeStats, useSavedViews, useCommitteeDetails, useDebounce, useCommitteeMetadata, useGlobalMetadata, useFilteredStats, useViolationAnalysis } from '../hooks/useData'
+import { useGlobalStats, useCommittees, useBills, useCommitteeStats, useSavedViews, useCommitteeDetails, useDebounce, useCommitteeMetadata, useGlobalMetadata, useFilteredStats, useViolationAnalysis, useCommitteeScanDates } from '../hooks/useData'
 import { useAuth } from '../contexts/AuthContext'
 import { DashboardFilters, Bill } from '../types'
 import { ComplianceOverviewChart, CommitteeComparisonChart, ViolationAnalysisChart } from '../components/charts'
@@ -122,7 +122,14 @@ const DashboardPage: React.FC = () => {
   // Fetch committee details when a single committee is selected
   const selectedCommitteeId = filters.committees.length === 1 ? filters.committees[0] : null
   const { committee: selectedCommitteeDetails } = useCommitteeDetails(selectedCommitteeId)
-  const { metadata: committeeMetadata, loading: metadataLoading } = useCommitteeMetadata(selectedCommitteeId)
+  const [selectedInterval, setSelectedInterval] = useState<'daily' | 'weekly' | 'monthly' | 'custom'>('daily')
+  const [selectedDate, setSelectedDate] = useState<string | null>(null)
+  const { metadata: committeeMetadata, loading: metadataLoading } = useCommitteeMetadata(
+    selectedCommitteeId, 
+    selectedInterval === 'custom' ? undefined : selectedInterval,
+    selectedInterval === 'custom' ? selectedDate : undefined
+  )
+  const { scanDates } = useCommitteeScanDates(selectedCommitteeId)
   const { metadata: globalMetadata, loading: globalMetadataLoading } = useGlobalMetadata()
   
   // Use committee metadata if a committee is selected, otherwise use global aggregated metadata
@@ -1442,11 +1449,18 @@ const DashboardPage: React.FC = () => {
       </div>
 
       {/* Committee Change Widget - shown when committee selected or for global view */}
-      {(selectedCommitteeId || displayMetadata?.diff_report) && (
+      {(selectedCommitteeId || displayMetadata?.diff_report || displayMetadata?.diff_reports) && (
         <CommitteeChangeWidget
           diffReport={displayMetadata?.diff_report || null}
+          diffReports={displayMetadata?.diff_reports || null}
           analysis={displayMetadata?.analysis || null}
           loading={displayMetadataLoading}
+          committeeId={selectedCommitteeId}
+          availableDates={scanDates}
+          onIntervalChange={(interval, date) => {
+            setSelectedInterval(interval)
+            setSelectedDate(date || null)
+          }}
         />
       )}
 

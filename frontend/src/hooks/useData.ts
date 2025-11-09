@@ -6,7 +6,8 @@ import {
   GlobalStats, 
   DashboardFilters,
   SavedView,
-  DiffReport
+  DiffReport,
+  DiffReports
 } from '../types'
 
 // Custom hook for fetching committees
@@ -645,8 +646,17 @@ export const useCommitteeDetails = (committeeId: string | null) => {
 }
 
 // Custom hook for fetching committee scan metadata (diff_report and analysis)
-export const useCommitteeMetadata = (committeeId: string | null) => {
-  const [metadata, setMetadata] = useState<{ diff_report: DiffReport | null; analysis: string | null; scan_date: string | null } | null>(null)
+export const useCommitteeMetadata = (
+  committeeId: string | null,
+  interval?: string,
+  compareDate?: string | null
+) => {
+  const [metadata, setMetadata] = useState<{ 
+    diff_report?: DiffReport | null
+    diff_reports?: { daily?: DiffReport | null; weekly?: DiffReport | null; monthly?: DiffReport | null } | null
+    analysis?: string | null
+    scan_date?: string | null 
+  } | null>(null)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
@@ -662,7 +672,10 @@ export const useCommitteeMetadata = (committeeId: string | null) => {
       try {
         setLoading(true)
         setError(null)
-        const response = await apiService.getCommitteeMetadata(committeeId)
+        const params: { interval?: string; compare_date?: string } = {}
+        if (interval) params.interval = interval
+        if (compareDate) params.compare_date = compareDate
+        const response = await apiService.getCommitteeMetadata(committeeId, params)
         console.log('Committee metadata response:', response.data)
         setMetadata(response.data)
       } catch (err: any) {
@@ -675,14 +688,54 @@ export const useCommitteeMetadata = (committeeId: string | null) => {
     }
 
     fetchMetadata()
-  }, [committeeId])
+  }, [committeeId, interval, compareDate])
 
   return { metadata, loading, error }
 }
 
+// Hook for fetching available scan dates for a committee
+export const useCommitteeScanDates = (committeeId: string | null) => {
+  const [scanDates, setScanDates] = useState<string[]>([])
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+
+  useEffect(() => {
+    if (!committeeId) {
+      setScanDates([])
+      setLoading(false)
+      setError(null)
+      return
+    }
+
+    const fetchScanDates = async () => {
+      try {
+        setLoading(true)
+        setError(null)
+        const response = await apiService.getCommitteeScanDates(committeeId)
+        setScanDates(response.data.scan_dates || [])
+      } catch (err: any) {
+        console.error('Error fetching scan dates:', err)
+        setError(err.response?.data?.error || 'Failed to fetch scan dates')
+        setScanDates([])
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    fetchScanDates()
+  }, [committeeId])
+
+  return { scanDates, loading, error }
+}
+
 // Hook for fetching global aggregated metadata (all committees)
 export const useGlobalMetadata = () => {
-  const [metadata, setMetadata] = useState<{ diff_report: DiffReport | null; analysis: string | null; scan_date: string | null } | null>(null)
+  const [metadata, setMetadata] = useState<{ 
+    diff_report?: DiffReport | null
+    diff_reports?: { daily?: DiffReport | null; weekly?: DiffReport | null; monthly?: DiffReport | null } | null
+    analysis?: string | null
+    scan_date?: string | null 
+  } | null>(null)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
