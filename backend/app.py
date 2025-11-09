@@ -11,7 +11,7 @@ import time
 from flask import Flask, request, jsonify
 from flask_jwt_extended import JWTManager
 from dotenv import load_dotenv
-from datetime import datetime
+from datetime import datetime, timedelta
 
 # Import our new modules
 from auth_models import init_db as init_auth_db
@@ -1201,8 +1201,16 @@ def create_app():
     # Scan metadata endpoint - get latest diff_report and analysis for a committee
     @flask_app.route('/api/compliance/<committee_id>/metadata', methods=['GET'])
     def get_committee_metadata(committee_id):
-        """Get latest scan metadata (diff_report and analysis) for a committee"""
+        """Get latest scan metadata (diff_report and analysis) for a committee
+        
+        Query parameters:
+        - interval: 'daily', 'weekly', 'monthly' (default: 'daily')
+        - compare_date: YYYY-MM-DD format for custom date comparison
+        """
         try:
+            interval = request.args.get('interval', 'daily').lower()
+            compare_date = request.args.get('compare_date', None)
+            
             with get_db_connection() as conn:
                 cursor = conn.cursor()
                 db_type = get_database_type()
@@ -1230,6 +1238,7 @@ def create_app():
                 if not result:
                     return jsonify({
                         'diff_report': None,
+                        'diff_reports': None,
                         'analysis': None,
                         'scan_date': None
                     }), 200
@@ -1245,17 +1254,77 @@ def create_app():
                 
                 # Parse diff_report JSON if it exists
                 diff_report = None
+                diff_reports = None
                 if diff_report_json:
                     try:
-                        diff_report = json.loads(diff_report_json) if isinstance(diff_report_json, str) else diff_report_json
+                        parsed = json.loads(diff_report_json) if isinstance(diff_report_json, str) else diff_report_json
+                        
+                        # Check if it's the new structure (diff_reports) or old (diff_report)
+                        if isinstance(parsed, dict) and ('daily' in parsed or 'weekly' in parsed or 'monthly' in parsed):
+                            # New structure: diff_reports with intervals
+                            diff_reports = parsed
+                            
+                            # Extract the requested interval
+                            if interval in diff_reports and diff_reports[interval]:
+                                diff_report = diff_reports[interval]
+                                # Extract analysis from the interval if it exists
+                                if 'analysis' in diff_report:
+                                    analysis = diff_report.get('analysis')
+                        else:
+                            # Old structure: single diff_report
+                            diff_report = parsed
                     except (json.JSONDecodeError, TypeError):
                         diff_report = None
                 
-                return jsonify({
-                    'diff_report': diff_report,
-                    'analysis': analysis,
+                # If compare_date is provided, calculate diff on the fly
+                if compare_date:
+                    try:
+                        # Parse compare_date
+                        compare_datetime = datetime.fromisoformat(compare_date.replace('Z', '+00:00'))
+                        if compare_datetime.tzinfo:
+                            compare_datetime = compare_datetime.replace(tzinfo=None)
+                        
+                        # Get current bills (latest scan)
+                        current_bills = _get_bills_at_date(cursor, committee_id, scan_date, db_type, placeholder)
+                        
+                        # Get previous bills at compare_date
+                        previous_bills = _get_bills_at_date(cursor, committee_id, compare_datetime, db_type, placeholder)
+                        
+                        if current_bills and previous_bills:
+                            # Calculate custom diff
+                            custom_diff = _calculate_diff_report(
+                                current_bills, previous_bills, scan_date, compare_datetime, 'custom', None
+                            )
+                            
+                            response = {
+                                'diff_report': custom_diff,
+                                'diff_reports': diff_reports,  # Still include stored reports
+                                'analysis': None,  # No analysis for custom dates
+                                'scan_date': scan_date.isoformat() if hasattr(scan_date, 'isoformat') else scan_date
+                            }
+                            return jsonify(response), 200
+                        else:
+                            # No data for comparison
+                            response = {
+                                'diff_report': None,
+                                'diff_reports': diff_reports,
+                                'analysis': None,
+                                'scan_date': scan_date.isoformat() if hasattr(scan_date, 'isoformat') else scan_date
+                            }
+                            return jsonify(response), 200
+                    except Exception as e:
+                        logger = logging.getLogger(__name__)
+                        logger.warning(f"Error calculating custom date diff: {str(e)}")
+                        # Fall through to return stored data
+                
+                response = {
+                    'diff_report': diff_report,  # Legacy support
+                    'diff_reports': diff_reports,  # New structure
+                    'analysis': analysis,  # Legacy support (top-level)
                     'scan_date': scan_date.isoformat() if hasattr(scan_date, 'isoformat') else scan_date
-                }), 200
+                }
+                
+                return jsonify(response), 200
         
         except Exception as e:
             logger = logging.getLogger(__name__)
@@ -1268,6 +1337,52 @@ def create_app():
                     logger.error("compliance_scan_metadata table does not exist! Database schema may need to be initialized.")
             except Exception:
                 pass
+            return jsonify({'error': str(e)}), 500
+
+    # Get available scan dates for a committee (for date picker)
+    @flask_app.route('/api/compliance/<committee_id>/scan-dates', methods=['GET'])
+    def get_committee_scan_dates(committee_id):
+        """Get list of dates that have scan data for a committee"""
+        try:
+            with get_db_connection() as conn:
+                cursor = conn.cursor()
+                db_type = get_database_type()
+                placeholder = '%s' if db_type == 'postgresql' else '?'
+                
+                # Get distinct scan dates for this committee
+                if db_type == 'postgresql':
+                    cursor.execute(f'''
+                        SELECT DISTINCT DATE(scan_date) as scan_date
+                        FROM compliance_scan_metadata
+                        WHERE committee_id = {placeholder}
+                        ORDER BY scan_date DESC
+                    ''', (committee_id,))
+                else:
+                    cursor.execute(f'''
+                        SELECT DISTINCT DATE(scan_date) as scan_date
+                        FROM compliance_scan_metadata
+                        WHERE committee_id = {placeholder}
+                        ORDER BY scan_date DESC
+                    ''', (committee_id,))
+                
+                results = cursor.fetchall()
+                scan_dates = []
+                for result in results:
+                    scan_date = result[0]
+                    if scan_date:
+                        # Format as YYYY-MM-DD
+                        if isinstance(scan_date, str):
+                            scan_dates.append(scan_date[:10])  # Take first 10 chars (YYYY-MM-DD)
+                        elif hasattr(scan_date, 'date'):
+                            scan_dates.append(scan_date.date().isoformat())
+                        else:
+                            scan_dates.append(str(scan_date)[:10])
+                
+                return jsonify({'scan_dates': scan_dates}), 200
+        
+        except Exception as e:
+            logger = logging.getLogger(__name__)
+            logger.error(f"Error fetching scan dates for {committee_id}: {str(e)}", exc_info=True)
             return jsonify({'error': str(e)}), 500
 
     # Global aggregated metadata endpoint - sums stats across all committees
@@ -2095,6 +2210,200 @@ def import_changelog_data(data):
             'message': f"Failed to import changelog: {str(e)}"
         }
 
+def _calculate_compliance_rate(bills):
+    """Calculate compliance rate from a list of bills"""
+    if not bills:
+        return 0.0
+    
+    total = len(bills)
+    compliant = sum(1 for bill in bills if bill.get('state', '').lower() in ['compliant', 'unknown'])
+    return round((compliant / total) * 100, 2) if total > 0 else 0.0
+
+def _get_bills_at_date(cursor, committee_id, target_date, db_type, placeholder):
+    """Get bills for a committee at or before a specific date"""
+    if db_type == 'postgresql':
+        cursor.execute(f'''
+            WITH latest_bills AS (
+                SELECT bc.*,
+                       ROW_NUMBER() OVER (PARTITION BY bc.bill_id ORDER BY bc.generated_at DESC) as rn
+                FROM bill_compliance bc
+                WHERE bc.committee_id = {placeholder}
+                  AND bc.generated_at <= {placeholder}
+            )
+            SELECT bill_id, hearing_date, reported_out, summary_present, 
+                   votes_present, state, generated_at
+            FROM latest_bills
+            WHERE rn = 1
+        ''', (committee_id, target_date))
+    else:
+        cursor.execute(f'''
+            SELECT bc.bill_id, bc.hearing_date, bc.reported_out, bc.summary_present,
+                   bc.votes_present, bc.state, bc.generated_at
+            FROM (
+                SELECT bc.*,
+                       ROW_NUMBER() OVER (PARTITION BY bc.bill_id ORDER BY bc.generated_at DESC) as rn
+                FROM bill_compliance bc
+                WHERE bc.committee_id = {placeholder}
+                  AND bc.generated_at <= {placeholder}
+            ) bc
+            WHERE bc.rn = 1
+        ''', (committee_id, target_date))
+    
+    results = cursor.fetchall()
+    bills = []
+    for row in results:
+        bills.append({
+            'bill_id': row[0],
+            'hearing_date': row[1],
+            'reported_out': bool(row[2]) if row[2] is not None else False,
+            'summary_present': bool(row[3]) if row[3] is not None else False,
+            'votes_present': bool(row[4]) if row[4] is not None else False,
+            'state': row[5] or 'unknown',
+            'generated_at': row[6]
+        })
+    return bills
+
+def _calculate_diff_report(current_bills, previous_bills, current_date, previous_date, time_interval, analysis=None):
+    """Calculate a diff report comparing current bills to previous bills"""
+    # Convert to dicts for easier lookup
+    current_dict = {bill['bill_id']: bill for bill in current_bills}
+    previous_dict = {bill['bill_id']: bill for bill in previous_bills}
+    
+    # Calculate compliance rates
+    current_compliance = _calculate_compliance_rate(current_bills)
+    previous_compliance = _calculate_compliance_rate(previous_bills)
+    compliance_delta = round(current_compliance - previous_compliance, 1)
+    
+    # Find new bills
+    new_bills = [bill_id for bill_id in current_dict if bill_id not in previous_dict]
+    
+    # Find bills with changes
+    bills_with_new_hearings = []
+    bills_reported_out = []
+    bills_with_new_summaries = []
+    bills_with_new_votes = []
+    
+    for bill_id, current_bill in current_dict.items():
+        if bill_id not in previous_dict:
+            continue
+        
+        prev_bill = previous_dict[bill_id]
+        
+        # Check for new hearing
+        if current_bill.get('hearing_date') and not prev_bill.get('hearing_date'):
+            bills_with_new_hearings.append(bill_id)
+        
+        # Check if reported out
+        if current_bill.get('reported_out') and not prev_bill.get('reported_out'):
+            bills_reported_out.append(bill_id)
+        
+        # Check for new summary
+        if current_bill.get('summary_present') and not prev_bill.get('summary_present'):
+            bills_with_new_summaries.append(bill_id)
+        
+        # Check for new votes
+        if current_bill.get('votes_present') and not prev_bill.get('votes_present'):
+            bills_with_new_votes.append(bill_id)
+    
+    diff_report = {
+        'time_interval': time_interval,
+        'previous_date': previous_date.isoformat()[:10] if hasattr(previous_date, 'isoformat') else str(previous_date)[:10],
+        'current_date': current_date.isoformat()[:10] if hasattr(current_date, 'isoformat') else str(current_date)[:10],
+        'compliance_delta': compliance_delta,
+        'new_bills_count': len(new_bills),
+        'new_bills': new_bills,
+        'bills_with_new_hearings': bills_with_new_hearings,
+        'bills_reported_out': bills_reported_out,
+        'bills_with_new_summaries': bills_with_new_summaries,
+        'bills_with_new_votes': bills_with_new_votes
+    }
+    
+    if analysis:
+        diff_report['analysis'] = analysis
+    
+    return diff_report
+
+def _calculate_diff_reports(cursor, committee_id, current_bills, current_date, analysis, db_type, placeholder):
+    """Calculate daily, weekly, and monthly diff reports"""
+    logger = logging.getLogger(__name__)
+    diff_reports = {}
+    
+    # Helper to find closest scan date
+    def find_closest_scan_date(target_date):
+        if db_type == 'postgresql':
+            cursor.execute(f'''
+                SELECT MAX(generated_at)
+                FROM bill_compliance
+                WHERE committee_id = {placeholder}
+                  AND generated_at < {placeholder}
+            ''', (committee_id, target_date))
+        else:
+            cursor.execute(f'''
+                SELECT MAX(generated_at)
+                FROM bill_compliance
+                WHERE committee_id = {placeholder}
+                  AND generated_at < {placeholder}
+            ''', (committee_id, target_date))
+        
+        result = cursor.fetchone()
+        return result[0] if result and result[0] else None
+    
+    # Calculate daily diff (1 day ago)
+    try:
+        daily_target = current_date - timedelta(days=1)
+        daily_scan_date = find_closest_scan_date(daily_target)
+        if daily_scan_date:
+            previous_bills = _get_bills_at_date(cursor, committee_id, daily_scan_date, db_type, placeholder)
+            if previous_bills:
+                diff_reports['daily'] = _calculate_diff_report(
+                    current_bills, previous_bills, current_date, daily_scan_date, '1 day', analysis
+                )
+            else:
+                diff_reports['daily'] = None
+        else:
+            diff_reports['daily'] = None
+    except Exception as e:
+        logger.warning(f"Error calculating daily diff: {str(e)}")
+        diff_reports['daily'] = None
+    
+    # Calculate weekly diff (7 days ago)
+    try:
+        weekly_target = current_date - timedelta(days=7)
+        weekly_scan_date = find_closest_scan_date(weekly_target)
+        if weekly_scan_date:
+            previous_bills = _get_bills_at_date(cursor, committee_id, weekly_scan_date, db_type, placeholder)
+            if previous_bills:
+                diff_reports['weekly'] = _calculate_diff_report(
+                    current_bills, previous_bills, current_date, weekly_scan_date, '7 days', None
+                )
+            else:
+                diff_reports['weekly'] = None
+        else:
+            diff_reports['weekly'] = None
+    except Exception as e:
+        logger.warning(f"Error calculating weekly diff: {str(e)}")
+        diff_reports['weekly'] = None
+    
+    # Calculate monthly diff (30 days ago)
+    try:
+        monthly_target = current_date - timedelta(days=30)
+        monthly_scan_date = find_closest_scan_date(monthly_target)
+        if monthly_scan_date:
+            previous_bills = _get_bills_at_date(cursor, committee_id, monthly_scan_date, db_type, placeholder)
+            if previous_bills:
+                diff_reports['monthly'] = _calculate_diff_report(
+                    current_bills, previous_bills, current_date, monthly_scan_date, '30 days', None
+                )
+            else:
+                diff_reports['monthly'] = None
+        else:
+            diff_reports['monthly'] = None
+    except Exception as e:
+        logger.warning(f"Error calculating monthly diff: {str(e)}")
+        diff_reports['monthly'] = None
+    
+    return diff_reports
+
 def import_compliance_report(committee_id, bills_data, diff_report=None, analysis=None):
     """Import compliance report data for a specific committee"""
     logger = logging.getLogger(__name__)
@@ -2251,45 +2560,69 @@ def import_compliance_report(committee_id, bills_data, diff_report=None, analysi
                         ))
                 imported_count += 1
 
-            # Store diff_report and analysis metadata if present
-            if diff_report is not None or analysis is not None:
-                logger.info("Storing scan metadata (diff_report and/or analysis)")
-                try:
-                    scan_date = datetime.utcnow().isoformat() + 'Z'
-                    
-                    # Serialize diff_report to JSON string for storage
-                    diff_report_json = None
-                    if diff_report is not None:
-                        diff_report_json = json.dumps(diff_report)
-                    
-                    if db_type == 'postgresql':
-                        # PostgreSQL: Store as JSONB (cast string to jsonb)
-                        cursor.execute(f'''
-                            INSERT INTO compliance_scan_metadata 
-                            (committee_id, scan_date, diff_report, analysis)
-                            VALUES ({placeholder}, {placeholder}, {placeholder}::jsonb, {placeholder})
-                        ''', (
-                            committee_id,
-                            scan_date,
-                            diff_report_json,
-                            analysis
-                        ))
-                    else:
-                        # SQLite: Store as TEXT
-                        cursor.execute('''
-                            INSERT INTO compliance_scan_metadata 
-                            (committee_id, scan_date, diff_report, analysis)
-                            VALUES (?, ?, ?, ?)
-                        ''', (
-                            committee_id,
-                            scan_date,
-                            diff_report_json,
-                            analysis
-                        ))
-                    logger.info(f"Successfully stored scan metadata for committee {committee_id}")
-                except Exception as metadata_error:
-                    logger.error(f"Failed to store scan metadata for committee {committee_id}: {str(metadata_error)}", exc_info=True)
-                    # Don't fail the whole import if metadata storage fails
+            # Calculate and store diff_reports metadata
+            # Always calculate diff_reports from historical data (even if client sent diff_report)
+            logger.info("Calculating diff_reports from historical data")
+            try:
+                scan_date = datetime.utcnow()
+                scan_date_str = scan_date.isoformat() + 'Z'
+                
+                # Convert bills_data to format needed for diff calculation
+                current_bills = []
+                for bill in bills_data:
+                    current_bills.append({
+                        'bill_id': bill.get('bill_id'),
+                        'hearing_date': bill.get('hearing_date'),
+                        'reported_out': bool(bill.get('reported_out', False)),
+                        'summary_present': bool(bill.get('summary_present', False)),
+                        'votes_present': bool(bill.get('votes_present', False)),
+                        'state': bill.get('state', 'unknown')
+                    })
+                
+                # Calculate diff_reports (daily, weekly, monthly)
+                diff_reports = _calculate_diff_reports(
+                    cursor, committee_id, current_bills, scan_date, analysis, db_type, placeholder
+                )
+                
+                # If client sent a diff_report, use it for daily if we don't have one
+                if diff_report is not None and diff_reports.get('daily') is None:
+                    # Convert old format to new format
+                    if isinstance(diff_report, dict):
+                        diff_reports['daily'] = diff_report
+                        if analysis and 'analysis' not in diff_reports['daily']:
+                            diff_reports['daily']['analysis'] = analysis
+                
+                # Serialize diff_reports to JSON string for storage
+                diff_reports_json = json.dumps(diff_reports)
+                
+                if db_type == 'postgresql':
+                    # PostgreSQL: Store as JSONB (cast string to jsonb)
+                    cursor.execute(f'''
+                        INSERT INTO compliance_scan_metadata 
+                        (committee_id, scan_date, diff_report, analysis)
+                        VALUES ({placeholder}, {placeholder}, {placeholder}::jsonb, {placeholder})
+                    ''', (
+                        committee_id,
+                        scan_date_str,
+                        diff_reports_json,
+                        analysis  # Store top-level analysis for backward compatibility
+                    ))
+                else:
+                    # SQLite: Store as TEXT
+                    cursor.execute('''
+                        INSERT INTO compliance_scan_metadata 
+                        (committee_id, scan_date, diff_report, analysis)
+                        VALUES (?, ?, ?, ?)
+                    ''', (
+                        committee_id,
+                        scan_date_str,
+                        diff_reports_json,
+                        analysis
+                    ))
+                logger.info(f"Successfully stored scan metadata with diff_reports for committee {committee_id}")
+            except Exception as metadata_error:
+                logger.error(f"Failed to store scan metadata for committee {committee_id}: {str(metadata_error)}", exc_info=True)
+                # Don't fail the whole import if metadata storage fails
 
             conn.commit()  # Explicit commit
             logger.info(f"Successfully imported {imported_count} bills for committee {committee_id}")
