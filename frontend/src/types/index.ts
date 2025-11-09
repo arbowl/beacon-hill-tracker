@@ -163,13 +163,26 @@ export interface DiffReport {
   bills_reported_out: string[]
   bills_with_new_summaries: string[]
   bills_with_new_votes: string[]
+  analysis?: string | null  // Analysis is now part of the diff report (only for daily)
+}
+
+export interface DiffReports {
+  daily?: DiffReport | null
+  weekly?: DiffReport | null
+  monthly?: DiffReport | null
 }
 
 export interface ComplianceReportResponse {
   bills: Bill[]
-  diff_report?: DiffReport | null
-  analysis?: string | null
+  diff_report?: DiffReport | null  // Legacy support
+  diff_reports?: DiffReports | null  // New structure
+  analysis?: string | null  // Legacy support (top-level analysis)
 }
+
+export type IntervalType = 'daily' | 'weekly' | 'monthly' | 'custom'
+
+// Re-export as a const for better compatibility
+export const IntervalTypeValues = ['daily', 'weekly', 'monthly', 'custom'] as const
 
 // Filter and Search Types
 export interface DashboardFilters {
