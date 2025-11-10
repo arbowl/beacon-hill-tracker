@@ -96,7 +96,7 @@ const faqData: FAQItem[] = [
     id: 'misuse',
     question: 'What constitutes misuse of this data?',
     answer: 'The purpose of this tool is to measuare systemic compliance, not to support partisan narratives. No political party advertises opacity as a foundational principle; it\'s a problem that sits outside of binary party dynamics. Users of the tracker are encourgaed to use it for what it is: an aggregator of documentation and tracker of compliance.'
-  }
+  },
   {
     id: 'whats-next',
     question: 'What\'s next for this project?',
@@ -271,4 +271,5 @@ const FAQPage: React.FC = () => {
 }
 
 export default FAQPage
+
 
