@@ -53,6 +53,16 @@ const faqData: FAQItem[] = [
     answer: 'Certain checks, such as whether a page has an embedded summary or vote count, can be confirmed objectively by verifiable checks. I leverage local language models to help determine document types where simple code checks fail, which generates a comprehensive audit log I closely monitor for anomalies. Any items which fall below a sufficient computer-generated confidence threshold are subject to manual review prior to being uploaded. All analysis types are audited regularly for accuracy. This multi-tiered waterfall approach ensures regular, timely, accurate data uploads.'
   },
   {
+    id: 'automation-requirement',
+    question: 'Why does this need to be automated at all?',
+    answer: 'The Legislature produces and updates thousands of pages across dozens of committees every session, and the data isn\'t standardized or searchable. Some committees post summaries in bulk under the hearing page in Word documents; others post each summary in its own PDF. Some votes are recorded in plaintext on the bill page, and others are recorded in a table format. A human could spot-check a few bills every day, but not all bills, for all committees, every day, with timestamps precise enough to verify compliance. Because bills are added and deadlines are crossed every day, automation is the only way to ensure compliance is tracked accurately and consistently.',
+  },
+  {
+    id: 'reported-out-compliance',
+    question: 'Why are some bills marked as "Compliant" when they haven\'t been reported out?',
+    answer: 'If votes are present for a bill, it has necessarily been reported out. The purpose of tracking reported-out status is to ensure the Legislature has met its procedural deadline. If we do not detect the usual reported-out markers, but the votes are present within the required timeframe, it has satisfied the reported-out requirement.'
+  },
+  {
     id: 'bill-not-showing',
     question: 'Why hasn\'t a bill shown up yet?',
     answer: 'The dashboard updates once per day with a snapshot of exactly what information the Legislature has provided. As such, movement within the day can get lost, delays in posted material translates to delays in compliance tracking, and sometimes the Legislature\'s website is partially or fully down, preventing analysis.'
@@ -82,6 +92,11 @@ const faqData: FAQItem[] = [
     question: 'Does this project have any affiliation with the Legislature or a political group?',
     answer: 'No. The Beacon Hill Compliance Tracker is an independent civic technology project with no official relationship to the Massachusetts Legislature or any political organization. I receive no funding and obtained no sponsorships. I received invaluable help from civic volunteers, and I couldn\'t have done this without their feedback and guidance. That said, all data is collected from publicly available sources, and I post my evaluation logic for all to see.'
   },
+  {
+    id: 'misuse',
+    question: 'What constitutes misuse of this data?',
+    answer: 'The purpose of this tool is to measuare systemic compliance, not to support partisan narratives. No political party advertises opacity as a foundational principle; it\'s a problem that sits outside of binary party dynamics. Users of the tracker are encourgaed to use it for what it is: an aggregator of documentation and tracker of compliance.'
+  }
   {
     id: 'whats-next',
     question: 'What\'s next for this project?',
