@@ -1437,9 +1437,20 @@ def create_app():
                     # Parse diff_report
                     try:
                         if db_type == 'postgresql':
-                            diff_report = diff_report_json if isinstance(diff_report_json, dict) else json.loads(diff_report_json)
+                            parsed = diff_report_json if isinstance(diff_report_json, dict) else json.loads(diff_report_json)
                         else:
-                            diff_report = json.loads(diff_report_json) if isinstance(diff_report_json, str) else diff_report_json
+                            parsed = json.loads(diff_report_json) if isinstance(diff_report_json, str) else diff_report_json
+                        
+                        # Check if it's the new structure (diff_reports with daily/weekly/monthly) or old (single diff_report)
+                        diff_report = None
+                        if isinstance(parsed, dict):
+                            if 'daily' in parsed or 'weekly' in parsed or 'monthly' in parsed:
+                                # New structure: diff_reports with intervals - extract daily for aggregation
+                                if 'daily' in parsed and parsed['daily']:
+                                    diff_report = parsed['daily']
+                            else:
+                                # Old structure: single diff_report
+                                diff_report = parsed
                         
                         if diff_report:
                             latest_by_committee[committee_id] = {
@@ -1506,10 +1517,12 @@ def create_app():
                             latest_scan_date = scan_date_str
                 
                 # Calculate average compliance_delta
+                # Always return a number (0.0 if no data) since we expect daily uploads
                 if compliance_delta_count > 0:
-                    aggregated['compliance_delta'] = compliance_delta_sum / compliance_delta_count
+                    aggregated['compliance_delta'] = round(compliance_delta_sum / compliance_delta_count, 1)
                 else:
-                    aggregated['compliance_delta'] = None
+                    # Default to 0.0 instead of None when no committees have compliance_delta
+                    aggregated['compliance_delta'] = 0.0
                 
                 # Remove duplicates from lists
                 aggregated['new_bills'] = list(set(aggregated['new_bills']))
