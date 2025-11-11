@@ -68,8 +68,8 @@ const CommitteeChangeWidget: React.FC<CommitteeChangeWidgetProps> = ({
               {diffReport.compliance_delta !== undefined && diffReport.compliance_delta !== null && (
                 <div className="space-y-3">
                   <div className="flex items-center gap-3 p-3 rounded-lg bg-base-200/50">
-                    <div className={`badge badge-lg ${
-                      diffReport.compliance_delta > 0 ? 'badge-success text-white' : 
+                    <div className={`badge badge-lg text-white ${
+                      diffReport.compliance_delta > 0 ? 'badge-success' : 
                       diffReport.compliance_delta < 0 ? 'badge-error' : 
                       'badge-neutral'
                     }`}>
@@ -97,7 +97,7 @@ const CommitteeChangeWidget: React.FC<CommitteeChangeWidgetProps> = ({
                 {/* New Bills - always show */}
                 {diffReport.new_bills_count !== undefined && diffReport.new_bills_count !== null && (
                   <div className="flex flex-col items-center gap-2 p-3 rounded-lg bg-base-200/30 lg:flex-1 lg:min-w-[120px]">
-                    <div className={`badge badge-lg ${diffReport.new_bills_count > 0 ? 'badge-info text-white' : 'badge-ghost'}`}>
+                    <div className={`badge badge-lg text-white ${diffReport.new_bills_count > 0 ? 'badge-info' : 'badge-ghost'}`}>
                       <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                       </svg>
@@ -110,7 +110,10 @@ const CommitteeChangeWidget: React.FC<CommitteeChangeWidgetProps> = ({
                 {/* Bills with new hearings - always show */}
                 {diffReport.bills_with_new_hearings !== undefined && (
                   <div className="flex flex-col items-center gap-2 p-3 rounded-lg bg-base-200/30 lg:flex-1 lg:min-w-[120px]">
-                    <div className={`badge badge-lg ${diffReport.bills_with_new_hearings && diffReport.bills_with_new_hearings.length > 0 ? 'badge-warning' : 'badge-ghost'}`}>
+                    <div 
+                      className={`badge badge-lg text-white ${diffReport.bills_with_new_hearings && diffReport.bills_with_new_hearings.length > 0 ? '' : 'badge-ghost'}`}
+                      style={diffReport.bills_with_new_hearings && diffReport.bills_with_new_hearings.length > 0 ? { backgroundColor: '#92400E' } : undefined}
+                    >
                       <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
                       </svg>
@@ -123,7 +126,7 @@ const CommitteeChangeWidget: React.FC<CommitteeChangeWidgetProps> = ({
                 {/* Bills reported out - always show */}
                 {diffReport.bills_reported_out !== undefined && (
                   <div className="flex flex-col items-center gap-2 p-3 rounded-lg bg-base-200/30 lg:flex-1 lg:min-w-[120px]">
-                    <div className={`badge badge-lg ${diffReport.bills_reported_out && diffReport.bills_reported_out.length > 0 ? 'badge-success text-white' : 'badge-ghost'}`}>
+                    <div className={`badge badge-lg text-white ${diffReport.bills_reported_out && diffReport.bills_reported_out.length > 0 ? 'badge-success' : 'badge-ghost'}`}>
                       <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                       </svg>
@@ -136,7 +139,7 @@ const CommitteeChangeWidget: React.FC<CommitteeChangeWidgetProps> = ({
                 {/* Bills with new summaries - always show */}
                 {diffReport.bills_with_new_summaries !== undefined && (
                   <div className="flex flex-col items-center gap-2 p-3 rounded-lg bg-base-200/30 lg:flex-1 lg:min-w-[120px]">
-                    <div className={`badge badge-lg ${diffReport.bills_with_new_summaries && diffReport.bills_with_new_summaries.length > 0 ? 'badge-success text-white' : 'badge-ghost'}`}>
+                    <div className={`badge badge-lg text-white ${diffReport.bills_with_new_summaries && diffReport.bills_with_new_summaries.length > 0 ? 'badge-success' : 'badge-ghost'}`}>
                       <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                       </svg>
@@ -149,7 +152,7 @@ const CommitteeChangeWidget: React.FC<CommitteeChangeWidgetProps> = ({
                 {/* Bills with new votes - always show */}
                 {diffReport.bills_with_new_votes !== undefined && (
                   <div className="flex flex-col items-center gap-2 p-3 rounded-lg bg-base-200/30 lg:flex-1 lg:min-w-[120px]">
-                    <div className={`badge badge-lg ${diffReport.bills_with_new_votes && diffReport.bills_with_new_votes.length > 0 ? 'badge-success text-white' : 'badge-ghost'}`}>
+                    <div className={`badge badge-lg text-white ${diffReport.bills_with_new_votes && diffReport.bills_with_new_votes.length > 0 ? 'badge-success' : 'badge-ghost'}`}>
                       <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                       </svg>
