@@ -901,6 +901,16 @@ const DashboardPage: React.FC = () => {
         </div>
       )}
 
+      {/* Committee Change Widget - shown when committee selected or for global view */}
+      {(selectedCommitteeId || displayMetadata?.diff_report) && (
+        <CommitteeChangeWidget
+          diffReport={displayMetadata?.diff_report || null}
+          analysis={displayMetadata?.analysis || null}
+          loading={displayMetadataLoading}
+          committeeId={selectedCommitteeId}
+        />
+      )}
+
       {/* Committee Contact Details - Show when single committee is selected */}
       {selectedCommitteeId && selectedCommitteeDetails && (
         <div className="space-y-6">
@@ -1442,16 +1452,6 @@ const DashboardPage: React.FC = () => {
           )}
         </div>
       </div>
-
-      {/* Committee Change Widget - shown when committee selected or for global view */}
-      {(selectedCommitteeId || displayMetadata?.diff_report) && (
-        <CommitteeChangeWidget
-          diffReport={displayMetadata?.diff_report || null}
-          analysis={displayMetadata?.analysis || null}
-          loading={displayMetadataLoading}
-          committeeId={selectedCommitteeId}
-        />
-      )}
 
       {/* Accuracy Notice Banner */}
       <div className="bg-base-200/50 border border-base-300 rounded-lg p-4">
