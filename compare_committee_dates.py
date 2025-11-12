@@ -14,6 +14,7 @@ Or run interactively:
 
 import sys
 import os
+import json
 from datetime import datetime, timedelta
 from pathlib import Path
 
@@ -115,6 +116,61 @@ def get_committee_name(cursor, committee_id, db_type):
     return result[0] if result else committee_id
 
 
+def get_stored_diff_report(cursor, committee_id, target_date, db_type):
+    """Get stored diff_report from compliance_scan_metadata for a given date"""
+    placeholder = '%s' if db_type == 'postgresql' else '?'
+    
+    # Get the latest scan metadata for this committee on or before target_date
+    if db_type == 'postgresql':
+        cursor.execute(f'''
+            SELECT scan_date, diff_report, analysis
+            FROM compliance_scan_metadata
+            WHERE committee_id = {placeholder}
+              AND scan_date <= {placeholder}
+            ORDER BY scan_date DESC
+            LIMIT 1
+        ''', (committee_id, target_date))
+    else:
+        cursor.execute(f'''
+            SELECT scan_date, diff_report, analysis
+            FROM compliance_scan_metadata
+            WHERE committee_id = {placeholder}
+              AND scan_date <= {placeholder}
+            ORDER BY scan_date DESC
+            LIMIT 1
+        ''', (committee_id, target_date))
+    
+    result = cursor.fetchone()
+    if not result:
+        return None, None, None
+    
+    scan_date = result[0]
+    diff_report_json = result[1]
+    analysis = result[2]
+    
+    # Parse diff_report JSON
+    try:
+        if db_type == 'postgresql':
+            parsed = diff_report_json if isinstance(diff_report_json, dict) else json.loads(diff_report_json)
+        else:
+            parsed = json.loads(diff_report_json) if isinstance(diff_report_json, str) else diff_report_json
+        
+        # Check if it's new structure (with daily/weekly/monthly) or old (single diff_report)
+        diff_report = None
+        if isinstance(parsed, dict):
+            if 'daily' in parsed or 'weekly' in parsed or 'monthly' in parsed:
+                # New structure: extract daily diff_report
+                if 'daily' in parsed and parsed['daily']:
+                    diff_report = parsed['daily']
+            else:
+                # Old structure: single diff_report
+                diff_report = parsed
+        
+        return scan_date, diff_report, analysis
+    except (json.JSONDecodeError, TypeError):
+        return scan_date, None, analysis
+
+
 def compare_committees(committee_id, date1_str, date2_str):
     """Compare committee compliance between two dates"""
     # Parse dates
@@ -167,7 +223,12 @@ def compare_committees(committee_id, date1_str, date2_str):
         rate2, total2, compliant2, unknown2, non_compliant2, incomplete2, compliant_count2 = calculate_compliance_rate(bills2)
         
         # Calculate delta
-        delta = round(rate2 - rate1, 1)
+        calculated_delta = round(rate2 - rate1, 1)
+        
+        # Get stored diff_report from client (what dashboard displays)
+        stored_scan_date, stored_diff_report, stored_analysis = get_stored_diff_report(
+            cursor, committee_id, scan_date2, db_type
+        )
         
         # Print statistics
         print(f"{'='*80}")
@@ -195,10 +256,66 @@ def compare_committees(committee_id, date1_str, date2_str):
         print(f"\nCalculation: ({compliant_count2} / {total2}) * 100 = {rate2}%")
         
         print(f"\n{'='*80}")
-        print(f"DELTA CALCULATION")
+        print(f"DELTA COMPARISON")
         print(f"{'='*80}")
-        print(f"Compliance Delta:         {delta}%")
-        print(f"Calculation: {rate2}% - {rate1}% = {delta}%")
+        print(f"\n📊 CALCULATED DELTA (from database):")
+        print(f"   Compliance Delta:      {calculated_delta}%")
+        print(f"   Calculation:           {rate2}% - {rate1}% = {calculated_delta}%")
+        
+        if stored_diff_report:
+            stored_delta = stored_diff_report.get('compliance_delta')
+            stored_prev_date = stored_diff_report.get('previous_date')
+            stored_curr_date = stored_diff_report.get('current_date')
+            stored_interval = stored_diff_report.get('time_interval', 'N/A')
+            
+            stored_new_bills = stored_diff_report.get('new_bills_count', 0)
+            stored_new_hearings = len(stored_diff_report.get('bills_with_new_hearings', []))
+            stored_reported_out = len(stored_diff_report.get('bills_reported_out', []))
+            stored_new_summaries = len(stored_diff_report.get('bills_with_new_summaries', []))
+            stored_new_votes = len(stored_diff_report.get('bills_with_new_votes', []))
+            
+            print(f"\n📥 STORED DELTA (from client/dashboard):")
+            print(f"   Compliance Delta:      {stored_delta}%")
+            print(f"   Time Interval:         {stored_interval}")
+            print(f"   Previous Date:         {stored_prev_date}")
+            print(f"   Current Date:          {stored_curr_date}")
+            print(f"   Stored Scan Date:      {stored_scan_date}")
+            print(f"   New Bills:             {stored_new_bills}")
+            print(f"   New Hearings:          {stored_new_hearings}")
+            print(f"   Reported Out:          {stored_reported_out}")
+            print(f"   New Summaries:         {stored_new_summaries}")
+            print(f"   New Votes:             {stored_new_votes}")
+            
+            if stored_analysis:
+                print(f"\n   Analysis:")
+                analysis_preview = stored_analysis[:200] + ('...' if len(stored_analysis) > 200 else '')
+                for line in analysis_preview.split('\n')[:3]:
+                    print(f"   {line}")
+            
+            if stored_delta is not None and calculated_delta != stored_delta:
+                variance = round(stored_delta - calculated_delta, 1)
+                print(f"\n⚠️  VARIANCE DETECTED:")
+                print(f"   Difference:            {variance}%")
+                print(f"   Stored (Dashboard):    {stored_delta}%")
+                print(f"   Calculated (Tool):     {calculated_delta}%")
+                print(f"\n   Possible reasons:")
+                print(f"   • Client calculated delta using different dates/timestamps")
+                print(f"     (Stored: {stored_prev_date} → {stored_curr_date})")
+                print(f"     (Tool:   {str(scan_date1)[:10]} → {str(scan_date2)[:10]})")
+                print(f"   • Client used different baseline data")
+                print(f"   • Database state changed after client submission")
+                print(f"   • Different deduplication or calculation logic")
+            elif stored_delta is not None:
+                print(f"\n✅ DELTAS MATCH: Both show {stored_delta}%")
+        else:
+            print(f"\n⚠️  No stored diff_report found for this date range")
+            print(f"   The dashboard may not have a stored delta for this comparison")
+        
+        print(f"\n{'='*80}")
+        print(f"DELTA CALCULATION DETAILS")
+        print(f"{'='*80}")
+        print(f"Calculated Delta:         {calculated_delta}%")
+        print(f"Calculation: {rate2}% - {rate1}% = {calculated_delta}%")
         
         # Alternative calculation (as user mentioned)
         if total1 == total2:
