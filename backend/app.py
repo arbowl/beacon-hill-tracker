@@ -1424,7 +1424,8 @@ def create_app():
                     return jsonify({
                         'diff_report': None,
                         'analysis': None,
-                        'scan_date': None
+                        'scan_date': None,
+                        'top_movers': []
                     }), 200
                 
                 # Parse diff_reports (no need to group since SQL already filtered)
@@ -1531,10 +1532,43 @@ def create_app():
                 aggregated['bills_with_new_summaries'] = list(set(aggregated['bills_with_new_summaries']))
                 aggregated['bills_with_new_votes'] = list(set(aggregated['bills_with_new_votes']))
                 
+                # Calculate top 3 movers by absolute compliance_delta
+                top_movers = []
+                if latest_by_committee:
+                    # Get committee names
+                    committee_ids = list(latest_by_committee.keys())
+                    if committee_ids:
+                        placeholder = '%s' if db_type == 'postgresql' else '?'
+                        placeholders = ','.join([placeholder] * len(committee_ids))
+                        cursor.execute(f'''
+                            SELECT committee_id, name
+                            FROM committees
+                            WHERE committee_id IN ({placeholders})
+                        ''', committee_ids)
+                        
+                        committee_names = {row[0]: row[1] for row in cursor.fetchall()}
+                        
+                        # Build list of movers with compliance_delta
+                        movers = []
+                        for committee_id, committee_data in latest_by_committee.items():
+                            dr = committee_data['diff_report']
+                            compliance_delta = dr.get('compliance_delta')
+                            if compliance_delta is not None:
+                                movers.append({
+                                    'committee_id': committee_id,
+                                    'committee_name': committee_names.get(committee_id, f'Committee {committee_id}'),
+                                    'compliance_delta': compliance_delta
+                                })
+                        
+                        # Sort by absolute value of compliance_delta (descending) and take top 3
+                        movers.sort(key=lambda x: abs(x['compliance_delta']), reverse=True)
+                        top_movers = movers[:3]
+                
                 return jsonify({
                     'diff_report': aggregated,
                     'analysis': None,  # No analysis for aggregated view
-                    'scan_date': latest_scan_date
+                    'scan_date': latest_scan_date,
+                    'top_movers': top_movers
                 }), 200
         
         except Exception as e:
