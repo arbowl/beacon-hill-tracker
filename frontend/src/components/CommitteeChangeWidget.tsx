@@ -1,4 +1,5 @@
-import React, { useMemo } from 'react'
+import React, { useMemo, useState } from 'react'
+import { Link } from 'react-router-dom'
 import type { DiffReport, TopMover } from '../types'
 
 interface CommitteeChangeWidgetProps {
@@ -13,9 +14,10 @@ const CommitteeChangeWidget: React.FC<CommitteeChangeWidgetProps> = ({
   diffReport, 
   analysis, 
   loading = false,
-  committeeId: _committeeId = null, // Reserved for future use (e.g., trend chart)
+  committeeId = null, // Reserved for future use (e.g., trend chart)
   topMovers = []
 }) => {
+  const [isTopMoversExpanded, setIsTopMoversExpanded] = useState(true)
 
   // Calculate actual time interval from dates
   const calculatedTimeInterval = useMemo(() => {
@@ -60,6 +62,17 @@ const CommitteeChangeWidget: React.FC<CommitteeChangeWidgetProps> = ({
             </svg>
             <h3 className="text-lg font-semibold text-base-content">Recent Activity</h3>
           </div>
+          {committeeId && (
+            <Link 
+              to={`/dashboard?committees=${committeeId}`}
+              className="btn btn-sm btn-ghost text-primary hover:text-primary-focus"
+            >
+              <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
+              </svg>
+              View Committee
+            </Link>
+          )}
         </div>
 
         <div className="flex flex-col md:flex-row items-start gap-5 w-full">
@@ -216,33 +229,49 @@ const CommitteeChangeWidget: React.FC<CommitteeChangeWidgetProps> = ({
               )}
 
               {/* Top Movers section - only show for global view (no committeeId) */}
-              {!_committeeId && topMovers && topMovers.length > 0 && (() => {
+              {!committeeId && topMovers && topMovers.length > 0 && (() => {
                 const movers: TopMover[] = topMovers;
                 return (
                   <div className="w-full mt-6 pt-6 border-t border-base-300/30">
-                    <div className="flex items-center gap-2 mb-4">
-                      <svg className="w-4 h-4 text-base-content/60" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <button
+                      onClick={() => setIsTopMoversExpanded(!isTopMoversExpanded)}
+                      className="flex items-center gap-2 mb-4 w-full text-left hover:opacity-80 transition-opacity"
+                    >
+                      <svg 
+                        className={`w-4 h-4 text-base-content/60 transition-transform duration-200 ${
+                          isTopMoversExpanded ? 'rotate-180' : ''
+                        }`}
+                        fill="none" 
+                        stroke="currentColor" 
+                        viewBox="0 0 24 24"
+                      >
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
                       </svg>
                       <h4 className="text-base font-semibold text-base-content">Top Movers</h4>
-                    </div>
-                    <div className="space-y-2">
-                      {movers.map((mover) => (
-                        <div key={mover.committee_id} className="flex items-center justify-between p-2 rounded-lg bg-base-200/30 hover:bg-base-200/50 transition-colors">
-                          <span className="text-sm font-medium text-base-content/80">
-                            {mover.committee_name}
-                          </span>
-                          <span className={`text-sm font-semibold ${
-                            mover.compliance_delta > 0 ? 'text-success' : 
-                            mover.compliance_delta < 0 ? 'text-error' : 
-                            'text-base-content/60'
-                          }`}>
-                            {mover.compliance_delta > 0 ? '+' : ''}
-                            {mover.compliance_delta.toFixed(1)}%
-                          </span>
-                        </div>
-                      ))}
-                    </div>
+                    </button>
+                    {isTopMoversExpanded && (
+                      <div className="space-y-2">
+                        {movers.map((mover) => (
+                          <Link
+                            key={mover.committee_id}
+                            to={`/dashboard?committees=${mover.committee_id}`}
+                            className="flex items-center justify-between p-2 rounded-lg bg-base-200/30 hover:bg-base-200/50 transition-colors cursor-pointer"
+                          >
+                            <span className="text-sm font-medium text-base-content/80">
+                              {mover.committee_name}
+                            </span>
+                            <span className={`text-sm font-semibold ${
+                              mover.compliance_delta > 0 ? 'text-success' : 
+                              mover.compliance_delta < 0 ? 'text-error' : 
+                              'text-base-content/60'
+                            }`}>
+                              {mover.compliance_delta > 0 ? '+' : ''}
+                              {mover.compliance_delta.toFixed(1)}%
+                            </span>
+                          </Link>
+                        ))}
+                      </div>
+                    )}
                   </div>
                 );
               })()}
