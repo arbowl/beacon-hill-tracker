@@ -116,11 +116,77 @@ def get_committee_name(cursor, committee_id, db_type):
     return result[0] if result else committee_id
 
 
-def get_stored_diff_report(cursor, committee_id, target_date, db_type):
-    """Get stored diff_report from compliance_scan_metadata for a given date"""
+def get_stored_diff_report(cursor, committee_id, target_date, db_type, match_dates=None):
+    """Get stored diff_report from compliance_scan_metadata for a given date
+    
+    Args:
+        match_dates: Optional tuple (prev_date_str, curr_date_str) to find diff_report
+                    that matches these exact dates. If None, gets latest scan.
+    """
     placeholder = '%s' if db_type == 'postgresql' else '?'
     
-    # Get the latest scan metadata for this committee on or before target_date
+    # If match_dates provided, try to find diff_report with matching dates
+    if match_dates:
+        prev_date_str, curr_date_str = match_dates
+        
+        # Get all scan metadata and check their diff_report dates
+        if db_type == 'postgresql':
+            cursor.execute(f'''
+                SELECT scan_date, diff_report, analysis
+                FROM compliance_scan_metadata
+                WHERE committee_id = {placeholder}
+                  AND scan_date <= {placeholder}
+                ORDER BY scan_date DESC
+            ''', (committee_id, target_date))
+        else:
+            cursor.execute(f'''
+                SELECT scan_date, diff_report, analysis
+                FROM compliance_scan_metadata
+                WHERE committee_id = {placeholder}
+                  AND scan_date <= {placeholder}
+                ORDER BY scan_date DESC
+            ''', (committee_id, target_date))
+        
+        results = cursor.fetchall()
+        
+        # Check each result to find one with matching dates
+        for result in results:
+            scan_date = result[0]
+            diff_report_json = result[1]
+            analysis = result[2]
+            
+            if not diff_report_json:
+                continue
+            
+            try:
+                if db_type == 'postgresql':
+                    parsed = diff_report_json if isinstance(diff_report_json, dict) else json.loads(diff_report_json)
+                else:
+                    parsed = json.loads(diff_report_json) if isinstance(diff_report_json, str) else diff_report_json
+                
+                # Check if it's new structure (with daily/weekly/monthly) or old (single diff_report)
+                diff_report = None
+                if isinstance(parsed, dict):
+                    if 'daily' in parsed or 'weekly' in parsed or 'monthly' in parsed:
+                        # New structure: extract daily diff_report
+                        if 'daily' in parsed and parsed['daily']:
+                            diff_report = parsed['daily']
+                    else:
+                        # Old structure: single diff_report
+                        diff_report = parsed
+                
+                # Check if dates match
+                if diff_report:
+                    stored_prev = diff_report.get('previous_date', '')
+                    stored_curr = diff_report.get('current_date', '')
+                    # Compare date strings (YYYY-MM-DD format)
+                    if (str(stored_prev)[:10] == prev_date_str[:10] and 
+                        str(stored_curr)[:10] == curr_date_str[:10]):
+                        return scan_date, diff_report, analysis
+            except (json.JSONDecodeError, TypeError):
+                continue
+    
+    # Fall back to latest scan if no match found or match_dates not provided
     if db_type == 'postgresql':
         cursor.execute(f'''
             SELECT scan_date, diff_report, analysis
@@ -226,8 +292,12 @@ def compare_committees(committee_id, date1_str, date2_str):
         calculated_delta = round(rate2 - rate1, 1)
         
         # Get stored diff_report from client (what dashboard displays)
+        # Try to match the dates we're comparing
+        date1_str_short = str(scan_date1)[:10]
+        date2_str_short = str(scan_date2)[:10]
         stored_scan_date, stored_diff_report, stored_analysis = get_stored_diff_report(
-            cursor, committee_id, scan_date2, db_type
+            cursor, committee_id, scan_date2, db_type, 
+            match_dates=(date1_str_short, date2_str_short)
         )
         
         # Print statistics
