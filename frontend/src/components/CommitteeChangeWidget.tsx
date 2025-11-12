@@ -32,6 +32,14 @@ const CommitteeChangeWidget: React.FC<CommitteeChangeWidgetProps> = ({
     if (diffDays === 1) return '1 day'
     return `${diffDays} days`
   }, [diffReport])
+
+  // Format bill IDs for tooltip display
+  const formatBillList = (bills: string[] | undefined): string => {
+    if (!bills || bills.length === 0) return ''
+    // Sort bills for consistent display (House bills first, then Senate)
+    const sorted = [...bills].sort()
+    return sorted.join(', ')
+  }
   // Show loading state
   if (loading) {
     return (
@@ -119,7 +127,12 @@ const CommitteeChangeWidget: React.FC<CommitteeChangeWidgetProps> = ({
               <div className="flex flex-col lg:flex-row lg:flex-wrap gap-3 w-full">
                 {/* New Bills - always show */}
                 {diffReport.new_bills_count !== undefined && diffReport.new_bills_count !== null && (
-                  <div className="flex flex-col items-center gap-2 p-3 rounded-lg bg-base-200/30 lg:flex-1 lg:min-w-[120px]">
+                  <div 
+                    className={`flex flex-col items-center gap-2 p-3 rounded-lg bg-base-200/30 lg:flex-1 lg:min-w-[120px] ${
+                      diffReport.new_bills && diffReport.new_bills.length > 0 ? 'tooltip tooltip-top' : ''
+                    }`}
+                    data-tip={diffReport.new_bills && diffReport.new_bills.length > 0 ? formatBillList(diffReport.new_bills) : undefined}
+                  >
                     <div 
                       className={`badge badge-lg text-white ${diffReport.new_bills_count > 0 ? 'badge-info' : ''}`}
                       style={diffReport.new_bills_count === 0 ? { backgroundColor: '#4B5563' } : undefined}
@@ -135,7 +148,12 @@ const CommitteeChangeWidget: React.FC<CommitteeChangeWidgetProps> = ({
 
                 {/* Bills with new hearings - always show */}
                 {diffReport.bills_with_new_hearings !== undefined && (
-                  <div className="flex flex-col items-center gap-2 p-3 rounded-lg bg-base-200/30 lg:flex-1 lg:min-w-[120px]">
+                  <div 
+                    className={`flex flex-col items-center gap-2 p-3 rounded-lg bg-base-200/30 lg:flex-1 lg:min-w-[120px] ${
+                      diffReport.bills_with_new_hearings && diffReport.bills_with_new_hearings.length > 0 ? 'tooltip tooltip-top' : ''
+                    }`}
+                    data-tip={diffReport.bills_with_new_hearings && diffReport.bills_with_new_hearings.length > 0 ? formatBillList(diffReport.bills_with_new_hearings) : undefined}
+                  >
                     <div 
                       className={`badge badge-lg text-white ${diffReport.bills_with_new_hearings && diffReport.bills_with_new_hearings.length > 0 ? '' : ''}`}
                       style={
@@ -155,7 +173,12 @@ const CommitteeChangeWidget: React.FC<CommitteeChangeWidgetProps> = ({
 
                 {/* Bills reported out - always show */}
                 {diffReport.bills_reported_out !== undefined && (
-                  <div className="flex flex-col items-center gap-2 p-3 rounded-lg bg-base-200/30 lg:flex-1 lg:min-w-[120px]">
+                  <div 
+                    className={`flex flex-col items-center gap-2 p-3 rounded-lg bg-base-200/30 lg:flex-1 lg:min-w-[120px] ${
+                      diffReport.bills_reported_out && diffReport.bills_reported_out.length > 0 ? 'tooltip tooltip-top' : ''
+                    }`}
+                    data-tip={diffReport.bills_reported_out && diffReport.bills_reported_out.length > 0 ? formatBillList(diffReport.bills_reported_out) : undefined}
+                  >
                     <div 
                       className={`badge badge-lg text-white ${diffReport.bills_reported_out && diffReport.bills_reported_out.length > 0 ? 'badge-success' : ''}`}
                       style={(!diffReport.bills_reported_out || diffReport.bills_reported_out.length === 0) ? { backgroundColor: '#4B5563' } : undefined}
@@ -171,7 +194,12 @@ const CommitteeChangeWidget: React.FC<CommitteeChangeWidgetProps> = ({
 
                 {/* Bills with new summaries - always show */}
                 {diffReport.bills_with_new_summaries !== undefined && (
-                  <div className="flex flex-col items-center gap-2 p-3 rounded-lg bg-base-200/30 lg:flex-1 lg:min-w-[120px]">
+                  <div 
+                    className={`flex flex-col items-center gap-2 p-3 rounded-lg bg-base-200/30 lg:flex-1 lg:min-w-[120px] ${
+                      diffReport.bills_with_new_summaries && diffReport.bills_with_new_summaries.length > 0 ? 'tooltip tooltip-top' : ''
+                    }`}
+                    data-tip={diffReport.bills_with_new_summaries && diffReport.bills_with_new_summaries.length > 0 ? formatBillList(diffReport.bills_with_new_summaries) : undefined}
+                  >
                     <div 
                       className={`badge badge-lg text-white ${diffReport.bills_with_new_summaries && diffReport.bills_with_new_summaries.length > 0 ? 'badge-success' : ''}`}
                       style={(!diffReport.bills_with_new_summaries || diffReport.bills_with_new_summaries.length === 0) ? { backgroundColor: '#4B5563' } : undefined}
@@ -187,7 +215,12 @@ const CommitteeChangeWidget: React.FC<CommitteeChangeWidgetProps> = ({
 
                 {/* Bills with new votes - always show */}
                 {diffReport.bills_with_new_votes !== undefined && (
-                  <div className="flex flex-col items-center gap-2 p-3 rounded-lg bg-base-200/30 lg:flex-1 lg:min-w-[120px]">
+                  <div 
+                    className={`flex flex-col items-center gap-2 p-3 rounded-lg bg-base-200/30 lg:flex-1 lg:min-w-[120px] ${
+                      diffReport.bills_with_new_votes && diffReport.bills_with_new_votes.length > 0 ? 'tooltip tooltip-top' : ''
+                    }`}
+                    data-tip={diffReport.bills_with_new_votes && diffReport.bills_with_new_votes.length > 0 ? formatBillList(diffReport.bills_with_new_votes) : undefined}
+                  >
                     <div 
                       className={`badge badge-lg text-white ${diffReport.bills_with_new_votes && diffReport.bills_with_new_votes.length > 0 ? 'badge-success' : ''}`}
                       style={(!diffReport.bills_with_new_votes || diffReport.bills_with_new_votes.length === 0) ? { backgroundColor: '#4B5563' } : undefined}
