@@ -127,6 +127,7 @@ const HomePage: React.FC = () => {
           analysis={globalMetadata.analysis || null}
           loading={globalMetadataLoading}
           committeeId={null}
+          topMovers={globalMetadata.top_movers || []}
         />
       )}
 

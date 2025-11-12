@@ -908,6 +908,7 @@ const DashboardPage: React.FC = () => {
           analysis={displayMetadata?.analysis || null}
           loading={displayMetadataLoading}
           committeeId={selectedCommitteeId}
+          topMovers={!selectedCommitteeId && globalMetadata?.top_movers ? globalMetadata.top_movers : []}
         />
       )}
 

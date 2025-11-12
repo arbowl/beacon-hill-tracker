@@ -166,6 +166,12 @@ export interface DiffReport {
   analysis?: string | null  // Analysis is now part of the diff report (only for daily)
 }
 
+export interface TopMover {
+  committee_id: string
+  committee_name: string
+  compliance_delta: number
+}
+
 export interface DiffReports {
   daily?: DiffReport | null
   weekly?: DiffReport | null

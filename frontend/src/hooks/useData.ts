@@ -6,7 +6,8 @@ import {
   GlobalStats, 
   DashboardFilters,
   SavedView,
-  DiffReport
+  DiffReport,
+  TopMover
 } from '../types'
 
 // Custom hook for fetching committees
@@ -693,7 +694,7 @@ export const useCommitteeMetadata = (
 
 // Hook for fetching global aggregated metadata (all committees)
 export const useGlobalMetadata = () => {
-  const [metadata, setMetadata] = useState<{ diff_report: DiffReport | null; diff_reports?: any; analysis: string | null; scan_date: string | null } | null>(null)
+  const [metadata, setMetadata] = useState<{ diff_report: DiffReport | null; diff_reports?: any; analysis: string | null; scan_date: string | null; top_movers?: TopMover[] } | null>(null)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 

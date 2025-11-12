@@ -1,18 +1,20 @@
 import React, { useMemo } from 'react'
-import type { DiffReport } from '../types'
+import type { DiffReport, TopMover } from '../types'
 
 interface CommitteeChangeWidgetProps {
   diffReport: DiffReport | null
   analysis: string | null
   loading?: boolean
   committeeId?: string | null // Reserved for future use (e.g., trend chart)
+  topMovers?: TopMover[] // Top 3 committees with largest absolute compliance_delta change
 }
 
 const CommitteeChangeWidget: React.FC<CommitteeChangeWidgetProps> = ({ 
   diffReport, 
   analysis, 
   loading = false,
-  committeeId: _committeeId = null // Reserved for future use (e.g., trend chart)
+  committeeId: _committeeId = null, // Reserved for future use (e.g., trend chart)
+  topMovers = []
 }) => {
 
   // Calculate actual time interval from dates
@@ -214,6 +216,38 @@ const CommitteeChangeWidget: React.FC<CommitteeChangeWidgetProps> = ({
               )}
             </div>
           )}
+
+          {/* Top Movers section - only show for global view (no committeeId) */}
+          {!_committeeId && topMovers && topMovers.length > 0 && (() => {
+            const movers: TopMover[] = topMovers;
+            return (
+            <div className="w-full mt-6 pt-6 border-t border-base-300/30">
+              <div className="flex items-center gap-2 mb-4">
+                <svg className="w-4 h-4 text-base-content/60" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                </svg>
+                <h4 className="text-base font-semibold text-base-content">Top Movers</h4>
+              </div>
+              <div className="space-y-2">
+                {movers.map((mover) => (
+                  <div key={mover.committee_id} className="flex items-center justify-between p-2 rounded-lg bg-base-200/30 hover:bg-base-200/50 transition-colors">
+                    <span className="text-sm font-medium text-base-content/80">
+                      {mover.committee_name}
+                    </span>
+                    <span className={`text-sm font-semibold ${
+                      mover.compliance_delta > 0 ? 'text-success' : 
+                      mover.compliance_delta < 0 ? 'text-error' : 
+                      'text-base-content/60'
+                    }`}>
+                      {mover.compliance_delta > 0 ? '+' : ''}
+                      {mover.compliance_delta.toFixed(1)}%
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </div>
+            );
+          })()}
 
           {/* Right side: Analysis text */}
           {analysis && (
