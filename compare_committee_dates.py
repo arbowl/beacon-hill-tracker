@@ -308,19 +308,70 @@ def list_scan_dates(committee_id):
         db_type = get_database_type()
         placeholder = '%s' if db_type == 'postgresql' else '?'
         
-        cursor.execute(f'''
-            SELECT DISTINCT DATE(generated_at) as scan_date, COUNT(*) as bill_count
-            FROM bill_compliance
-            WHERE committee_id = {placeholder}
-            GROUP BY DATE(generated_at)
-            ORDER BY scan_date DESC
-            LIMIT 20
-        ''', (committee_id,))
+        # Use deduplication logic matching the dashboard (latest version of each bill)
+        # For each date, count the latest version of each bill_id as of that date
+        if db_type == 'postgresql':
+            cursor.execute(f'''
+                WITH scan_dates AS (
+                    SELECT DISTINCT DATE(generated_at) as scan_date
+                    FROM bill_compliance
+                    WHERE committee_id = {placeholder}
+                    ORDER BY scan_date DESC
+                    LIMIT 20
+                ),
+                date_bills AS (
+                    SELECT 
+                        sd.scan_date,
+                        bc.bill_id,
+                        ROW_NUMBER() OVER (PARTITION BY sd.scan_date, bc.bill_id ORDER BY bc.generated_at DESC) as rn
+                    FROM scan_dates sd
+                    CROSS JOIN LATERAL (
+                        SELECT bill_id, generated_at
+                        FROM bill_compliance
+                        WHERE committee_id = {placeholder}
+                          AND DATE(generated_at) <= sd.scan_date
+                    ) bc
+                )
+                SELECT scan_date, COUNT(DISTINCT bill_id) as bill_count
+                FROM date_bills
+                WHERE rn = 1
+                GROUP BY scan_date
+                ORDER BY scan_date DESC
+            ''', (committee_id, committee_id))
+        else:
+            # SQLite version - for each date, get latest bills as of that date
+            # This matches the dashboard's deduplication logic
+            cursor.execute(f'''
+                WITH scan_dates AS (
+                    SELECT DISTINCT DATE(generated_at) as scan_date
+                    FROM bill_compliance
+                    WHERE committee_id = {placeholder}
+                    ORDER BY scan_date DESC
+                    LIMIT 20
+                ),
+                all_bills AS (
+                    SELECT 
+                        sd.scan_date,
+                        bc.bill_id,
+                        bc.generated_at,
+                        ROW_NUMBER() OVER (PARTITION BY sd.scan_date, bc.bill_id ORDER BY bc.generated_at DESC) as rn
+                    FROM scan_dates sd
+                    JOIN bill_compliance bc ON bc.committee_id = {placeholder}
+                        AND DATE(bc.generated_at) <= sd.scan_date
+                )
+                SELECT scan_date, COUNT(*) as bill_count
+                FROM all_bills
+                WHERE rn = 1
+                GROUP BY scan_date
+                ORDER BY scan_date DESC
+            ''', (committee_id, committee_id))
         
         scans = cursor.fetchall()
         
         print(f"\n{'='*80}")
         print(f"Recent Scan Dates for {committee_id}")
+        print(f"{'='*80}")
+        print(f"Note: Counts show deduplicated bills (latest version per bill_id)")
         print(f"{'='*80}\n")
         for row in scans:
             print(f"  {row[0]} - {row[1]} bills")
