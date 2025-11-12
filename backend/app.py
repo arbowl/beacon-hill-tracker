@@ -1268,11 +1268,16 @@ def create_app():
                             if interval in diff_reports and diff_reports[interval]:
                                 diff_report = diff_reports[interval]
                                 # Extract analysis from the interval if it exists
-                                if 'analysis' in diff_report:
+                                # Fall back to top-level analysis column if not in diff_report
+                                if isinstance(diff_report, dict) and 'analysis' in diff_report:
                                     analysis = diff_report.get('analysis')
+                                # If analysis not in diff_report, keep the top-level analysis (already set from database column)
                         else:
                             # Old structure: single diff_report
                             diff_report = parsed
+                            # For old structure, if diff_report has analysis, use it; otherwise keep top-level analysis
+                            if isinstance(diff_report, dict) and 'analysis' in diff_report:
+                                analysis = diff_report.get('analysis')
                     except (json.JSONDecodeError, TypeError):
                         diff_report = None
                 
@@ -2656,8 +2661,12 @@ def import_compliance_report(committee_id, bills_data, diff_report=None, analysi
                     logger.info("Using client-provided diff_report for daily interval")
                     diff_reports['daily'] = diff_report.copy()
                     # Ensure analysis is attached to the diff_report
-                    if analysis and 'analysis' not in diff_reports['daily']:
+                    # Prefer analysis from diff_report itself, but fall back to top-level analysis if not present
+                    if 'analysis' not in diff_reports['daily'] and analysis:
                         diff_reports['daily']['analysis'] = analysis
+                    elif 'analysis' in diff_reports['daily']:
+                        # Analysis is already in diff_report, ensure it's preserved
+                        logger.info(f"Analysis found in diff_report: {diff_reports['daily']['analysis'][:100] if diff_reports['daily']['analysis'] else 'None'}...")
                 else:
                     # Only calculate from historical data if client didn't send one
                     logger.info("No client diff_report provided, calculating from historical data")
