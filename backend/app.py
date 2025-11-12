@@ -2660,13 +2660,17 @@ def import_compliance_report(committee_id, bills_data, diff_report=None, analysi
                 if diff_report is not None and isinstance(diff_report, dict):
                     logger.info("Using client-provided diff_report for daily interval")
                     diff_reports['daily'] = diff_report.copy()
-                    # Ensure analysis is attached to the diff_report
-                    # Prefer analysis from diff_report itself, but fall back to top-level analysis if not present
-                    if 'analysis' not in diff_reports['daily'] and analysis:
+                    # Always ensure analysis is in diff_reports['daily']
+                    # Prefer analysis from the separate analysis variable (extracted from diff_report),
+                    # but if diff_report already has analysis, preserve it
+                    if analysis:
+                        # Use the separately extracted analysis (this is the source of truth)
                         diff_reports['daily']['analysis'] = analysis
                     elif 'analysis' in diff_reports['daily']:
-                        # Analysis is already in diff_report, ensure it's preserved
+                        # Analysis is already in diff_report, keep it
                         logger.info(f"Analysis found in diff_report: {diff_reports['daily']['analysis'][:100] if diff_reports['daily']['analysis'] else 'None'}...")
+                    else:
+                        logger.warning("No analysis found in diff_report or separate analysis variable")
                 else:
                     # Only calculate from historical data if client didn't send one
                     logger.info("No client diff_report provided, calculating from historical data")
