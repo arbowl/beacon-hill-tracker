@@ -905,7 +905,7 @@ const DashboardPage: React.FC = () => {
       {(selectedCommitteeId || displayMetadata?.diff_report) && (
         <CommitteeChangeWidget
           diffReport={displayMetadata?.diff_report || null}
-          analysis={displayMetadata?.analysis || null}
+          analysis={displayMetadata?.analysis || displayMetadata?.diff_report?.analysis || null}
           loading={displayMetadataLoading}
           committeeId={selectedCommitteeId}
           topMovers={!selectedCommitteeId && globalMetadata?.top_movers ? globalMetadata.top_movers : []}
