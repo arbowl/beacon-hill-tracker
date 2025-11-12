@@ -298,13 +298,37 @@ def compare_committees(committee_id, date1_str, date2_str):
                 print(f"   Difference:            {variance}%")
                 print(f"   Stored (Dashboard):    {stored_delta}%")
                 print(f"   Calculated (Tool):     {calculated_delta}%")
+                
+                # Check if dates match
+                stored_prev_match = str(scan_date1)[:10] == stored_prev_date if stored_prev_date else False
+                stored_curr_match = str(scan_date2)[:10] == stored_curr_date if stored_curr_date else False
+                
+                print(f"\n   Date Comparison:")
+                print(f"     Stored dates:        {stored_prev_date} → {stored_curr_date}")
+                print(f"     Tool dates:          {str(scan_date1)[:10]} → {str(scan_date2)[:10]}")
+                if not (stored_prev_match and stored_curr_match):
+                    print(f"     ⚠️  DATES DON'T MATCH - This explains the variance!")
+                else:
+                    print(f"     ✓ Dates match - variance is due to different calculations")
+                
                 print(f"\n   Possible reasons:")
-                print(f"   • Client calculated delta using different dates/timestamps")
-                print(f"     (Stored: {stored_prev_date} → {stored_curr_date})")
-                print(f"     (Tool:   {str(scan_date1)[:10]} → {str(scan_date2)[:10]})")
-                print(f"   • Client used different baseline data")
-                print(f"   • Database state changed after client submission")
-                print(f"   • Different deduplication or calculation logic")
+                if not (stored_prev_match and stored_curr_match):
+                    print(f"   • PRIMARY ISSUE: Client calculated delta for different dates")
+                    print(f"     The stored diff_report is for {stored_prev_date} → {stored_curr_date}")
+                    print(f"     But the tool calculated for {str(scan_date1)[:10]} → {str(scan_date2)[:10]}")
+                else:
+                    print(f"   • Client used different baseline data or calculation method")
+                    print(f"   • Client's diff_report shows {stored_new_bills} new bills, {stored_new_hearings} hearings")
+                    print(f"     But database shows actual state changes occurred")
+                    print(f"   • Database state may have changed after client submission")
+                    print(f"   • Different deduplication or compliance calculation logic")
+                
+                # Show what actually changed in the database
+                if abs(calculated_delta) > 0.1:  # Only show if there's a meaningful change
+                    print(f"\n   What actually changed in database:")
+                    print(f"     • Compliance rate changed by {calculated_delta}%")
+                    print(f"     • This means bills changed state between these dates")
+                    print(f"     • See 'BILL CHANGES' section below for details")
             elif stored_delta is not None:
                 print(f"\n✅ DELTAS MATCH: Both show {stored_delta}%")
         else:
