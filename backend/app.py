@@ -1658,6 +1658,7 @@ def create_app():
             logger.info(f"Top-level keys in data: {list(data.keys())}")
             logger.info(f"Has 'bills' key: {'bills' in data}")
             logger.info(f"Has 'diff_report' key: {'diff_report' in data}")
+            logger.info(f"Has 'diff_reports' key: {'diff_reports' in data}")
             logger.info(f"Has 'analysis' key: {'analysis' in data}")
             
             if not committee_id:
@@ -1669,7 +1670,7 @@ def create_app():
 
             # Extract items/bills array - handle both old and new formats
             # Old format: data is array directly, or has 'items' or 'bills' array
-            # New format: has 'bills' array, optional 'diff_report' and 'analysis'
+            # New format: has 'bills' array, optional 'diff_report', 'diff_reports', and 'analysis'
             items = None
             diff_report = None
             analysis = None
@@ -1678,17 +1679,36 @@ def create_app():
             if isinstance(data, list):
                 items = data
             else:
-                # Check for new format with bills, diff_report, analysis
+                # Check for new format with bills, diff_report/diff_reports, analysis
                 # First check if 'bills' key exists (could be new or old format)
                 if 'bills' in data and isinstance(data['bills'], list):
                     items = data['bills']
-                    # Check if this is the new format (has diff_report or analysis at top level)
-                    if 'diff_report' in data or 'analysis' in data:
-                        diff_report = data.get('diff_report')  # Can be None
-                        analysis = data.get('analysis')  # Can be None
-                        logger.info(f"New format detected: has diff_report={diff_report is not None}, analysis={analysis is not None}")
-                        if diff_report:
-                            logger.info(f"Diff report keys: {list(diff_report.keys()) if isinstance(diff_report, dict) else 'not a dict'}")
+                    # Check if this is the new format (has diff_report, diff_reports, or analysis at top level)
+                    if 'diff_report' in data or 'diff_reports' in data or 'analysis' in data:
+                        # Check for new structure: diff_reports with daily/weekly/monthly
+                        if 'diff_reports' in data and isinstance(data['diff_reports'], dict):
+                            diff_reports = data['diff_reports']
+                            # Extract daily diff_report (this is what matches the analysis)
+                            if 'daily' in diff_reports and diff_reports['daily']:
+                                diff_report = diff_reports['daily']
+                                # Extract analysis from daily if it exists
+                                if isinstance(diff_report, dict) and 'analysis' in diff_report:
+                                    analysis = diff_report.get('analysis')
+                                logger.info(f"New format detected: extracted diff_reports.daily, has analysis={analysis is not None}")
+                                if diff_report:
+                                    logger.info(f"Daily diff report keys: {list(diff_report.keys()) if isinstance(diff_report, dict) else 'not a dict'}")
+                                    logger.info(f"Daily compliance_delta: {diff_report.get('compliance_delta') if isinstance(diff_report, dict) else 'N/A'}")
+                        # Fall back to old structure: single diff_report at top level
+                        elif 'diff_report' in data:
+                            diff_report = data.get('diff_report')  # Can be None
+                            analysis = data.get('analysis')  # Can be None
+                            logger.info(f"Legacy format detected: has diff_report={diff_report is not None}, analysis={analysis is not None}")
+                            if diff_report:
+                                logger.info(f"Diff report keys: {list(diff_report.keys()) if isinstance(diff_report, dict) else 'not a dict'}")
+                        # Just analysis at top level (no diff_report)
+                        elif 'analysis' in data:
+                            analysis = data.get('analysis')
+                            logger.info(f"Analysis-only format detected")
                 # Fall back to old format: 'items' or 'bills' as direct key
                 elif 'items' in data and isinstance(data['items'], list):
                     items = data['items']
