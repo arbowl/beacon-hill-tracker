@@ -408,7 +408,7 @@ const DashboardPage: React.FC = () => {
         'Votes Present', 
         'Votes URL',
         'Notice Status',
-        'Notice Gap Days',
+        'Hearing Notice Days',
         'Announcement Date',
         'Scheduled Hearing Date',
         'Generated At'
@@ -1255,7 +1255,7 @@ const DashboardPage: React.FC = () => {
                     <SortableHeader column="summary" label="Summary" />
                     <SortableHeader column="votes" label="Votes" />
                     <SortableHeader column="reported_out" label="Reported Out" />
-                    <SortableHeader column="notice_gap" label="Notice Gap" />
+                    <SortableHeader column="notice_gap" label="Hearing Notice" />
                     <SortableHeader column="hearing_date" label="Hearing Date" />
                     <SortableHeader column="deadline" label="Deadline" />
                   </tr>
