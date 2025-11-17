@@ -667,7 +667,7 @@ const DashboardPage: React.FC = () => {
       {/* Understanding Compliance States */}
       <div className="card bg-base-100 shadow-md">
         <div className="card-body">
-          <h2 className="card-title text-lg mb-3">Understanding Compliance States</h2>
+          <h2 className="card-title text-lg mb-3">Understanding Compliance Statuses</h2>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div className="flex items-start space-x-3">
               <div className="badge badge-success badge-lg shrink-0 mt-1">Compliant</div>
@@ -763,7 +763,7 @@ const DashboardPage: React.FC = () => {
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
               </svg>
               <div className="text-sm text-base-content/80">
-                Use the filters below to sort the data by title, ID, compliance state, and committee. 
+                Use the filters below to sort the data by title, ID, compliance status, and committee. 
                 Any changes you make will automatically update all statistics, charts, and the bills table below.
               </div>
             </div>
@@ -791,7 +791,7 @@ const DashboardPage: React.FC = () => {
             
             <div className="form-control">
               <label className="label py-1">
-                <span className="label-text text-sm">Compliance State</span>
+                <span className="label-text text-sm">Compliance Status</span>
               </label>
               <select 
                 className="select select-bordered select-sm"
