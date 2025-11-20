@@ -398,6 +398,52 @@ def init_compliance_database():
         print(f"✅ Compliance database schema initialized ({db_type})")
 
 
+def refresh_latest_bills_materialized_view():
+    """
+    Refresh the latest_bills_mv materialized view.
+    Should be called after data ingest operations to keep the view up to date.
+    
+    Returns:
+        bool: True if successful, False otherwise
+    """
+    db_type = get_database_type()
+    if db_type != 'postgresql':
+        # Materialized views are PostgreSQL-only, skip for SQLite
+        return True
+    
+    try:
+        with get_db_connection() as conn:
+            cursor = conn.cursor()
+            
+            # Check if view exists
+            cursor.execute('''
+                SELECT EXISTS (
+                    SELECT 1 FROM pg_matviews 
+                    WHERE matviewname = 'latest_bills_mv'
+                )
+            ''')
+            exists = cursor.fetchone()[0]
+            
+            if not exists:
+                # View doesn't exist yet, that's okay
+                return True
+            
+            # Try concurrent refresh first (requires unique index)
+            try:
+                cursor.execute('REFRESH MATERIALIZED VIEW CONCURRENTLY latest_bills_mv')
+                # Note: During concurrent refresh, readers see the OLD view until refresh completes
+                # Application caches should be invalidated after refresh
+            except Exception as e:
+                # If concurrent fails (e.g., no unique index), use regular refresh
+                # Regular refresh will briefly lock the view
+                cursor.execute('REFRESH MATERIALIZED VIEW latest_bills_mv')
+            
+            return True
+    except Exception:
+        # Don't fail the main operation if view refresh fails
+        return False
+
+
 # Export public functions
-__all__ = ['get_db_connection', 'get_database_type', 'init_compliance_database']
+__all__ = ['get_db_connection', 'get_database_type', 'init_compliance_database', 'refresh_latest_bills_materialized_view']
 

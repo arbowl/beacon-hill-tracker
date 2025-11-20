@@ -21,7 +21,7 @@ from keys_routes import keys_bp
 from contact_routes import contact_bp
 from email_service import init_mail
 from security import init_security_middleware
-from database import get_db_connection, get_database_type, init_compliance_database
+from database import get_db_connection, get_database_type, init_compliance_database, refresh_latest_bills_materialized_view
 
 # Load environment variables
 load_dotenv()
@@ -2162,6 +2162,10 @@ def import_cache_data(cache_data):
 
             conn.commit()  # Explicit commit
             logger.info("Cache data import completed successfully")
+            
+            # Refresh materialized view after data ingest (PostgreSQL optimization)
+            refresh_latest_bills_materialized_view()
+            
             return {
                 "status": "success",
                 "message": "Successfully imported cache data"
@@ -2728,9 +2732,14 @@ def import_compliance_report(committee_id, bills_data, diff_report=None, analysi
             conn.commit()  # Explicit commit
             logger.info(f"Successfully imported {imported_count} bills for committee {committee_id}")
             
+            # Refresh materialized view after data ingest (PostgreSQL optimization)
+            # Note: This refreshes concurrently, so readers see old data until refresh completes
+            refresh_latest_bills_materialized_view()
+            
             # Invalidate stats cache after data import (next request will recalculate)
+            # This ensures app caches are busted after MV refresh
             _invalidate_stats_cache()
-            logger.debug("Stats cache invalidated after data import")
+            logger.debug("Stats cache invalidated after data import and MV refresh")
             
             return {
                 "status": "success",

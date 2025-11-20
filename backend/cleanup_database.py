@@ -66,16 +66,19 @@ def cleanup_bill_compliance(dry_run=True, keep_days=None):
             date_filter = ""
             date_params = ()
         
-        # Count entries to keep
+        # Count entries to keep (single newest per committee/bill, not per day)
+        # NOTE: This matches the delete semantics - keeps only the single most recent record
+        # per (committee_id, bill_id). If you want one-per-day retention instead,
+        # change DISTINCT ON to: (committee_id, bill_id, DATE(generated_at))
         if db_type == 'postgresql':
             cursor.execute(f'''
                 SELECT COUNT(*)
                 FROM (
-                    SELECT DISTINCT ON (committee_id, bill_id, DATE(generated_at))
+                    SELECT DISTINCT ON (committee_id, bill_id)
                         id
                     FROM bill_compliance
                     WHERE 1=1 {date_filter}
-                    ORDER BY committee_id, bill_id, DATE(generated_at), generated_at DESC
+                    ORDER BY committee_id, bill_id, generated_at DESC NULLS LAST
                 ) latest
             ''', date_params)
         else:
@@ -98,8 +101,10 @@ def cleanup_bill_compliance(dry_run=True, keep_days=None):
         
         to_keep = cursor.fetchone()[0]
         to_delete = total_before - to_keep
-        print(f"Entries to keep (latest per committee/bill/day): {to_keep:,}")
+        print(f"Entries to keep (single newest per committee/bill): {to_keep:,}")
         print(f"Entries to delete: {to_delete:,}")
+        print("   NOTE: This keeps only the single most recent record per (committee_id, bill_id)")
+        print("   If you want one-per-day retention, modify the cleanup query to use DATE(generated_at)")
         
         if to_delete == 0:
             print("✅ No cleanup needed!")
@@ -113,19 +118,72 @@ def cleanup_bill_compliance(dry_run=True, keep_days=None):
         # Actually delete duplicates
         print(f"\n🗑️  Deleting {to_delete:,} duplicate entries...")
         
+        # Safety check: Abort if deletion count is unexpectedly large
+        # This prevents accidental mass deletions
+        if to_delete > 1000000:  # 1 million rows threshold
+            print(f"⚠️  WARNING: Attempting to delete {to_delete:,} rows!")
+            print("   This exceeds the safety threshold of 1,000,000 rows.")
+            print("   Aborting to prevent accidental mass deletion.")
+            print("   If this is intentional, adjust the threshold in cleanup_database.py")
+            return 0
+        
         if db_type == 'postgresql':
-            # PostgreSQL: Delete all except the latest per committee/bill/day
-            cursor.execute(f'''
-                DELETE FROM bill_compliance
-                WHERE id NOT IN (
-                    SELECT DISTINCT ON (committee_id, bill_id, DATE(generated_at))
-                        id
-                    FROM bill_compliance
-                    WHERE 1=1 {date_filter}
-                    ORDER BY committee_id, bill_id, DATE(generated_at), generated_at DESC
-                )
-                AND 1=1 {date_filter}
-            ''', date_params)
+            # PostgreSQL: Optimized DELETE using window function with USING clause
+            # This pattern avoids the performance issues with NOT IN on large datasets
+            # 
+            # NOTE: This keeps only the single most recent record per (committee_id, bill_id)
+            # If you want one-per-day retention instead, change PARTITION BY to:
+            # PARTITION BY committee_id, bill_id, DATE(generated_at)
+            print("   Using optimized DELETE with window function...")
+            print("   Semantics: Keep only the single newest row per (committee_id, bill_id)")
+            
+            # Use transaction for safety
+            cursor.execute('BEGIN')
+            try:
+                # Preview the exact rows that will be deleted
+                cursor.execute(f'''
+                    WITH ranked AS (
+                        SELECT id,
+                               ROW_NUMBER() OVER (
+                                   PARTITION BY committee_id, bill_id
+                                   ORDER BY generated_at DESC NULLS LAST
+                               ) AS rn
+                        FROM bill_compliance
+                        WHERE 1=1 {date_filter}
+                    )
+                    SELECT COUNT(*) FROM ranked WHERE rn > 1
+                ''', date_params)
+                preview_count = cursor.fetchone()[0]
+                
+                if preview_count != to_delete:
+                    print(f"   ⚠️  Preview count ({preview_count:,}) differs from expected ({to_delete:,})")
+                    print("   Proceeding with actual count from preview...")
+                
+                # Perform the delete
+                cursor.execute(f'''
+                    WITH ranked AS (
+                        SELECT id,
+                               ROW_NUMBER() OVER (
+                                   PARTITION BY committee_id, bill_id
+                                   ORDER BY generated_at DESC NULLS LAST
+                               ) AS rn
+                        FROM bill_compliance
+                        WHERE 1=1 {date_filter}
+                    )
+                    DELETE FROM bill_compliance b
+                    USING ranked r
+                    WHERE b.id = r.id
+                      AND r.rn > 1
+                ''', date_params)
+                
+                deleted_count = cursor.rowcount
+                cursor.execute('COMMIT')
+                print(f"   ✅ Deleted {deleted_count:,} rows in transaction")
+                
+            except Exception as e:
+                cursor.execute('ROLLBACK')
+                print(f"   ❌ Error during delete, transaction rolled back: {e}")
+                raise
         else:
             # SQLite: Delete all except the latest per committee/bill/day
             cursor.execute(f'''
