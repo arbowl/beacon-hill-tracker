@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react'
 import { getChangelog, ChangelogEntry } from '../services/api'
+import { formatDateOnly } from '../utils/dateFormat'
 
 interface ChangelogDisplayProps {
   limit?: number
@@ -74,9 +75,9 @@ const ChangelogDisplay: React.FC<ChangelogDisplayProps> = ({
     return category.charAt(0).toUpperCase() + category.slice(1)
   }
 
+  // Use the shared date formatting utility to avoid timezone issues
   const formatDate = (dateString: string) => {
-    const date = new Date(dateString)
-    return date.toLocaleDateString('en-US', {
+    return formatDateOnly(dateString, {
       year: 'numeric',
       month: 'long',
       day: 'numeric'

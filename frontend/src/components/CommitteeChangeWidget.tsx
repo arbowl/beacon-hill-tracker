@@ -1,6 +1,7 @@
 import React, { useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import type { DiffReport, TopMover } from '../types'
+import { daysDifference, formatTimeInterval, formatDateOnly } from '../utils/dateFormat'
 
 interface CommitteeChangeWidgetProps {
   diffReport: DiffReport | null
@@ -19,18 +20,12 @@ const CommitteeChangeWidget: React.FC<CommitteeChangeWidgetProps> = ({
 }) => {
   const [isTopMoversExpanded, setIsTopMoversExpanded] = useState(true)
 
-  // Calculate actual time interval from dates
+  // Calculate actual time interval from dates (using local date parsing to avoid timezone issues)
   const calculatedTimeInterval = useMemo(() => {
     if (!diffReport?.previous_date || !diffReport?.current_date) return null
     
-    const prevDate = new Date(diffReport.previous_date)
-    const currDate = new Date(diffReport.current_date)
-    const diffTime = Math.abs(currDate.getTime() - prevDate.getTime())
-    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24))
-    
-    if (diffDays === 0) return 'same day'
-    if (diffDays === 1) return '1 day'
-    return `${diffDays} days`
+    const diffDays = daysDifference(diffReport.previous_date, diffReport.current_date)
+    return formatTimeInterval(diffDays)
   }, [diffReport])
 
   // Format bill IDs for tooltip display
@@ -244,11 +239,11 @@ const CommitteeChangeWidget: React.FC<CommitteeChangeWidgetProps> = ({
                   <div className="flex items-center gap-2 text-sm font-medium text-base-content/60">
                     {diffReport.previous_date && diffReport.current_date && (
                       <>
-                        <span className="font-semibold">{new Date(diffReport.previous_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}</span>
+                        <span className="font-semibold">{formatDateOnly(diffReport.previous_date, { month: 'short', day: 'numeric' })}</span>
                         <svg className="w-4 h-4 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
                         </svg>
-                        <span className="font-semibold">{new Date(diffReport.current_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}</span>
+                        <span className="font-semibold">{formatDateOnly(diffReport.current_date, { month: 'short', day: 'numeric' })}</span>
                       </>
                     )}
                     {calculatedTimeInterval && (

@@ -2,6 +2,7 @@ import { Link } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
 import { useGlobalStats, useGlobalMetadata } from '../hooks/useData'
 import CommitteeChangeWidget from '../components/CommitteeChangeWidget'
+import { formatDateOnly } from '../utils/dateFormat'
 
 const HomePage: React.FC = () => {
   const { user } = useAuth()
@@ -230,7 +231,9 @@ const HomePage: React.FC = () => {
               <div>
                 <div className="font-medium">Database</div>
                 <div className="text-sm text-base-content/70">
-                  {stats ? `Last updated: ${stats.latest_report_date || 'Recently'}` : 'Connected'}
+                  {stats?.latest_report_date 
+                    ? `Last updated: ${formatDateOnly(stats.latest_report_date)}`
+                    : 'Connected'}
                 </div>
               </div>
             </div>

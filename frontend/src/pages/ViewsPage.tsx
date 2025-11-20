@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { useSavedViews } from '../hooks/useData'
 import { useAuth } from '../contexts/AuthContext'
 import { SavedView } from '../types'
+import { formatDateTime } from '../utils/dateFormat'
 
 const ViewsPage: React.FC = () => {
   const navigate = useNavigate()
@@ -114,8 +115,9 @@ const ViewsPage: React.FC = () => {
     setShowDuplicateModal(true)
   }
 
+  // Use the shared date formatting utility to avoid timezone issues
   const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('en-US', {
+    return formatDateTime(dateString, {
       year: 'numeric',
       month: 'short',
       day: 'numeric',

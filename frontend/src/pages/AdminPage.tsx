@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react'
 import { useAuth } from '../contexts/AuthContext'
 import { authService, keysService } from '../services/api'
+import { formatDateOnly } from '../utils/dateFormat'
 
 interface User {
   id: number
@@ -74,13 +75,12 @@ const AdminPage: React.FC = () => {
       <span className="badge badge-error badge-sm">Inactive</span>
   }
 
+  // Use the shared date formatting utility to avoid timezone issues
   const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('en-US', {
+    return formatDateOnly(dateString, {
       year: 'numeric',
       month: 'short',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
+      day: 'numeric'
     })
   }
 

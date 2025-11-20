@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react'
 import { useAuth } from '../contexts/AuthContext'
 import { keysService } from '../services/api'
+import { formatDateOnly } from '../utils/dateFormat'
 
 interface SigningKey {
   id: number
@@ -238,9 +239,9 @@ const KeysPage: React.FC = () => {
                           </div>
                           
                           <div className="text-sm text-base-content/70">
-                            <p>Created: {new Date(key.created_at).toLocaleDateString()}</p>
+                            <p>Created: {formatDateOnly(key.created_at)}</p>
                             {key.revoked_at && (
-                              <p>Revoked: {new Date(key.revoked_at).toLocaleDateString()}</p>
+                              <p>Revoked: {formatDateOnly(key.revoked_at)}</p>
                             )}
                           </div>
 

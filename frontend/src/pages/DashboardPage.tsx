@@ -6,6 +6,7 @@ import { DashboardFilters, Bill } from '../types'
 import { ComplianceOverviewChart, CommitteeComparisonChart, ViolationAnalysisChart } from '../components/charts'
 import { getStateLabel, getStateBadgeClass } from '../utils/billStatus'
 import CommitteeChangeWidget from '../components/CommitteeChangeWidget'
+import { formatDateTime, formatDateOnly } from '../utils/dateFormat'
 
 const DashboardPage: React.FC = () => {
   const { user } = useAuth()
@@ -637,7 +638,7 @@ const DashboardPage: React.FC = () => {
                           <div>
                             <div className="font-medium">{view.name}</div>
                             <div className="text-xs text-base-content/70">
-                              {new Date(view.created_at).toLocaleDateString()}
+                              {formatDateOnly(view.created_at)}
                             </div>
                           </div>
                         </a>
@@ -710,9 +711,9 @@ const DashboardPage: React.FC = () => {
                   <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" className="w-3 h-3">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" stroke="currentColor" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
                   </svg>
-                  Last updated: {new Date(stats.latest_report_date).toLocaleDateString('en-US', { 
-                    year: 'numeric', 
-                    month: 'short', 
+                  Last updated: {formatDateTime(stats.latest_report_date, {
+                    year: 'numeric',
+                    month: 'short',
                     day: 'numeric',
                     hour: '2-digit',
                     minute: '2-digit'
@@ -724,9 +725,9 @@ const DashboardPage: React.FC = () => {
                   <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" className="w-3 h-3">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" stroke="currentColor" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
                   </svg>
-                  Data generated: {new Date(billsData[0].generated_at).toLocaleDateString('en-US', { 
-                    year: 'numeric', 
-                    month: 'short', 
+                  Data generated: {formatDateOnly(billsData[0].generated_at, {
+                    year: 'numeric',
+                    month: 'short',
                     day: 'numeric'
                   })}
                 </span>
