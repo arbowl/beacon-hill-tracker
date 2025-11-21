@@ -65,6 +65,15 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
                     FAQ
                   </Link>
                 </li>
+                <li>
+                  <Link
+                    to="/updates"
+                    className={isActive('/updates') ? 'active' : ''}
+                    onClick={() => setMobileMenuOpen(false)}
+                  >
+                    Updates
+                  </Link>
+                </li>
                 {user && (
                   <li>
                     <Link 
@@ -136,6 +145,14 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
                 className={isActive('/faq') ? 'active' : ''}
               >
                 FAQ
+              </Link>
+            </li>
+            <li>
+              <Link
+                to="/updates"
+                className={isActive('/updates') ? 'active' : ''}
+              >
+                Updates
               </Link>
             </li>
             {user && (

@@ -18,6 +18,7 @@ import FAQPage from './pages/FAQPage'
 import PrivacyPage from './pages/PrivacyPage'
 import TOSPage from './pages/TOSPage'
 import PressPage from './pages/PressPage'
+import UpdatesPage from './pages/UpdatesPage'
 import ProtectedRoute from './components/ProtectedRoute'
 
 function App() {
@@ -40,6 +41,7 @@ function App() {
             <Route path="/privacy" element={<PrivacyPage />} />
             <Route path="/tos" element={<TOSPage />} />
             <Route path="/press" element={<PressPage />} />
+            <Route path="/updates" element={<UpdatesPage />} />
             
             {/* Dashboard - public access */}
             <Route path="/dashboard" element={<DashboardPage />} />

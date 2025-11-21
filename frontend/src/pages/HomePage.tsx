@@ -148,6 +148,13 @@ const HomePage: React.FC = () => {
         </div>
       </div>
 
+      {/* Updates Link */}
+      <div className="text-center">
+        <Link to="/updates" className="link link-hover text-base-content/70 hover:text-base-content">
+          View project updates and status alerts →
+        </Link>
+      </div>
+
       {/* Features */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
         <div className="card bg-base-100 shadow-md">
