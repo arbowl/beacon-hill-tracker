@@ -1,7 +1,7 @@
 import { useState, useMemo } from 'react'
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
-import { updates, Update } from '../data/updates'
+import { updates } from '../data/updates'
 import { formatDateOnly } from '../utils/dateFormat'
 
 const UPDATES_PER_PAGE = 10
