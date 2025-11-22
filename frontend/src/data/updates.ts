@@ -43,10 +43,11 @@ I am pursuing these improvements out of a commitment to transparency and accurac
     id: 3,
     date: '2025-11-22',
     title: 'Update on Report-Outs and Hearing Announcements',
-    content: `I worked on the reported-out and hearing announcement detection algorithms, ran tests, and landed on a system I'm happier with for today's report. In short, the old system evaluated compliance partially based on what it discovered had happened, rather than adhering solely to what was actually announced. While this technically aligned real-life events as they transpired, it was not a good marker of the story the bill pages told, and could result in situations where the final compliance calculation didn't match what you would actually see in the public record.
+    content: `I worked on the reported-out and hearing announcement detection algorithms, ran tests, and landed on a system I'm happier with for today's report. In short, the old system evaluated compliance partially based on what it discovered had happened, rather than adhering solely to what was actually announced. While this technically aligned with real-life events as they transpired, it was not a good marker of the story the bill pages told, and could result in situations where the final compliance calculation didn't match what you would actually see in the public record. By using one unified public dataset, the tool shifts away from being a procedural monitor and closer toward its intended purpose as a transparency and compliance tracker.
     
 This is the most brittle part of the algorithm due to the constraints, so I'll be on the lookout for further tweaks that need to be made, and will communicate any changes here and in the [changelog](https://beaconhilltracker.org/about). As always, I encourage users to confirm their findings on a bill-by-bill basis using the official Legislature website. The dashboard makes a best-effort attempt to aggregate relevant documentation and grade all committees fairly according to a common ruleset, but it doesn't replace primary sources.`,
   type: 'update',
   },
 ]
+
 
