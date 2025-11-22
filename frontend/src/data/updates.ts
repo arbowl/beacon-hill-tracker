@@ -36,7 +36,7 @@ I'm working on a smarter system which makes a few improvements to the existing a
 - Reject rows which are procedurally impossible or illogical.
 - Recalculate the notice gap based on the latest rescheduling of a hearing.
 
-I am pursuing these improvements out of a commitment to transparency and accuracy, but note that this does only affect a small subset of bills, the logic is applied evenly to all committees, and it rarely changes a bill’s overall compliance outcome by itself.. And, frankly, if it's difficult for an automated tool to analyze a bill, it's not much easier for citizens, which is the exact problem this project aims to shine a spotlight on.`,
+I am pursuing these improvements out of a commitment to transparency and accuracy, but note that this does only affect a small subset of bills, the logic is applied evenly to all committees, and it rarely changes a bill’s overall compliance outcome by itself. And, frankly, if it's difficult for an automated tool to analyze a bill, it's not much easier for citizens, which is the exact problem this project aims to shine a spotlight on.`,
     type: 'alert'
   },
   {
@@ -49,3 +49,4 @@ This is the most brittle part of the algorithm due to the constraints, so I'll b
   type: 'update',
   },
 ]
+
