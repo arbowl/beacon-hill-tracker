@@ -9,10 +9,10 @@ const UPDATES_PER_PAGE = 10
 const UpdatesPage: React.FC = () => {
   const [currentPage, setCurrentPage] = useState(1)
 
-  // Sort updates by date (newest first)
+  // Sort updates by ID (higher ID = newer = top)
   const sortedUpdates = useMemo(() => {
     return [...updates].sort((a, b) => {
-      return new Date(b.date).getTime() - new Date(a.date).getTime()
+      return b.id - a.id
     })
   }, [])
 
