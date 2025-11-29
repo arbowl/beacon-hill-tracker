@@ -55,7 +55,7 @@ This is the most brittle part of the algorithm due to the constraints, so I'll b
     content: `As the Beacon Hill Compliance Tracker settles into regular daily updates, having run for a few consecutive weeks now, I've taken some time to look at what the first few weeks of data reveal about the structure of legislative transparency in Massachusetts.
 
 In numbers:
-- Total compliance for all bills hovers around **60-67%**, with the number of fully-compliant bills hovering closer to **11-12%**.
+- Total compliance for all bills hovers around **60-67%**, with the number of fully-compliant bills hovering closer to **11-12%**. New bills can raise provisional compliance, while large numbers of bills crossing a common deadline at once without necessary documentation can quickly sink it.
 - The number-one most consistently missing piece of evidence is **vote records**, with 2,191 bills currently non-compliant in this regard---more than a quarter of all bills.
 - Committees announced hearings too soon in advance of (or, sometimes, after) a hearing 2,063 times, or **23.7%** of the time.
 
@@ -72,6 +72,7 @@ As always, anyone with insight into legislative record-keeping or experience wit
   type: 'announcement',
   },
 ]
+
 
 
 
