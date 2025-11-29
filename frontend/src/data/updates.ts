@@ -66,12 +66,13 @@ This early observation reinforces the purpose of this tool: to make the public-f
 Over the next few weeks, I'll be exploring some ideas unlocked by the opportunities presented by this tool:
 - Weekly and monthly trend analysis, in addition to the existing daily analysis
 - More ways to export data types for various analytical and research purposes
-- Deep dives into questions like "do summaries accurately match the bill text?" and "what information is lost from bills with absent vote tallies?"
+- Deep dives into questions like "can the aggregation of summaries aid accuracy measurements?" and "what information is lost from bills with absent vote tallies?"
 
 As always, anyone with insight into legislative record-keeping or experience with government datasets is welcome to reach out with questions, concerns, or collaborations. Transparency is a collective effort!`,
   type: 'announcement',
   },
 ]
+
 
 
 
