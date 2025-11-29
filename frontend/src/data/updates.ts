@@ -48,6 +48,30 @@ I am pursuing these improvements out of a commitment to transparency and accurac
 This is the most brittle part of the algorithm due to the constraints, so I'll be on the lookout for further tweaks that need to be made, and will communicate any changes here and in the [changelog](https://beaconhilltracker.org/about). As always, I encourage users to confirm their findings on a bill-by-bill basis using the official Legislature website. The dashboard makes a best-effort attempt to aggregate relevant documentation and grade all committees fairly according to a common ruleset, but it doesn't replace primary sources.`,
   type: 'update',
   },
+  {
+    id: 4,
+    date: '2025-11-29',
+    title: 'What have we learned so far?',
+    content: `As the Beacon Hill Compliance Tracker settles into regular daily updates, having run for a few consecutive weeks now, I've taken some time to look at what the first few weeks of data reveal about the structure of legislative transparency in Massachusetts.
+
+In numbers:
+- Total compliance for all bills hovers around **60-67%**, with the number of fully-compliant bills hovering closer to **11-12%**.
+- The number-one most consistently missing piece of evidence is **vote records**, with 2,191 bills currently non-compliant in this regard---more than a quarter of all bills.
+- Committees announced hearings too soon in advance of (or, sometimes, after) a hearing 2,063 times, or **23.7%** of the time.
+
+One emerging theme is that procedural transparency varies more in the documentation layer than in the underlying legislative mechanics. Hearing notices, summaries, and committee actions generally have broadly recognizable patterns when zooming out, but the phrasing, placement, and timing of these postings are not standardized across all committees. This means that two bills handled on the same day, given the same compliant treatment, can look _very_ different to the public simply because of how and where the information was presented.
+
+This early observation reinforces the purpose of this tool: to make the public-facing legislative record easier to interpret. The BHCT doesn't replace official sources, but it does massively shortcut the process of finding and tracking the progress indicators of a bill.
+
+Over the next few weeks, I'll be exploring some ideas unlocked by the opportunities presented by this tool:
+- Weekly and monthly trend analysis, in addition to the existing daily analysis
+- More ways to export data types for various analytical and research purposes
+- Deep dives into questions like "do summaries accurately match the bill text?" and "what information is lost from bills with absent vote tallies?"
+
+As always, anyone with insight into legislative record-keeping or experience with government datasets is welcome to reach out with questions, concerns, or collaborations. Transparency is a collective effort!`,
+  type: 'announcement',
+  },
 ]
+
 
 
