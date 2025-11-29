@@ -112,7 +112,7 @@ const CommitteeChangeWidget: React.FC<CommitteeChangeWidgetProps> = ({
                       {diffReport.compliance_delta.toFixed(1)}%
                     </div>
                     <span className="text-base font-medium text-base-content/80">
-                      Compliance Change
+                      Average Compliance Change
                     </span>
                   </div>
                 </div>
