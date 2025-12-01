@@ -1877,14 +1877,14 @@ def create_app():
                         cursor.execute('''
                             SELECT id, version, date, user_agent, received_at
                             FROM changelog_versions
-                            ORDER BY received_at DESC
+                            ORDER BY date DESC, received_at DESC
                             LIMIT %s
                         ''', (limit,))
                     else:
                         cursor.execute('''
                             SELECT id, version, date, user_agent, received_at
                             FROM changelog_versions
-                            ORDER BY received_at DESC
+                            ORDER BY date DESC, received_at DESC
                             LIMIT ?
                         ''', (limit,))
                     
