@@ -33,7 +33,7 @@ const UpdatesPage: React.FC = () => {
       case 'update':
         return 'badge-success'
       case 'announcement':
-        return 'badge-accent'
+        return 'bg-cyan-500 text-white border-cyan-500'
       case 'insight':
         return 'badge-warning'
       default:
