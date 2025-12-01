@@ -132,6 +132,22 @@ const HomePage: React.FC = () => {
         />
       )}
 
+      {/* Updates Banner */}
+      <div className="alert bg-gradient-to-r from-emerald-50 to-purple-50 border-l-4 border-emerald-700">
+        <svg className="stroke-current flex-shrink-0 h-6 w-6 text-emerald-700" fill="none" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"></path>
+        </svg>
+        <div>
+          <div className="font-bold text-emerald-900">Project Updates & Insights</div>
+          <div className="text-sm text-emerald-800">Stay informed about system status, methodology updates, and new data insights.</div>
+        </div>
+        <div className="flex-none">
+          <Link to="/updates" className="btn btn-sm bg-emerald-700 text-white hover:bg-emerald-800">
+            View Updates
+          </Link>
+        </div>
+      </div>
+
       {/* Press Kit Banner */}
       <div className="alert bg-gradient-to-r from-blue-50 to-amber-50 border-l-4 border-blue-800">
         <svg className="stroke-current flex-shrink-0 h-6 w-6 text-blue-800" fill="none" viewBox="0 0 24 24">
@@ -146,13 +162,6 @@ const HomePage: React.FC = () => {
             View Press Kit
           </Link>
         </div>
-      </div>
-
-      {/* Updates Link */}
-      <div className="text-center">
-        <Link to="/updates" className="link link-hover text-base-content/70 hover:text-base-content">
-          View project updates and status alerts →
-        </Link>
       </div>
 
       {/* Features */}
