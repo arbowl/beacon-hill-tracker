@@ -30,11 +30,33 @@ const UpdatesPage: React.FC = () => {
         return 'badge-error'
       case 'status':
         return 'badge-info'
-      case 'musing':
-        return 'badge-secondary'
       case 'update':
+        return 'badge-success'
+      case 'announcement':
+        return 'badge-accent'
+      case 'insight':
+        return 'badge-warning'
       default:
         return 'badge-primary'
+    }
+  }
+
+  const getTypeBorderClass = (type?: string) => {
+    if (!type) return ''
+    
+    switch (type.toLowerCase()) {
+      case 'alert':
+        return 'border-l-4 border-error'
+      case 'status':
+        return 'border-l-4 border-info'
+      case 'update':
+        return 'border-l-4 border-success'
+      case 'announcement':
+        return 'border-l-4 border-cyan-500'
+      case 'insight':
+        return 'border-l-4 border-orange-500'
+      default:
+        return ''
     }
   }
 
@@ -66,9 +88,7 @@ const UpdatesPage: React.FC = () => {
             {currentUpdates.map((update) => (
               <div
                 key={update.id}
-                className={`card bg-base-100 shadow-md ${
-                  update.type === 'alert' ? 'border-l-4 border-error' : ''
-                }`}
+                className={`card bg-base-100 shadow-md ${getTypeBorderClass(update.type)}`}
               >
                 <div className="card-body">
                   <div className="flex flex-wrap items-center gap-2 mb-4">
