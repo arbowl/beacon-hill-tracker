@@ -3,7 +3,7 @@ export interface Update {
   date: string // ISO date string (YYYY-MM-DD)
   title?: string
   content: string // Markdown content
-  type?: string // Any one-word description (e.g., 'status', 'alert', 'update', 'musing', 'announcement', etc.)
+  type?: string // Any one-word description (e.g., 'status', 'alert', 'update', 'insight', 'announcement', etc.)
 }
 
 export const updates: Update[] = [
@@ -70,6 +70,15 @@ Over the next few weeks, I'll be exploring some ideas unlocked by the opportunit
 
 As always, anyone with insight into legislative record-keeping or experience with government datasets is welcome to reach out with questions, concerns, or collaborations. Transparency is a collective effort!`,
   type: 'announcement',
+  },
+  {
+    id: 5,
+    date: '2025-12-01',
+    title: 'Key Insights from Missing Votes',
+    content: `I’ve published a short data brief examining patterns in missing committee vote postings across the 194th General Court. Using descriptive clustering and subject-area comparisons, the report highlights structural documentation gaps visible in public bill records. The findings are preliminary but offer a useful baseline for understanding how vote posting varies by committee and bill type.
+
+[Read the report here (PDF)](/documents/missing_votes.pdf)`,
+    type: 'insight',
   },
 ]
 
