@@ -80,7 +80,19 @@ As always, anyone with insight into legislative record-keeping or experience wit
 [Read the report here (PDF)](/documents/missing_votes.pdf)`,
     type: 'insight',
   },
+  {
+    id: 6,
+    date: '2025-12-02',
+    title: 'Legislative Transparency Briefs (Winter Series)',
+    content: `As the Legislature enters its year-end lull, a period when formal sessions pause and committee activity slows until early January, the public record offers an opportunity to step back and evaluate broader patterns in procedural transparency.
+
+To support that reflection, the Beacon Hill Compliance Tracker is releasing a series of short analytical briefs over the coming weeks. Each brief examines a different structural aspect of publicly posted committee documentation, such as notice timeliness, summary availability, vote posting rates, and report-out practices.
+
+These analyses are descriptive only and rely exclusively on information visible on bill pages and committee records. They are intended to provide context during a quieter period in the legislative calendar and to help inform ongoing discussions around transparency and public access to legislative information.`,
+    type: 'announcement',
+  },
 ]
+
 
 
 
