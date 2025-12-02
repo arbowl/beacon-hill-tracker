@@ -246,9 +246,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
       {/* Footer */}
       <footer className="footer footer-center p-10 bg-base-100 text-base-content">
         <aside>
-          <p className="font-bold text-lg">
-            Beacon Hill Compliance Tracker
-          </p>
+          <p className="font-bold text-lg">Beacon Hill Compliance Tracker</p>
           <p className="text-base-content/70">
             Tracking legislative compliance in Massachusetts with transparency and accountability.
           </p>
@@ -256,7 +254,8 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
             Copyright © 2025 - All rights reserved
           </p>
         </aside>
-        <nav>
+
+        <nav className="grid gap-4">
           <div className="grid grid-flow-col gap-4">
             <Link to="/about" className="link link-hover">About</Link>
             <Link to="/faq" className="link link-hover">FAQ</Link>
@@ -264,6 +263,63 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
             <Link to="/press" className="link link-hover">Press Kit</Link>
             <Link to="/privacy" className="link link-hover">Privacy Policy</Link>
             <Link to="/tos" className="link link-hover">Terms of Service</Link>
+          </div>
+
+          {/* Social Icons */}
+          <div className="grid grid-flow-col gap-6 mt-2">
+            {/* Reddit */}
+            <a
+              href="https://old.reddit.com/user/BeaconHillTracker/"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-base-content/70 hover:text-base-content transition"
+            >
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                width="24"
+                height="24"
+                viewBox="0 0 24 24"
+                fill="currentColor"
+              >
+                <path d="M12 2a10 10 0 1 0 10 10A10.011 10.011 0 0 0 12 2Zm5.485 11.261a2.027 2.027 0 0 1-.63 1.444c-1.087 1.084-3.29 1.165-4.852 1.165s-3.764-.081-4.852-1.165a2.027 2.027 0 0 1-.63-1.444 2.06 2.06 0 0 1 3.052-1.792 7.435 7.435 0 0 1 4.86 0 2.06 2.06 0 0 1 3.052 1.792ZM9.25 12.25A1.25 1.25 0 1 0 10.5 13.5a1.25 1.25 0 0 0-1.25-1.25Zm5.5 0A1.25 1.25 0 1 0 16 13.5a1.25 1.25 0 0 0-1.25-1.25Zm-2.75 5.236c1.308 0 2.48-.32 3.326-.9a.75.75 0 1 0-.852-1.238c-.626.431-1.55.638-2.474.638s-1.848-.207-2.474-.638a.75.75 0 1 0-.852 1.238c.846.58 2.018.9 3.326.9Z"/>
+              </svg>
+            </a>
+
+            {/* Bluesky */}
+            <a
+              href="https://bsky.app/profile/beaconhilltracker.bsky.social"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-base-content/70 hover:text-base-content transition"
+            >
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                width="24"
+                height="24"
+                viewBox="0 0 24 24"
+                fill="currentColor"
+              >
+                <path d="M12 9.95c1.582-3.146 5.236-5.737 7.443-5.737 1.264 0 1.957 1.03 1.957 2.237 0 1.582-1.028 3.185-2.059 4.36-.88 1.006-.88 1.611 0 2.617 1.03 1.175 2.059 2.778 2.059 4.36 0 1.207-.693 2.237-1.957 2.237-2.207 0-5.861-2.591-7.443-5.737-1.582 3.146-5.236 5.737-7.443 5.737-1.264 0-1.957-1.03-1.957-2.237 0-1.582 1.029-3.185 2.059-4.36.88-1.006.88-1.611 0-2.617-1.03-1.175-2.059-2.778-2.059-4.36 0-1.207.693-2.237 1.957-2.237 2.207 0 5.861 2.591 7.443 5.737Z" />
+              </svg>
+            </a>
+
+            {/* X / Twitter */}
+            <a
+              href="https://x.com/BeaconHillTrack"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-base-content/70 hover:text-base-content transition"
+            >
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                width="24"
+                height="24"
+                viewBox="0 0 24 24"
+                fill="currentColor"
+              >
+                <path d="M18.244 2H21l-6.51 7.445L22 22h-7.173l-4.7-6.146L4.6 22H2l7.028-8.043L2 2h7.173l4.274 5.684L18.244 2Zm-2.48 17.329h1.863L8.31 4.56H6.33l9.434 14.769Z"/>
+              </svg>
+            </a>
           </div>
         </nav>
       </footer>
