@@ -1125,7 +1125,7 @@ def create_app():
                 base_query = f'''
                     WITH latest_bills AS (
                         SELECT bc.committee_id, bc.bill_id, bc.hearing_date, bc.deadline_60, bc.effective_deadline,
-                               bc.extension_order_url, bc.extension_date, bc.reported_out, bc.summary_present,
+                               bc.extension_order_url, bc.extension_date, bc.reported_out, bc.reported_out_date, bc.summary_present,
                                bc.summary_url, bc.votes_present, bc.votes_url, bc.state, bc.reason,
                                bc.notice_status, bc.notice_gap_days, bc.announcement_date, bc.scheduled_hearing_date,
                                bc.generated_at, b.bill_title, b.bill_url, c.name as committee_name, c.chamber,
@@ -1136,7 +1136,7 @@ def create_app():
                         WHERE 1=1 {filter_clause}
                     )
                     SELECT committee_id, bill_id, hearing_date, deadline_60, effective_deadline,
-                           extension_order_url, extension_date, reported_out, summary_present,
+                           extension_order_url, extension_date, reported_out, reported_out_date, summary_present,
                            summary_url, votes_present, votes_url, state, reason,
                            notice_status, notice_gap_days, announcement_date, scheduled_hearing_date,
                            generated_at, bill_title, bill_url, committee_name, chamber
@@ -1162,21 +1162,22 @@ def create_app():
                         'extension_order_url': row[5],   # extension_order_url
                         'extension_date': row[6],        # extension_date
                         'reported_out': bool(row[7]),    # reported_out
-                        'summary_present': bool(row[8]), # summary_present
-                        'summary_url': row[9],           # summary_url
-                        'votes_present': bool(row[10]),  # votes_present
-                        'votes_url': row[11],            # votes_url
-                        'state': row[12],                # state
-                        'reason': row[13],               # reason
-                        'notice_status': row[14],        # notice_status
-                        'notice_gap_days': row[15],      # notice_gap_days
-                        'announcement_date': row[16],    # announcement_date
-                        'scheduled_hearing_date': row[17], # scheduled_hearing_date
-                        'generated_at': row[18],         # generated_at
-                        'bill_title': row[19],           # bill_title (from JOIN)
-                        'bill_url': row[20] if row[20] else f'https://malegislature.gov/Bills/194/{row[1]}', # bill_url (from JOIN)
-                        'committee_name': row[21],       # committee_name (from JOIN)
-                        'chamber': row[22],              # chamber (from JOIN)
+                        'reported_out_date': row[8],     # reported_out_date
+                        'summary_present': bool(row[9]), # summary_present
+                        'summary_url': row[10],          # summary_url
+                        'votes_present': bool(row[11]),  # votes_present
+                        'votes_url': row[12],            # votes_url
+                        'state': row[13],                # state
+                        'reason': row[14],               # reason
+                        'notice_status': row[15],        # notice_status
+                        'notice_gap_days': row[16],      # notice_gap_days
+                        'announcement_date': row[17],    # announcement_date
+                        'scheduled_hearing_date': row[18], # scheduled_hearing_date
+                        'generated_at': row[19],         # generated_at
+                        'bill_title': row[20],           # bill_title (from JOIN)
+                        'bill_url': row[21] if row[21] else f'https://malegislature.gov/Bills/194/{row[1]}', # bill_url (from JOIN)
+                        'committee_name': row[22],       # committee_name (from JOIN)
+                        'chamber': row[23],              # chamber (from JOIN)
                     }
                     
                     # Normalize state to lowercase and map incomplete → non-compliant
@@ -2571,7 +2572,7 @@ def import_compliance_report(committee_id, bills_data, diff_report=None, analysi
                         INSERT INTO bill_compliance (
                             committee_id, bill_id, hearing_date, deadline_60, 
                             effective_deadline, extension_order_url, extension_date, 
-                            reported_out, summary_present, summary_url, 
+                            reported_out, reported_out_date, summary_present, summary_url, 
                             votes_present, votes_url, state, reason, 
                             notice_status, notice_gap_days, announcement_date, 
                             scheduled_hearing_date, generated_at
@@ -2579,7 +2580,7 @@ def import_compliance_report(committee_id, bills_data, diff_report=None, analysi
                             {placeholder}, {placeholder}, {placeholder}, {placeholder}, {placeholder}, 
                             {placeholder}, {placeholder}, {placeholder}, {placeholder}, {placeholder}, 
                             {placeholder}, {placeholder}, {placeholder}, {placeholder}, {placeholder}, 
-                            {placeholder}, {placeholder}, {placeholder}, {placeholder}
+                            {placeholder}, {placeholder}, {placeholder}, {placeholder}, {placeholder}
                         )
                     ''',
                     (
@@ -2591,6 +2592,7 @@ def import_compliance_report(committee_id, bills_data, diff_report=None, analysi
                         bill.get('extension_order_url'),
                         bill.get('extension_date'),
                         1 if bill.get('reported_out') else 0,
+                        bill.get('reported_out_date'),
                         1 if bill.get('summary_present') else 0,
                         bill.get('summary_url'),
                         1 if bill.get('votes_present') else 0,
@@ -2608,11 +2610,11 @@ def import_compliance_report(committee_id, bills_data, diff_report=None, analysi
                         'INSERT INTO bill_compliance ('
                         'committee_id, bill_id, hearing_date, deadline_60, '
                         'effective_deadline, extension_order_url, extension_date, '
-                        'reported_out, summary_present, summary_url, '
+                        'reported_out, reported_out_date, summary_present, summary_url, '
                         'votes_present, votes_url, state, reason, '
                         'notice_status, notice_gap_days, announcement_date, '
                         'scheduled_hearing_date, generated_at) '
-                        'VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+                        'VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
                         (
                             committee_id,
                             bill.get('bill_id'),
@@ -2622,6 +2624,7 @@ def import_compliance_report(committee_id, bills_data, diff_report=None, analysi
                             bill.get('extension_order_url'),
                             bill.get('extension_date'),
                             1 if bill.get('reported_out') else 0,
+                            bill.get('reported_out_date'),
                             1 if bill.get('summary_present') else 0,
                             bill.get('summary_url'),
                             1 if bill.get('votes_present') else 0,
