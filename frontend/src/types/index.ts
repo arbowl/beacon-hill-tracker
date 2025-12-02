@@ -50,6 +50,7 @@ export interface Bill {
   extension_order_url?: string
   extension_date?: string
   reported_out: boolean
+  reported_out_date?: string
   summary_present: boolean
   summary_url?: string
   votes_present: boolean
