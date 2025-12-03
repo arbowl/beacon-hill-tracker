@@ -115,7 +115,9 @@ I am currently in the testing phase, but results are promising. When done, I pla
 
 Any additional enhancements will continue to be documented in the changelog and explained here as they develop.`,
     type: 'update',
+  }
 ]
+
 
 
 
