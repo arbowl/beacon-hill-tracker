@@ -91,7 +91,32 @@ To support that reflection, the Beacon Hill Compliance Tracker is releasing a se
 These analyses are descriptive only and rely exclusively on information visible on bill pages and committee records. They are intended to provide context during a quieter period in the legislative calendar and to help inform ongoing discussions around transparency and public access to legislative information.`,
     type: 'announcement',
   },
+  {
+    id: 7,
+    date: '2025-12-03',
+    title: 'Coming Soon: Virtual Bill History Reconstruction Engine',
+    content:`With the Legislature in a quieter period, I took the opportunity to conduct a full assessment of the Tracker’s report-out deadline logic. The existing system, while applied consistently and fairly, was designed to look for a small set of expected events on each bill page. That approach works for most bills, but testing showed that bills with more complex histories could occasionally be misinterpreted. In some cases, the logic stopped once it found a matching action, even if the bill’s history continued, or later actions should have overridden earlier ones.
+
+It’s the difference between scanning a book for a few keywords versus reading the whole chapter to understand the plot. Both can get you in the right neighborhood, but only the second reliably captures the full sequence of events in the order they happened.
+
+To address this, I adopted the same methodology that has made the document-detection pipeline successful:
+**Build a robust, extensible, plugin-based timeline engine, and make the ruleset responsible only for interpreting its output.**
+
+The new system reconstructs each bill’s full action timeline from the public record, then applies the relevant deadlines and reporting rules to that sequence. This allows the Tracker to:
+- Handle referrals, re-referrals, rescheduled hearings, and overrides more accurately
+- Avoid premature stopping points
+- Treat every committee (and every bill) fairly, including those with irregular or multi-stage histories
+
+Importantly, the timeline engine is designed to grow. New action types, phrasing patterns, and shorthand can be added incrementally without altering the core logic. This mirrors how the document finder works: stable core foundation, extensible methods of discovery.
+
+As with previous improvements, this affects only a small subset of bills, but it advances the Tracker’s long-term goal: to offer a clear, rules-based approximation of committee transparency using only what appears in the public record. Complex cases remain rare, but the system will handle them with greater consistency and fidelity.
+
+I am currently in the testing phase, but results are promising. When done, I plan to release a report detailing any changes in output, as well as the implications of these changes. You can expect this to land in the next week or two.
+
+Any additional enhancements will continue to be documented in the changelog and explained here as they develop.`,
+    type: 'update',
 ]
+
 
 
 
