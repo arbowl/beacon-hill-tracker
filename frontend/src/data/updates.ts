@@ -113,7 +113,7 @@ As with previous improvements, this affects only a small subset of bills, but it
 
 I am currently in the testing phase, but results are promising. When done, I plan to release a report detailing any changes in output, as well as the implications of these changes. You can expect this to land in the next week or two.
 
-Any additional enhancements will continue to be documented in the [changelog](https://beaconhilltracker.com/about) and explained here as they develop.`,
+Any additional enhancements will continue to be documented in the [changelog](https://beaconhilltracker.org/about) and explained here as they develop.`,
     type: 'update',
   },
   {
@@ -128,10 +128,11 @@ The "benefit of the doubt" will only apply in the cases where a vote exists but 
 
 This change has the potential to reclassify instances where late actions were previously being "rescued" by the gimme-rule as "Non-Compliant", but it should provide a more accurate picture of how often committees are not only acting, but acting on time.
 
-As always, you will see this reflected in the [changelog](https://beaconhilltracker.com/about) when it lands, accompanied by an acknowlegement in Updates.`,
+As always, you will see this reflected in the [changelog](https://beaconhilltracker.org/about) when it lands, accompanied by an acknowlegement in Updates.`,
     type: 'announcement',
   },
 ]
+
 
 
 
