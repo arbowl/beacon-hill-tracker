@@ -156,7 +156,6 @@ def init_compliance_database():
                 WHERE table_name='bill_compliance' AND column_name='reported_out_date'
             ''')
             if cursor.fetchone() is None:
-                logger.info("Adding reported_out_date column to bill_compliance table")
                 cursor.execute('''
                     ALTER TABLE bill_compliance 
                     ADD COLUMN reported_out_date TEXT
@@ -325,7 +324,6 @@ def init_compliance_database():
             ''')
             columns = [row[1] for row in cursor.fetchall()]
             if 'reported_out_date' not in columns:
-                logger.info("Adding reported_out_date column to bill_compliance table")
                 cursor.execute('''
                     ALTER TABLE bill_compliance 
                     ADD COLUMN reported_out_date TEXT
