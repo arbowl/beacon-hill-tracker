@@ -148,6 +148,20 @@ def init_compliance_database():
                 )
             ''')
             
+            # Migration: Add reported_out_date column if it doesn't exist
+            # Check if column exists (PostgreSQL)
+            cursor.execute('''
+                SELECT column_name 
+                FROM information_schema.columns 
+                WHERE table_name='bill_compliance' AND column_name='reported_out_date'
+            ''')
+            if cursor.fetchone() is None:
+                logger.info("Adding reported_out_date column to bill_compliance table")
+                cursor.execute('''
+                    ALTER TABLE bill_compliance 
+                    ADD COLUMN reported_out_date TEXT
+                ''')
+            
             # Create indexes for better query performance
             cursor.execute('''
                 CREATE INDEX IF NOT EXISTS idx_bill_compliance_committee 
@@ -303,6 +317,19 @@ def init_compliance_database():
                     FOREIGN KEY (bill_id) REFERENCES bills(bill_id) ON DELETE CASCADE
                 )
             ''')
+            
+            # Migration: Add reported_out_date column if it doesn't exist
+            # Check if column exists (SQLite)
+            cursor.execute('''
+                PRAGMA table_info(bill_compliance)
+            ''')
+            columns = [row[1] for row in cursor.fetchall()]
+            if 'reported_out_date' not in columns:
+                logger.info("Adding reported_out_date column to bill_compliance table")
+                cursor.execute('''
+                    ALTER TABLE bill_compliance 
+                    ADD COLUMN reported_out_date TEXT
+                ''')
             
             # Create indexes for better query performance (SQLite)
             cursor.execute('''
