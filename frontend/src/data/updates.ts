@@ -113,10 +113,26 @@ As with previous improvements, this affects only a small subset of bills, but it
 
 I am currently in the testing phase, but results are promising. When done, I plan to release a report detailing any changes in output, as well as the implications of these changes. You can expect this to land in the next week or two.
 
-Any additional enhancements will continue to be documented in the changelog and explained here as they develop.`,
+Any additional enhancements will continue to be documented in the [changelog](https://beaconhilltracker.com/about) and explained here as they develop.`,
     type: 'update',
-  }
+  },
+  {
+    id: 8,
+    date: '2025-12-04',
+    title: 'Upcoming Changes to Implicit Report-Out Classification',
+    content: `Since its launch, the Tracker has used a "benefit of the doubt" rule for bills where votes were posted but the official bill history didn’t show a clear reported-out entry. In those cases, the presence of a vote was treated as evidence that the committee had taken action, and the bill was counted as meeting the report-out deadline, a concession by the Tracker so as to not penalize committees for the limitations of the tools used to evalaute them.
+
+As the timeline engine has improved, I can now often recover the actual date of that committee action from the vote record itself. In a future update, when a date is available, either from the bill history or from the vote record, the Tracker will compare that date to the committee’s deadline and mark the bill compliant or non-compliant accordingly.
+
+The "benefit of the doubt" will only apply in the cases where a vote exists but no usable date can be found anywhere. In those situations, the Tracker will still credit the committee for posting votes and reporting out.
+
+This change has the potential to reclassify instances where late actions were previously being "rescued" by the gimme-rule as "Non-Compliant", but it should provide a more accurate picture of how often committees are not only acting, but acting on time.
+
+As always, you will see this reflected in the [changelog](https://beaconhilltracker.com/about) when it lands, accompanied by an acknowlegement in Updates.`,
+    type: 'announcement',
+  },
 ]
+
 
 
 
