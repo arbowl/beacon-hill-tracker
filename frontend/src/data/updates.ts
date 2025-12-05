@@ -131,7 +131,39 @@ This change has the potential to reclassify instances where late actions were pr
 As always, you will see this reflected in the [changelog](https://beaconhilltracker.org/about) when it lands, accompanied by an acknowlegement in Updates.`,
     type: 'announcement',
   },
+  {
+    id: 9,
+    date: '2025-12-05',
+    title: 'Timeline Engine Now Online: Reclassifications Explained',
+    content: `## Intro
+Today, I’m rolling out the promised update to the Tracker’s underlying timeline engine. This represents the most complicated piece of the model by far, but it’s well worth the effort, as compliance is heavily dictated by timelines. This change improves the tracking of a bill as it passes through different committees.
+
+## Why It Was Needed
+Hearing dates, announcements, and report-out dates are all major compliance factors. However, modeling a timeline from non-standardized input text is difficult, compounded by the fact that multiple committees could handle a bill, necessitating proper scoping. The old way required grabbing all relevant keywords, then trying to discard the irrelevant data; however, it became tricky determining how to automatically know what was irrelevant. This new system creates a timeline, which makes chronological ordering a viable path to solving this issue. Now, all bills are not only treated consistently, but also much more accurately with respect to what the public sees.
+
+## How It Works
+Before this change, I was looking for keywords to figure out what a committee did with a bill. This worked **most** of the time, but fell apart when bills had non-standard actions, such as [H.4229](https://malegislature.gov/Bills/194/H4229), which in one action: reports, refers, reports out again, and refers again, with two committees named. Since the old way was just looking for keywords, it would get tripped up by this and fail to properly recognize these actions.
+The new way uses a "node" system. In short, I created an action-based model of what can actually happen to a bill. Next, I tied key phrases to each action. Then, I build a virtual timeline. Whenever I need to figure out what a committee did with a bill, I narrow the timeline to the committee’s tenure window.
+It’s not perfect; it still relies on an inconsistent, human-driven, sometimes incomplete data source. That said, it creates a significantly improved model of what’s presented to the public.
+
+## Impact on Compliance Statistics
+If you visit every day, perhaps you noticed that this change resulted in, approximately, a 6% drop in global compliance. In short, this is because the tool no longer gets tricked by compliant windows within a bill’s overall history; if one committee is compliant, it no longer has the possibility to trick later analyses.
+Here is a [graph](https://i.imgur.com/J1UalBc.png) showing the compliance drop for affected committees. Some are unaffected, and most are only slightly affected. The outlier is the Joint Committee on Agriculture and Fisheries, which dropped due to the fact that the new system differentiates between “Agriculture” (J38) and “Agriculture and Fisheries” (J45).
+Here are some examples of reclassified bills which were previously compliant but are now considered non-compliant due to timeline rules:
+-	[H.101](https://malegislature.gov/Bills/194/H101)
+-	[H82](https://malegislature.gov/Bills/194/H82)
+-	[H1525)(https://malegislature.gov/Bills/194/H1525)
+
+As you can see from the timelines, these were reported out past the deadline, which can now be accurately calculated based on proper committee tenure windows.
+**Note: This change reflects an improvement in modeling, not a change in committee behavior.**
+
+## What this means going forward
+This is a one-time foundational correction, not an ongoing or recurring volatility issue. Keeping an accurate timeline is crucial for compliance calculations, yet the code to properly parse and model it is more complicated than any other component of the entire project. The new timeline engine provides a stable base for incremental improvements, so while the possibility to catch unique phrases in odd edge cases is on the table, large-scale reclassifications are highly unlikely at this stage.
+The goal remains the same: to offer a clear, fair, and transparent approximation of the publicly observable legislative process.`,
+    type: 'update',
+  },
 ]
+
 
 
 
