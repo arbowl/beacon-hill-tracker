@@ -151,8 +151,8 @@ If you visit every day, perhaps you noticed that this change resulted in, approx
 Here is a [graph](https://i.imgur.com/J1UalBc.png) showing the compliance drop for affected committees. Some are unaffected, and most are only slightly affected. The outlier is the Joint Committee on Agriculture and Fisheries, which dropped due to the fact that the new system differentiates between “Agriculture” (J38) and “Agriculture and Fisheries” (J45).
 Here are some examples of reclassified bills which were previously compliant but are now considered non-compliant due to timeline rules:
 -	[H.101](https://malegislature.gov/Bills/194/H101)
--	[H82](https://malegislature.gov/Bills/194/H82)
--	[H1525](https://malegislature.gov/Bills/194/H1525)
+-	[H.82](https://malegislature.gov/Bills/194/H82)
+-	[H.1525](https://malegislature.gov/Bills/194/H1525)
 
 As you can see from the timelines, these were reported out past the deadline, which can now be accurately calculated based on proper committee tenure windows.
 **Note: This change reflects an improvement in modeling, not a change in committee behavior.**
@@ -163,6 +163,7 @@ The goal remains the same: to offer a clear, fair, and transparent approximation
     type: 'update',
   },
 ]
+
 
 
 
