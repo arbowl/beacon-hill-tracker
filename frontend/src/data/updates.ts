@@ -157,12 +157,13 @@ Here are some examples of reclassified bills which were previously compliant but
 As you can see from the timelines, these were reported out past the deadline, which can now be accurately calculated based on proper committee tenure windows.
 **Note: This change reflects an improvement in modeling, not a change in committee behavior.**
 
-## What this means going forward
+## What This Means Going Forward
 This is a one-time foundational correction, not an ongoing or recurring volatility issue. Keeping an accurate timeline is crucial for compliance calculations, yet the code to properly parse and model it is more complicated than any other component of the entire project. The new timeline engine provides a stable base for incremental improvements, so while the possibility to catch unique phrases in odd edge cases is on the table, large-scale reclassifications are highly unlikely at this stage.
 The goal remains the same: to offer a clear, fair, and transparent approximation of the publicly observable legislative process.`,
     type: 'update',
   },
 ]
+
 
 
 
