@@ -247,10 +247,16 @@ export const useViolationAnalysis = (filters?: DashboardFilters) => {
 
         const response = await apiService.getBillsViolations(params)
         const violationsData = Array.isArray(response.data) ? response.data : []
-        setViolations(violationsData)
+        
+        // Filter out "Deadline Passed" violations
+        const filteredViolations = violationsData.filter(
+          (item: any) => item.violation?.id !== 'deadline_passed'
+        )
+        
+        setViolations(filteredViolations)
         
         // Log if no violations found for debugging
-        if (violationsData.length === 0) {
+        if (filteredViolations.length === 0) {
           console.debug('No violations found for filters:', params)
         }
       } catch (err: any) {
