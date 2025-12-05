@@ -147,7 +147,7 @@ The new way uses a "node" system. In short, I created an action-based model of w
 It’s not perfect; it still relies on an inconsistent, human-driven, sometimes incomplete data source. That said, it creates a significantly improved model of what’s presented to the public.
 
 ## Impact on Compliance Statistics
-If you visit every day, perhaps you noticed that this change resulted in, approximately, a 6% drop in global compliance. In short, this is because the tool no longer gets tricked by compliant windows within a bill’s overall history; if one committee is compliant, it no longer has the possibility to trick later analyses.
+If you visit every day, perhaps you noticed that this change resulted in, approximately, a 3-4% drop in global compliance. In short, this is because the tool no longer gets tricked by compliant windows within a bill’s overall history; if one committee is compliant, it no longer has the possibility to trick later analyses.
 Here is a [graph](https://i.imgur.com/J1UalBc.png) showing the compliance drop for affected committees. Some are unaffected, and most are only slightly affected. The outlier is the Joint Committee on Agriculture and Fisheries, which dropped due to the fact that the new system differentiates between “Agriculture” (J38) and “Agriculture and Fisheries” (J45).
 Here are some examples of reclassified bills which were previously compliant but are now considered non-compliant due to timeline rules:
 -	[H.101](https://malegislature.gov/Bills/194/H101)
@@ -163,6 +163,7 @@ The goal remains the same: to offer a clear, fair, and transparent approximation
     type: 'update',
   },
 ]
+
 
 
 
