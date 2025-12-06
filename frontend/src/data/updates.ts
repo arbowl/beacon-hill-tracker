@@ -162,6 +162,16 @@ This is a one-time foundational correction, not an ongoing or recurring volatili
 The goal remains the same: to offer a clear, fair, and transparent approximation of the publicly observable legislative process.`,
     type: 'update',
   },
+  {
+    id: 10,
+    date: '2025-12-07',
+    title: 'How Massachusetts Committees Perform on Process and Transparency',
+    content: `Until now, committee workflows in the Massachsuetts Legislature have been difficult to quantify. Hearing notices, reschedules, report-out timing, and documentation for summaries and votes posting all vary widely, and the patterns were largely invisible. This analysis introduces the first statewide baseline: a data-driven map of process and transparency compliance across the 194th General Court. It highlights structural trends which provide insight into how committees manage deadlines and documentation.
+
+
+    [Read the report here (PDF)](/documents/typology_matrix.pdf)`,
+    type: 'insight',
+  },
 ]
 
 
