@@ -87,7 +87,7 @@ const PressPage: React.FC = () => {
           
           {/* Key Statistic Callout */}
           <div className="stat-callout">
-            <div className="text-6xl font-bold text-ma-blue mb-2">~67%</div>
+            <div className="text-6xl font-bold text-ma-blue mb-2">~50%</div>
             <div className="text-lg font-semibold text-gray-700 mb-1">of Bills Meet Standards</div>
             <div className="text-sm text-gray-600">According to automated procedural checks</div>
           </div>
@@ -704,4 +704,5 @@ const PressPage: React.FC = () => {
 }
 
 export default PressPage
+
 
