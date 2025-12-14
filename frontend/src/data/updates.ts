@@ -172,7 +172,18 @@ The goal remains the same: to offer a clear, fair, and transparent approximation
 [Read the report here (PDF)](/documents/typology_matrix.pdf)`,
     type: 'insight',
   },
+  {
+    id: 11,
+    date: '2025-12-14',
+    title: 'The Effect of Joint Rule 10 on Average Hearing Notice',
+    content: `This brief examines how hearing notice changed after the June 26 update to the Legislature's posting rules. By comparing all committee hearings before and after the rule change, the analysis shows how often hearings received at least 10 days' notice and how committee practices shifted across the session. The goal is to give a clear, data-driven model of how the new rule affected public access.
+
+
+[Read the report here (PDF)](/documents/hearing_analysis.pdf)`,
+    type: 'insight',
+  }
 ]
+
 
 
 
