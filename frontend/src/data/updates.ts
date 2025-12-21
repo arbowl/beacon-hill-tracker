@@ -181,8 +181,18 @@ The goal remains the same: to offer a clear, fair, and transparent approximation
 
 [Read the report here (PDF)](/documents/hearing_analysis.pdf)`,
     type: 'insight',
+  },
+  {
+    id: 12,
+    date: '2024-12-21',
+    title: 'How Committee Workflows Shape Transparency Outcomes',
+    content: `In this report, committee workflows are cross-compared via metrics such as: the number of bills handled, average advance hearing notice, average post-hearing report-out timing, and documentation posting rate. This provides a high-level profile for each committee, showing how differences in workloads and workflows can lead to varying transparency outcomes for the public.
+
+[Read the report here (PDF)](/documents/workflow_heatmap.pdf)`,
+    type: 'insight',
   }
 ]
+
 
 
 
