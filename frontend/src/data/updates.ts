@@ -201,7 +201,7 @@ This behavior originated as a conservative placeholder while referral tracking w
 
 After aligning Senate-origin joint committee deadlines to start at referral (rather than requiring a detected hearing), the most visible impacts were concentrated in five committees: J18 (Mental Health, −30.44 pp), J37 (Telecom/Utilities/Energy, −30.12 pp), J22 (Public Safety, −29.62 pp), J29 (Higher Education, −29.03 pp), and J12 (Economic Development/Emerging Tech, −26.67 pp).
 
-This is a methodological correction, not a claim that these committees suddenly worsened. Under the prior model, some Senate-origin matters effectively stayed “provisional” until a hearing was posted or detected, which introduced an unintended grace period. Because Senate reporting obligations for joint committees can begin based on referral alone, the updated model removes that implicit grace period and applies the countdown consistently from the referral event. Committees with more Senate-origin referrals that did not lead to a posted hearing are therefore more affected by this change.`,
+This is a methodological correction, not a claim that these committees suddenly changed behavior. Because Senate reporting obligations for joint committees can begin based on referral alone, the updated model removes the implicit grace period and applies the countdown consistently from the referral event. Committees with more Senate-origin referrals that did not lead to a posted hearing are therefore more affected by this change.`,
     type: 'announcement',
   }
 ]
