@@ -190,6 +190,19 @@ The goal remains the same: to offer a clear, fair, and transparent approximation
 
 [Read the report here (PDF)](/documents/workflow_heatmap.pdf)`,
     type: 'insight',
+  },
+  {
+    id: 13,
+    date: '2025-12-24',
+    title: 'Senate Referral-Based Deadline Anchoring',
+    content: `The Tracker now starts the report-out deadline clock for Senate-origin bills in joint committees at the referral date, even in cases where no hearing is posted or detected. Under the prior implementation, certain Senate bills implicitly required a hearing to initiate the countdown, which introduced an unintended grace period.
+
+This behavior originated as a conservative placeholder while referral tracking was incomplete. With referral handling now reliable, the placeholder has been removed in favor of direct Joint Rule 10–based modeling. This change improves deadline fidelity and results in a measurable decrease in Senate compliance/provisional classifications.
+
+After aligning Senate-origin joint committee deadlines to start at referral (rather than requiring a detected hearing), the most visible impacts were concentrated in five committees: J18 (Mental Health, −30.44 pp), J37 (Telecom/Utilities/Energy, −30.12 pp), J22 (Public Safety, −29.62 pp), J29 (Higher Education, −29.03 pp), and J12 (Economic Development/Emerging Tech, −26.67 pp).
+
+This is a methodological correction, not a claim that these committees suddenly worsened. Under the prior model, some Senate-origin matters effectively stayed “provisional” until a hearing was posted or detected, which introduced an unintended grace period. Because Senate reporting obligations for joint committees can begin based on referral alone, the updated model removes that implicit grace period and applies the countdown consistently from the referral event. Committees with more Senate-origin referrals that did not lead to a posted hearing are therefore more affected by this change.`,
+    type: 'announcement',
   }
 ]
 
