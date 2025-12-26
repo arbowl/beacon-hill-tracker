@@ -184,14 +184,47 @@ The goal remains the same: to offer a clear, fair, and transparent approximation
   },
   {
     id: 12,
-    date: '2024-12-21',
+    date: '2025-12-21',
     title: 'How Committee Workflows Shape Transparency Outcomes',
     content: `In this report, committee workflows are cross-compared via metrics such as: the number of bills handled, average advance hearing notice, average post-hearing report-out timing, and documentation posting rate. This provides a high-level profile for each committee, showing how differences in workloads and workflows can lead to varying transparency outcomes for the public.
 
 [Read the report here (PDF)](/documents/workflow_heatmap.pdf)`,
     type: 'insight',
+  },
+  {
+    id: 13,
+    date: '2025-12-26',
+    title: 'Senate Referral-Based Deadline Anchoring',
+    content: `## Update
+Over the past few days, an update to the Tracker resulted in a substantial increase in detected report-out violations, producing a notable downward shift in the overall compliance percentage, primarily reflassifying select Senate-origin bills in Joint committees from _Provisional_ to _Non-Compliant_.
+
+## Why Compliance Dropped
+This update reflects the recognition of a deadline that elapsed on December 3, 2025, when Senate-origin bills in Joint committees were required to report out under Joint Rule 10.
+
+For Senate-origin bills in Joint committees, the report-out clock begins when a bill is _referred_ to the committee. For House bills, the clock begins after a bill is presented at a _hearing_. The Legislature’s website makes hearing timelines relatively easy to track, while referral custody timelines are substantially harder to reconstruct from published action text.
+
+Recent programming improvements made it possible to track referral tenure windows with sufficient confidence. As a result, the effects of the December 3rd deadline are now accurately reflected in the model.
+
+## Supporting Data
+The largest committee-level shifts following this update occurred in:
+1. **Joint Committee on Emergency Preparedness and Management:** -60.0%
+2. **Joint Committee on Tourism, Arts, and Cultural Development:** -37.9%
+3. **Joint Committee on Mental Health, Substance Use and Recovery:** -31.5%
+
+Some bills, such as [S.540](https://malegislature.gov/Bills/194/S540), were referred to a Joint committee before October 1st, meaning they needed to be reported out by December 3rd. Since this bill was not reported out, it is now considered _Non-Compliant_.
+
+Others, such as [S.539](https://malegislature.gov/Bills/194/S539), were referred to a Joint committee before October 1st and reported-out after December 3rd, past the deadline. This too is considered _Non-Compliant_.
+
+## Looking Forward
+Senate-origin bills in Joint committees remain structurally harder to model than House bills, as referral custody windows must be inferred from legislative action text rather than anchored to published hearing schedules with multiple secondary confirmations.
+
+I am continuing to spot-check affected cases to ensure referral boundaries and committee actions are being applied reasonably, consistently, and as accurately as possible.
+
+As always, the aim of the Tracker is to improve fidelity to the public record and published rules. It does not evaluate or interpret committee behavior, and the Massachusetts Legislature’s website remains the authoritative source for all bill data.`,
+    type: 'update'
   }
 ]
+
 
 
 
