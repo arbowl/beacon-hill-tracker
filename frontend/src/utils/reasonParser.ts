@@ -78,7 +78,7 @@ export function parseReason(reason: string): ParsedReason {
   const violations: ViolationType[] = []
 
   // Check for specific violations
-  if (reasonLower.includes('not reported out')) {
+  if (reasonLower.includes('not reported out') || reasonLower.includes('reported out late')) {
     violations.push(VIOLATION_TYPES.find(v => v.id === 'not_reported_out')!)
   }
 
@@ -185,3 +185,4 @@ export function formatForChart(analysis: ReasonAnalysis[]) {
     borderColor: analysis.map(item => item.violation.color),
   }
 }
+
