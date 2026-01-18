@@ -222,25 +222,18 @@ I am continuing to spot-check affected cases to ensure referral boundaries and c
 
 As always, the aim of the Tracker is to improve fidelity to the public record and published rules. It does not evaluate or interpret committee behavior, and the Massachusetts Legislature’s website remains the authoritative source for all bill data.`,
     type: 'update'
+  },
+  {
+    id: 14,
+    date: '2026-01-18',
+    title: 'A Brief Update on Ongoing Work',
+    content: `It's been a little while since the last update, so I wanted to share a quick note on what I've been working on behind the scenes.
+
+The systems which locate and review documents are 99.9% stable, with just a few tweaks here and there to handle edge cases as needed. This typically only happens if a single document sits slightly outside the usual detection patterns. Still, because some users use this tool to track individual bills, I think it's important to ensure all documents are found as reliably as possible, even when challenging.
+
+I've also been monitoring how the timeline code handles deadlines as they happen. From December until March, there are a number of key dates that affect compliance, so I've been making sure the system is prepared to handle them all correctly. So far, everything is looking good, but I'm continuing to keep an eye on things.
+
+As always, thank you for your interest and support. All changes to the algorithm are documented in the [changelog](https://beaconhilltracker.org/about), and I'll continue to post updates here as significant developments occur. If you have feedback, questions, suggestions, or edge cases you'd like me to consider, please don't hesitate to [reach out!](https://beaconhilltracker.org/contact)`,
+    type: 'announcement',
   }
 ]
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
