@@ -29,7 +29,7 @@ const HomePage: React.FC = () => {
   return (
     <div className="space-y-8">
       {/* Hero Section */}
-      <div className="text-center py-12">
+      <div className="text-center pt-12 pb-2">
         <h1 className="text-4xl font-bold text-gray-900 mb-4">
           Beacon Hill Compliance Tracker
         </h1>
