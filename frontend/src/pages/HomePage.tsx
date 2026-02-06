@@ -3,11 +3,24 @@ import { useAuth } from '../contexts/AuthContext'
 import { useGlobalStats, useGlobalMetadata } from '../hooks/useData'
 import CommitteeChangeWidget from '../components/CommitteeChangeWidget'
 import { formatDateOnly } from '../utils/dateFormat'
+import { updates } from '../data/updates'
 
 const HomePage: React.FC = () => {
   const { user } = useAuth()
   const { data: stats, loading: statsLoading, error: statsError } = useGlobalStats()
   const { metadata: globalMetadata, loading: globalMetadataLoading } = useGlobalMetadata()
+
+  const latestUpdate = updates[updates.length - 1]
+  const previewText = latestUpdate?.content
+    .replace(/#{1,6}\s+/g, '')
+    .replace(/\[([^\]]+)\]\([^)]+\)/g, '$1')
+    .replace(/\*{1,2}([^*]+)\*{1,2}/g, '$1')
+    .replace(/`([^`]+)`/g, '$1')
+    .split('\n')
+    .filter(line => line.trim())
+    .slice(0, 2)
+    .join(' ')
+    .slice(0, 200) + (latestUpdate?.content.length > 200 ? '...' : '')
 
   // Use stats directly from API (same as DashboardPage)
   // Do NOT recalculate from bills - that would only use paginated data (25 bills by default)
@@ -59,6 +72,33 @@ const HomePage: React.FC = () => {
           </div>
         )}
       </div>
+
+      {/* Latest Update Banner */}
+      {latestUpdate && (
+        <Link to="/updates" className="block group">
+          <div className="card bg-base-100 shadow-md border-l-4 border-primary hover:shadow-lg transition-shadow">
+            <div className="card-body py-4 px-6">
+              <div className="flex items-start justify-between gap-4">
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2 mb-1">
+                    <span className="badge badge-primary badge-sm">Latest Update</span>
+                    <span className="text-sm text-base-content/50">{formatDateOnly(latestUpdate.date)}</span>
+                  </div>
+                  <h3 className="font-semibold text-gray-900 group-hover:text-primary transition-colors">
+                    {latestUpdate.title}
+                  </h3>
+                  <p className="text-sm text-base-content/60 mt-1 line-clamp-2">
+                    {previewText}
+                  </p>
+                </div>
+                <svg className="w-5 h-5 text-base-content/40 group-hover:text-primary transition-colors flex-shrink-0 mt-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                </svg>
+              </div>
+            </div>
+          </div>
+        </Link>
+      )}
 
       {/* Real-time Stats */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
@@ -131,22 +171,6 @@ const HomePage: React.FC = () => {
           topMovers={globalMetadata.top_movers || []}
         />
       )}
-
-      {/* Updates Banner */}
-      <div className="alert bg-slate-50 border-l-4" style={{ borderColor: '#003366' }}>
-        <svg className="stroke-current flex-shrink-0 h-6 w-6" style={{ color: '#003366' }} fill="none" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"></path>
-        </svg>
-        <div>
-          <div className="font-bold text-gray-900">Project Updates & Insights</div>
-          <div className="text-sm text-gray-700">Stay informed about system status, methodology updates, and new data insights.</div>
-        </div>
-        <div className="flex-none">
-          <Link to="/updates" className="btn btn-sm text-white hover:opacity-90" style={{ backgroundColor: '#003366' }}>
-            View Updates
-          </Link>
-        </div>
-      </div>
 
       {/* Press Kit Banner */}
       <div className="alert bg-slate-50 border-l-4" style={{ borderColor: '#003366' }}>
