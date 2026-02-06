@@ -732,31 +732,32 @@ def create_app():
                         chamber_conditions.append(f"c.chamber IN ({placeholders})")
                         chamber_filter_params.extend(chamber_list)
                 
-                if state:
-                    filter_conditions.append(f"LOWER(bc.state) = LOWER({placeholder})")
-                    filter_params.append(state)
-                elif states:
-                    state_list = [s.strip() for s in states.split(',') if s.strip()]
-                    if state_list:
-                        state_placeholders = ' OR '.join([f"LOWER(bc.state) = LOWER({placeholder})" for _ in state_list])
-                        filter_conditions.append(f"({state_placeholders})")
-                        filter_params.extend(state_list)
-                
                 filter_clause = " AND " + " AND ".join(filter_conditions) if filter_conditions else ""
-                
+
                 where_clauses = []
                 where_params = []
-                
+
                 if chamber_conditions:
                     where_clauses.extend(chamber_conditions)
                     where_params.extend(chamber_filter_params)
-                
+
+                # State filter must be applied after deduplication so it uses the latest state per bill
+                if state:
+                    where_clauses.append(f"LOWER(state) = LOWER({placeholder})")
+                    where_params.append(state)
+                elif states:
+                    state_list = [s.strip() for s in states.split(',') if s.strip()]
+                    if state_list:
+                        state_placeholders = ' OR '.join([f"LOWER(state) = LOWER({placeholder})" for _ in state_list])
+                        where_clauses.append(f"({state_placeholders})")
+                        where_params.extend(state_list)
+
                 if search_term:
                     where_clauses.append(f"(b.bill_id LIKE {placeholder} OR b.bill_title LIKE {placeholder})")
                     where_params.extend([f'%{search_term}%', f'%{search_term}%'])
-                
+
                 where_clause = " AND " + " AND ".join(where_clauses) if where_clauses else ""
-                
+
                 # Calculate stats for filtered bills
                 stats_query = f'''
                     WITH latest_bills AS (
@@ -860,38 +861,37 @@ def create_app():
                         chamber_conditions.append(f"c.chamber IN ({placeholders})")
                         chamber_filter_params.extend(chamber_list)
                 
-                if state:
-                    filter_conditions.append(f"LOWER(bc.state) = LOWER({placeholder})")
-                    filter_params.append(state)
-                elif states:
-                    state_list = [s.strip() for s in states.split(',') if s.strip()]
-                    if state_list:
-                        state_placeholders = ' OR '.join([f"LOWER(bc.state) = LOWER({placeholder})" for _ in state_list])
-                        filter_conditions.append(f"({state_placeholders})")
-                        filter_params.extend(state_list)
-                
                 filter_clause = " AND " + " AND ".join(filter_conditions) if filter_conditions else ""
-                
+
                 where_clauses = []
                 where_params = []
-                
+
                 if chamber_conditions:
                     where_clauses.extend(chamber_conditions)
                     where_params.extend(chamber_filter_params)
-                
+
+                # State filter must be applied after deduplication so it uses the latest state per bill
+                if state:
+                    where_clauses.append(f"LOWER(state) = LOWER({placeholder})")
+                    where_params.append(state)
+                elif states:
+                    state_list = [s.strip() for s in states.split(',') if s.strip()]
+                    if state_list:
+                        state_placeholders = ' OR '.join([f"LOWER(state) = LOWER({placeholder})" for _ in state_list])
+                        where_clauses.append(f"({state_placeholders})")
+                        where_params.extend(state_list)
+
                 if search_term:
                     where_clauses.append(f"(b.bill_id LIKE {placeholder} OR b.bill_title LIKE {placeholder})")
                     where_params.extend([f'%{search_term}%', f'%{search_term}%'])
-                
-                # Only get non-compliant bills for violation analysis
-                # Filter non-compliant in CTE for better performance and correctness
-                non_compliant_filter = " AND LOWER(bc.state) = 'non-compliant'"
-                
-                # Build WHERE clause for outer query (chamber and search filters)
+
+                # Only get non-compliant bills for violation analysis (applied after dedup)
+                non_compliant_filter = " AND LOWER(state) = 'non-compliant'"
+
+                # Build WHERE clause for outer query
                 where_clause = " AND " + " AND ".join(where_clauses) if where_clauses else ""
-                
+
                 # Get non-compliant bills with their reasons
-                # Filter non-compliant in CTE - this ensures we only process non-compliant bills
                 violations_query = f'''
                     WITH latest_bills AS (
                         SELECT bc.bill_id, bc.reason, bc.state,
@@ -899,11 +899,11 @@ def create_app():
                         FROM bill_compliance bc
                         LEFT JOIN bills b ON bc.bill_id = b.bill_id
                         LEFT JOIN committees c ON bc.committee_id = c.committee_id
-                        WHERE 1=1 {filter_clause} {non_compliant_filter}
+                        WHERE 1=1 {filter_clause}
                     )
                     SELECT bill_id, reason
                     FROM latest_bills
-                    WHERE rn = 1 {where_clause}
+                    WHERE rn = 1 {non_compliant_filter} {where_clause}
                 '''
                 
                 violations_params = filter_params.copy() + where_params
@@ -1068,32 +1068,32 @@ def create_app():
                         chamber_conditions.append(f"c.chamber IN ({placeholders})")
                         chamber_filter_params.extend(chamber_list)
                 
-                # Handle state filtering
-                if state:
-                    filter_conditions.append(f"LOWER(bc.state) = LOWER({placeholder})")
-                    filter_params.append(state)
-                elif states:
-                    state_list = [s.strip() for s in states.split(',') if s.strip()]
-                    if state_list:
-                        state_placeholders = ' OR '.join([f"LOWER(bc.state) = LOWER({placeholder})" for _ in state_list])
-                        filter_conditions.append(f"({state_placeholders})")
-                        filter_params.extend(state_list)
-                
-                # Build the query with deduplication - apply filters in CTE for better performance
+                # Build the query with deduplication - apply committee filters in CTE
                 filter_clause = " AND " + " AND ".join(filter_conditions) if filter_conditions else ""
-                
-                # Build WHERE clause for chamber and search (applied after JOIN)
+
+                # Build WHERE clause applied AFTER deduplication (outside CTE)
                 where_clauses = []
                 where_params = []
-                
+
                 if chamber_conditions:
                     where_clauses.extend(chamber_conditions)
                     where_params.extend(chamber_filter_params)
-                
+
+                # State filter must be applied after deduplication so it uses the latest state per bill
+                if state:
+                    where_clauses.append(f"LOWER(state) = LOWER({placeholder})")
+                    where_params.append(state)
+                elif states:
+                    state_list = [s.strip() for s in states.split(',') if s.strip()]
+                    if state_list:
+                        state_placeholders = ' OR '.join([f"LOWER(state) = LOWER({placeholder})" for _ in state_list])
+                        where_clauses.append(f"({state_placeholders})")
+                        where_params.extend(state_list)
+
                 if search_term:
                     where_clauses.append(f"(bill_id LIKE {placeholder} OR bill_title LIKE {placeholder})")
                     where_params.extend([f'%{search_term}%', f'%{search_term}%'])
-                
+
                 where_clause = " AND " + " AND ".join(where_clauses) if where_clauses else ""
                 
                 # First, get total count for pagination
