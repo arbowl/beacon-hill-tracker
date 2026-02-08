@@ -11,6 +11,32 @@ const HomePage: React.FC = () => {
   const { metadata: globalMetadata, loading: globalMetadataLoading } = useGlobalMetadata()
 
   const latestUpdate = updates[updates.length - 1]
+
+  const typeBadgeClass = (() => {
+    switch (latestUpdate?.type?.toLowerCase()) {
+      case 'alert': return 'badge-error'
+      case 'status': return 'badge-info'
+      case 'update': return 'badge-success'
+      case 'announcement': return 'bg-cyan-500 text-white border-cyan-500'
+      case 'insight': return 'badge-warning'
+      default: return 'badge-primary'
+    }
+  })()
+
+  const typeBorderClass = (() => {
+    switch (latestUpdate?.type?.toLowerCase()) {
+      case 'alert': return 'border-error'
+      case 'status': return 'border-info'
+      case 'update': return 'border-success'
+      case 'announcement': return 'border-cyan-500'
+      case 'insight': return 'border-orange-500'
+      default: return 'border-primary'
+    }
+  })()
+
+  const typeLabel = latestUpdate?.type
+    ? latestUpdate.type.charAt(0).toUpperCase() + latestUpdate.type.slice(1).toLowerCase()
+    : 'Update'
   const previewText = latestUpdate?.content
     .replace(/#{1,6}\s+/g, '')
     .replace(/\[([^\]]+)\]\([^)]+\)/g, '$1')
@@ -76,12 +102,12 @@ const HomePage: React.FC = () => {
       {/* Latest Update Banner */}
       {latestUpdate && (
         <Link to="/updates" className="block group">
-          <div className="card bg-base-100 shadow-md border-l-4 border-primary hover:shadow-lg transition-shadow">
+          <div className={`card bg-base-100 shadow-md border-l-4 ${typeBorderClass} hover:shadow-lg transition-shadow`}>
             <div className="card-body py-4 px-6">
               <div className="flex items-start justify-between gap-4">
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 mb-1">
-                    <span className="badge badge-primary badge-sm">Latest Update</span>
+                    <span className={`badge badge-sm ${typeBadgeClass}`}>{typeLabel}</span>
                     <span className="text-sm text-base-content/50">{formatDateOnly(latestUpdate.date)}</span>
                   </div>
                   <h3 className="font-semibold text-gray-900 group-hover:text-primary transition-colors">
