@@ -14,12 +14,12 @@ const HomePage: React.FC = () => {
 
   const typeBadgeClass = (() => {
     switch (latestUpdate?.type?.toLowerCase()) {
-      case 'alert': return 'badge-error'
-      case 'status': return 'badge-info'
-      case 'update': return 'badge-success'
+      case 'alert': return 'badge-error text-white'
+      case 'status': return 'badge-info text-white'
+      case 'update': return 'badge-success text-white'
       case 'announcement': return 'bg-cyan-500 text-white border-cyan-500'
-      case 'insight': return 'badge-warning'
-      default: return 'badge-primary'
+      case 'insight': return 'badge-warning text-white'
+      default: return 'badge-primary text-white'
     }
   })()
 

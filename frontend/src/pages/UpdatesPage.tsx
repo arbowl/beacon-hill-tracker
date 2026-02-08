@@ -8,36 +8,55 @@ const UPDATES_PER_PAGE = 10
 
 const UpdatesPage: React.FC = () => {
   const [currentPage, setCurrentPage] = useState(1)
+  const [selectedType, setSelectedType] = useState<string | null>(null)
 
   // Sort updates by ID (higher ID = newer = top)
   const sortedUpdates = useMemo(() => {
-    return [...updates].sort((a, b) => {
-      return b.id - a.id
-    })
+    return [...updates].sort((a, b) => b.id - a.id)
   }, [])
 
+  // Collect unique types for filter pills
+  const availableTypes = useMemo(() => {
+    const types = new Set<string>()
+    for (const u of updates) {
+      if (u.type) types.add(u.type.toLowerCase())
+    }
+    return Array.from(types).sort()
+  }, [])
+
+  // Filter by selected type
+  const filteredUpdates = useMemo(() => {
+    if (!selectedType) return sortedUpdates
+    return sortedUpdates.filter(u => u.type?.toLowerCase() === selectedType)
+  }, [sortedUpdates, selectedType])
+
   // Calculate pagination
-  const totalPages = Math.ceil(sortedUpdates.length / UPDATES_PER_PAGE)
+  const totalPages = Math.ceil(filteredUpdates.length / UPDATES_PER_PAGE)
   const startIndex = (currentPage - 1) * UPDATES_PER_PAGE
   const endIndex = startIndex + UPDATES_PER_PAGE
-  const currentUpdates = sortedUpdates.slice(startIndex, endIndex)
+  const currentUpdates = filteredUpdates.slice(startIndex, endIndex)
+
+  const handleTypeFilter = (type: string | null) => {
+    setSelectedType(type)
+    setCurrentPage(1)
+  }
 
   const getTypeBadgeClass = (type?: string) => {
-    if (!type) return 'badge-primary'
-    
+    if (!type) return 'badge-primary text-white'
+
     switch (type.toLowerCase()) {
       case 'alert':
-        return 'badge-error'
+        return 'badge-error text-white'
       case 'status':
-        return 'badge-info'
+        return 'badge-info text-white'
       case 'update':
-        return 'badge-success'
+        return 'badge-success text-white'
       case 'announcement':
         return 'bg-cyan-500 text-white border-cyan-500'
       case 'insight':
-        return 'badge-warning'
+        return 'badge-warning text-white'
       default:
-        return 'badge-primary'
+        return 'badge-primary text-white'
     }
   }
 
@@ -76,7 +95,34 @@ const UpdatesPage: React.FC = () => {
         </p>
       </div>
 
-      {sortedUpdates.length === 0 ? (
+      {/* Type Filter */}
+      {availableTypes.length > 1 && (
+        <div className="flex flex-wrap justify-center gap-2">
+          <button
+            className={`badge badge-lg cursor-pointer transition-opacity ${
+              selectedType === null ? 'badge-neutral' : 'badge-ghost opacity-50 hover:opacity-80'
+            }`}
+            onClick={() => handleTypeFilter(null)}
+          >
+            All
+          </button>
+          {availableTypes.map(type => (
+            <button
+              key={type}
+              className={`badge badge-lg cursor-pointer transition-opacity ${
+                selectedType === type
+                  ? getTypeBadgeClass(type)
+                  : 'badge-ghost opacity-50 hover:opacity-80'
+              }`}
+              onClick={() => handleTypeFilter(selectedType === type ? null : type)}
+            >
+              {getTypeLabel(type)}
+            </button>
+          ))}
+        </div>
+      )}
+
+      {filteredUpdates.length === 0 ? (
         <div className="card bg-base-100 shadow-md">
           <div className="card-body text-center">
             <p className="text-base-content/70">No updates yet. Check back soon!</p>
