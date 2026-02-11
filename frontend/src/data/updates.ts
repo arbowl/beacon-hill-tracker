@@ -260,5 +260,39 @@ As always, remember that the Stipends site and the Tracker are models, not autho
 
 Explore legislative compensation at [beaconhillstipends.org](https://beaconhillstipends.org/).`,
     type: 'announcement',
+  },
+  {
+    id: 16,
+    date: '2026-02-12',
+    title: 'New Vote Discovery Method Added',
+    content: `## What Changed
+
+The Tracker now recognizes votes for bills reported to study when the vote appears on the linked study order bill, even if not posted on the original bill's page.
+
+## Why This Matters
+
+Some committees bundle multiple bills into a single study order and post the vote only on that consolidated bill. Previously, the Tracker marked these as "no vote posted"--but citizens following the original bill *can* find the vote by clicking through to the study order.
+
+This update brings the Tracker's logic in line with how the Legislature actually posts these votes.
+
+## Example
+
+**[S.2312](https://malegislature.gov/Bills/194/S2312)** was sent to study without a vote on its own page. However, it links to **[S.2774](https://malegislature.gov/Bills/194/S2774)**, a study order bill that bundles multiple bills together--and *that* bill has a vote posted.
+
+**Before:** S.2312 counted as "no vote posted"  
+**Now:** S.2312 counts as having a vote (via the linked study order)
+
+## Important Limitation
+
+**This logic does NOT apply to redrafted bills.** 
+
+When a committee redrafts legislation, there's no objective way to determine if the new draft is substantially similar or completely different from the original. The Tracker treats originals and redrafts as separate bills, each requiring their own compliance documentation.
+
+## Impact
+
+This change improves accuracy for bills sent to study orders. It only affects vote compliance--other requirements (notice, deadlines, summaries) remain unchanged.
+
+*Updated February 11, 2026 | Version 1.3.2*
+`
   }
 ]
