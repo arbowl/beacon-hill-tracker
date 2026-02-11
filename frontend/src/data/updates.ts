@@ -235,5 +235,26 @@ I've also been monitoring how the timeline code handles deadlines as they happen
 
 As always, thank you for your interest and support. All changes to the algorithm are documented in the [changelog](https://beaconhilltracker.org/about), and I'll continue to post updates here as significant developments occur. If you have feedback, questions, suggestions, or edge cases you'd like me to consider, please don't hesitate to [reach out!](https://beaconhilltracker.org/contact)`,
     type: 'announcement',
+  },
+  {
+    id: 15,
+    date: '2026-02-10',
+    title: 'Presenting: Beacon Hill Stipends',
+    content: `
+I'm happy to announce a companion project to the Tracker, [Beacon Hill Stipends](https://beaconhillstipends.org/).
+
+Beacon Hill Stipends is a new side-project which focuses on the pay structure of the Legislature. It works by creating a statute-based model as dictated by Mass. Const. amend. Art. CXVIII and Mass. Gen. Laws ch. 3, §§ 9B–9C. I manually verified each legislator in the model against CTHRU payroll data to ensure that the numbers were accurate within a small margin of error (mostly due to rounding).
+
+You can search your legislator by name, sort by pay amount, chamber, and party. It will show which leadership and committee roles pay out, which ones are discarded by law, and how much each one pays. It's also interactive; you can click each salary component to see where in the law that amount is defined. You can export the data for your own projects by clicking the "📜" next to a legislator's name, which yields the full data packet with sources.
+
+The purpose of this project is threefold:
+1. To act as a resource so citizens can see what goes into their legislators' salaries.
+2. To map each salary component to its statute for research and data purposes.
+3. To make the convoluted pay structure of the Massachusetts Legislature more transparent.
+
+I will still continue to maintain the Tracker and provide regular maintenance and updates. Beacon Hill Stipends is just another tool in the toolbox, and will fuel additional insights provided as part of the larger transparency and accountability project.
+
+As always, remember that the Stipends and the Tracker are models, not authoritative sources. They complement--but do not replace--official Legislature sources.`,
+    type: 'announcement',
   }
 ]
