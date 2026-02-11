@@ -293,6 +293,7 @@ When a committee redrafts legislation, there's no objective way to determine if 
 This change improves accuracy for bills sent to study orders. It only affects vote compliance--other requirements (notice, deadlines, summaries) remain unchanged.
 
 *Updated February 11, 2026 | Version 1.3.2*
-`
+`,
+    type: 'update'
   }
 ]
