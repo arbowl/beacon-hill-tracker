@@ -241,20 +241,24 @@ As always, thank you for your interest and support. All changes to the algorithm
     date: '2026-02-10',
     title: 'Presenting: Beacon Hill Stipends',
     content: `
-I'm happy to announce a companion project to the Tracker, [Beacon Hill Stipends](https://beaconhillstipends.org/).
+I'm happy to announce a companion project to the Tracker: [Beacon Hill Stipends](https://beaconhillstipends.org/).
 
-Beacon Hill Stipends is a new side-project which focuses on the pay structure of the Legislature. It works by creating a statute-based model as dictated by Mass. Const. amend. Art. CXVIII and Mass. Gen. Laws ch. 3, §§ 9B–9C. I manually verified each legislator in the model against CTHRU payroll data to ensure that the numbers were accurate within a small margin of error (mostly due to rounding).
+Beacon Hill Stipends reveals how much each Massachusetts legislator earns--and why. The tool breaks down every component of legislative compensation, from base salary to leadership stipends, with full statutory provenance.
 
-You can search your legislator by name, sort by pay amount, chamber, and party. It will show which leadership and committee roles pay out, which ones are discarded by law, and how much each one pays. It's also interactive; you can click each salary component to see where in the law that amount is defined. You can export the data for your own projects by clicking the "📜" next to a legislator's name, which yields the full data packet with sources.
+The tool works by creating a statute-based model as dictated by Mass. Const. amend. Art. CXVIII and Mass. Gen. Laws ch. 3, §§ 9B–9C. I manually verified each legislator against CTHRU payroll data to ensure accuracy within a small margin of error (mostly due to rounding).
 
-The purpose of this project is threefold:
-1. To act as a resource so citizens can see what goes into their legislators' salaries.
-2. To map each salary component to its statute for research and data purposes.
-3. To make the convoluted pay structure of the Massachusetts Legislature more transparent.
+You can search by name, sort by pay amount, chamber, or party. The site shows which leadership and committee roles pay stipends, which are discarded by law, and how much each pays. It's interactive--click any salary component to see where in statute that amount is defined. Export the data for your own projects using the "📋" button.
 
-I will still continue to maintain the Tracker and provide regular maintenance and updates. Beacon Hill Stipends is just another tool in the toolbox, and will fuel additional insights provided as part of the larger transparency and accountability project.
+What you can do with Beacon Hill Stipends:
+- See how much your legislator earns in base pay, leadership stipends, and travel allowances
+- Compare compensation across the Legislature by party, chamber, district, or role
+- Cross-reference pay with performance using Tracker compliance data to see if extra pay correlates with better transparency
 
-As always, remember that the Stipends and the Tracker are models, not authoritative sources. They complement--but do not replace--official Legislature sources.`,
+I'll continue to maintain the Tracker and provide regular updates. Beacon Hill Stipends is another tool in the toolbox, fueling additional insights as part of the larger transparency and accountability project.
+
+As always, remember that the Stipends site and the Tracker are models, not authoritative sources. They complement--but do not replace--official Legislature sources.
+
+Explore legislative compensation at [beaconhillstipends.org](https://beaconhillstipends.org/).`,
     type: 'announcement',
   }
 ]
