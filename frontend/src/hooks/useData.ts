@@ -45,6 +45,8 @@ export const useBills = (filters?: DashboardFilters, page?: number, pageSize?: n
   const [totalPages, setTotalPages] = useState(0)
 
   useEffect(() => {
+    let cancelled = false
+
     const fetchBills = async () => {
       try {
         setLoading(true)
@@ -83,19 +85,22 @@ export const useBills = (filters?: DashboardFilters, page?: number, pageSize?: n
         }
 
         const response = await apiService.getBills(params)
+        if (cancelled) return
         // Handle both old format (array) and new format (object with bills array)
         const billsData = response.data.bills || response.data || []
         setBills(Array.isArray(billsData) ? billsData : [])
         setTotalCount(response.data.total || response.data.count || billsData.length || 0)
         setTotalPages(response.data.totalPages || Math.ceil((response.data.total || billsData.length || 0) / (pageSize || 100)))
       } catch (err: any) {
+        if (cancelled) return
         setError(err.response?.data?.error || 'Failed to fetch bills')
       } finally {
-        setLoading(false)
+        if (!cancelled) setLoading(false)
       }
     }
 
     fetchBills()
+    return () => { cancelled = true }
   }, [filters, page, pageSize, sortBy, sortDir])
 
   const refetch = () => {
@@ -169,6 +174,8 @@ export const useFilteredStats = (filters?: DashboardFilters) => {
       return
     }
 
+    let cancelled = false
+
     const fetchStats = async () => {
       try {
         setLoading(true)
@@ -195,15 +202,18 @@ export const useFilteredStats = (filters?: DashboardFilters) => {
         }
 
         const response = await apiService.getBillsStats(params)
+        if (cancelled) return
         setStats(response.data)
       } catch (err: any) {
+        if (cancelled) return
         setError(err.response?.data?.error || 'Failed to fetch statistics')
       } finally {
-        setLoading(false)
+        if (!cancelled) setLoading(false)
       }
     }
 
     fetchStats()
+    return () => { cancelled = true }
   }, [filters])
 
   return { data: stats, loading, error }
@@ -217,6 +227,8 @@ export const useViolationAnalysis = (filters?: DashboardFilters) => {
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
+    let cancelled = false
+
     const fetchViolations = async () => {
       try {
         setLoading(true)
@@ -246,6 +258,7 @@ export const useViolationAnalysis = (filters?: DashboardFilters) => {
         }
 
         const response = await apiService.getBillsViolations(params)
+        if (cancelled) return
         const violationsData = Array.isArray(response.data) ? response.data : []
         
         // Filter out "Deadline Passed" violations
@@ -260,15 +273,17 @@ export const useViolationAnalysis = (filters?: DashboardFilters) => {
           console.debug('No violations found for filters:', params)
         }
       } catch (err: any) {
+        if (cancelled) return
         console.error('Error fetching violations:', err)
         setError(err.response?.data?.error || 'Failed to fetch violation analysis')
         setViolations([]) // Ensure we always have an array
       } finally {
-        setLoading(false)
+        if (!cancelled) setLoading(false)
       }
     }
 
     fetchViolations()
+    return () => { cancelled = true }
   }, [filters])
 
   return { data: violations, loading, error }
@@ -326,22 +341,27 @@ export const useCommitteeCompliance = (committeeId?: string) => {
       return
     }
 
+    let cancelled = false
+
     const fetchCompliance = async () => {
       try {
         setLoading(true)
         setError(null)
         const response = await apiService.getCommitteeCompliance(committeeId)
+        if (cancelled) return
         // Handle both old format (array) and new format (object with bills array)
         const complianceDataArray = response.data.bills || response.data || []
         setComplianceData(Array.isArray(complianceDataArray) ? complianceDataArray : [])
       } catch (err: any) {
+        if (cancelled) return
         setError(err.response?.data?.error || 'Failed to fetch compliance data')
       } finally {
-        setLoading(false)
+        if (!cancelled) setLoading(false)
       }
     }
 
     fetchCompliance()
+    return () => { cancelled = true }
   }, [committeeId])
 
   return { complianceData, loading, error }
@@ -354,6 +374,8 @@ export const useComplianceData = (filters?: DashboardFilters) => {
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
+    let cancelled = false
+
     const fetchCompliance = async () => {
       try {
         setLoading(true)
@@ -382,17 +404,20 @@ export const useComplianceData = (filters?: DashboardFilters) => {
         }
 
         const response = await apiService.getComplianceData(params)
+        if (cancelled) return
         // Handle both old format (array) and new format (object with bills array)
         const complianceDataArray = response.data.bills || response.data || []
         setComplianceData(Array.isArray(complianceDataArray) ? complianceDataArray : [])
       } catch (err: any) {
+        if (cancelled) return
         setError(err.response?.data?.error || 'Failed to fetch compliance data')
       } finally {
-        setLoading(false)
+        if (!cancelled) setLoading(false)
       }
     }
 
     fetchCompliance()
+    return () => { cancelled = true }
   }, [filters])
 
   return { complianceData, loading, error }
@@ -632,20 +657,25 @@ export const useCommitteeDetails = (committeeId: string | null) => {
       return
     }
 
+    let cancelled = false
+
     const fetchCommitteeDetails = async () => {
       try {
         setLoading(true)
         setError(null)
         const response = await apiService.getCommittee(committeeId)
+        if (cancelled) return
         setCommittee(response.data)
       } catch (err: any) {
+        if (cancelled) return
         setError(err.response?.data?.error || 'Failed to fetch committee details')
       } finally {
-        setLoading(false)
+        if (!cancelled) setLoading(false)
       }
     }
 
     fetchCommitteeDetails()
+    return () => { cancelled = true }
   }, [committeeId])
 
   return { committee, loading, error }
@@ -669,6 +699,8 @@ export const useCommitteeMetadata = (
       return
     }
 
+    let cancelled = false
+
     const fetchMetadata = async () => {
       try {
         setLoading(true)
@@ -681,18 +713,21 @@ export const useCommitteeMetadata = (
           params.compare_date = compareDate
         }
         const response = await apiService.getCommitteeMetadata(committeeId, params)
+        if (cancelled) return
         console.log('Committee metadata response:', response.data)
         setMetadata(response.data)
       } catch (err: any) {
+        if (cancelled) return
         console.error('Error fetching committee metadata:', err)
         setError(err.response?.data?.error || 'Failed to fetch committee metadata')
         setMetadata(null)
       } finally {
-        setLoading(false)
+        if (!cancelled) setLoading(false)
       }
     }
 
     fetchMetadata()
+    return () => { cancelled = true }
   }, [committeeId, interval, compareDate])
 
   return { metadata, loading, error }
@@ -741,22 +776,27 @@ export const useCommitteeScanDates = (committeeId: string | null) => {
       return
     }
 
+    let cancelled = false
+
     const fetchScanDates = async () => {
       try {
         setLoading(true)
         setError(null)
         const response = await apiService.getCommitteeScanDates(committeeId)
+        if (cancelled) return
         setScanDates(Array.isArray(response.data) ? response.data : [])
       } catch (err: any) {
+        if (cancelled) return
         console.error('Error fetching committee scan dates:', err)
         setError(err.response?.data?.error || 'Failed to fetch committee scan dates')
         setScanDates([])
       } finally {
-        setLoading(false)
+        if (!cancelled) setLoading(false)
       }
     }
 
     fetchScanDates()
+    return () => { cancelled = true }
   }, [committeeId])
 
   return { scanDates, loading, error }
