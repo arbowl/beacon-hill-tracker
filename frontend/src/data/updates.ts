@@ -278,7 +278,7 @@ This report marks the start of a series which will draw upon the insights of the
     date: '2026-02-12',
     title: 'Anatomy of Non-Compliance, #2: Deadline Drift',
     content: `
-The intent of rules is unermined when flexibility is the default.
+The intent of rules is undermined when flexibility is the default.
 
 Today's data brief explores the non-compliance patterns of the Joint Committee on Telecommunications, Utilities and Energy--a committee which the Tracker has found misses reporting deadlines 100% of the time. In many cases, extension authority places the deadline well past the normally-allowed 90-day deadline set by the House Rules, demonstrating how systematic flexibility erodes the impact of transparency reforms.
 
@@ -286,4 +286,5 @@ Today's data brief explores the non-compliance patterns of the Joint Committee o
     type: 'insight'
   }
 ]
+
 
