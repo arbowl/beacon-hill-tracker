@@ -280,11 +280,12 @@ This report marks the start of a series which will draw upon the insights of the
     content: `
 The intent of rules is undermined when flexibility is the default.
 
-Today's data brief explores the non-compliance patterns of the Joint Committee on Telecommunications, Utilities and Energy--a committee which the Tracker has found misses reporting deadlines 100% of the time. In many cases, extension authority places the deadline well past the normally-allowed 90-day deadline set by the House Rules, demonstrating how systematic flexibility erodes the impact of transparency reforms.
+Today's data brief explores the non-compliance patterns of the Joint Committee on Telecommunications, Utilities and Energy--a committee which the Tracker has found misses reporting deadlines and documentation requirements 100% of the time. In many cases, extension authority places the deadline well past the normally-allowed 90-day deadline set by the House Rules, demonstrating how systematic flexibility erodes the impact of transparency reforms.
 
 [Read the report here (PDF)](/documents/noncompliance_anatomy_2.pdf)`,
     type: 'insight'
   }
 ]
+
 
 
