@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect } from 'react'
+import React, { useState, useMemo, useEffect, useRef } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { useGlobalStats, useCommittees, useBills, useCommitteeStats, useSavedViews, useCommitteeDetails, useDebounce, useCommitteeMetadata, useGlobalMetadata, useFilteredStats, useViolationAnalysis } from '../hooks/useData'
 import { useAuth } from '../contexts/AuthContext'
@@ -37,6 +37,7 @@ const DashboardPage: React.FC = () => {
   const [sortColumn, setSortColumn] = useState<string | null>(null)
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc' | null>(null)
   const [isLoadingFromURL, setIsLoadingFromURL] = useState(true)
+  const isUpdatingURLRef = useRef(false)
   const [showCharts, setShowCharts] = useState(true)
   const [showCommitteeContact, setShowCommitteeContact] = useState(false)
 
@@ -49,10 +50,15 @@ const DashboardPage: React.FC = () => {
     searchTerm: debouncedSearchTerm
   }), [filters.committees, filters.chambers, filters.states, filters.dateRange, debouncedSearchTerm])
 
-  // Load filters and view state from URL parameters (for saved views and shared links)
-  // Only runs on initial page load to prevent circular updates
+  // Load filters and view state from URL parameters (for saved views, shared links, and in-app navigation)
+  // Runs whenever searchParams change from external navigation, but skips changes
+  // caused by our own state→URL sync (detected via isUpdatingURLRef)
   useEffect(() => {
-    if (!isLoadingFromURL) return
+    // Skip URL changes caused by our own state→URL sync
+    if (isUpdatingURLRef.current) {
+      isUpdatingURLRef.current = false
+      return
+    }
 
     const committees = searchParams.get('committees')?.split(',').filter(Boolean) || []
     const chambers = searchParams.get('chambers')?.split(',').filter(Boolean) || []
@@ -98,9 +104,9 @@ const DashboardPage: React.FC = () => {
       }
     }
 
-    // Mark as loaded to prevent future runs
+    // Mark initial load complete so state→URL sync can begin
     setIsLoadingFromURL(false)
-  }, [searchParams, isLoadingFromURL])
+  }, [searchParams])
 
   // Check if view name already exists
   const viewNameExists = savedViews && Array.isArray(savedViews) 
@@ -296,6 +302,7 @@ const DashboardPage: React.FC = () => {
 
     // Update URL with current state
     const timer = setTimeout(() => {
+      isUpdatingURLRef.current = true
       updateURLWithViewState()
     }, 100)
     return () => clearTimeout(timer)
