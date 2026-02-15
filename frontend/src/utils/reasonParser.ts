@@ -91,7 +91,7 @@ export function parseReason(reason: string): ParsedReason {
   }
 
   // Check for notice violations (but only if not exempt)
-  if (reasonLower.includes('notice') && !reasonLower.includes('exempt from notice')) {
+  if (reasonLower.includes('insufficient hearing notice')) {
     violations.push(VIOLATION_TYPES.find(v => v.id === 'notice_violation')!)
   }
 
@@ -185,4 +185,5 @@ export function formatForChart(analysis: ReasonAnalysis[]) {
     borderColor: analysis.map(item => item.violation.color),
   }
 }
+
 
