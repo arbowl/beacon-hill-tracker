@@ -946,7 +946,7 @@ def create_app():
                         violation_counts['no_summaries_posted']['count'] += 1
                         violation_counts['no_summaries_posted']['bills'].append(bill_id)
                     
-                    if 'notice' in reason and 'exempt from notice' not in reason:
+                    if 'insufficient hearing notice' in reason:
                         violation_counts['notice_violation']['count'] += 1
                         violation_counts['notice_violation']['bills'].append(bill_id)
                     
