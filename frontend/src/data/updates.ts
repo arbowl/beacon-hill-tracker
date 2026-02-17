@@ -284,6 +284,18 @@ Today's data brief explores the non-compliance patterns of the Joint Committee o
 
 [Read the report here (PDF)](/documents/noncompliance_anatomy_2.pdf)`,
     type: 'insight'
+  },
+  {
+    id: 18,
+    date: '2026-02-17',
+    title: 'Anatomy of Non-Compliance, #3: Systemic Non-Compliance',
+    content: `
+Rules only matter when they're actually followed.
+
+Today's report studies the Joint Committee on Economic Development and Emerging Technologies, one of only a few committees the Tracker claims a 0.00% compliance track record for. Bills in this committee tend to slip deadlines and lack votes, making it difficult for constituents to follow the outcomes of important bills relating to AI, gaming, gambling, and more.
+
+[Read the report here (PDF)](/documents/noncompliance_anatomy_3.pdf)`,
+    type: 'insight'
   }
 ]
 
