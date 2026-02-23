@@ -296,6 +296,18 @@ Today's report studies the Joint Committee on Economic Development and Emerging 
 
 [Read the report here (PDF)](/documents/noncompliance_anatomy_3.pdf)`,
     type: 'insight'
+  },
+  {
+    id: 19,
+    date: '2026-02-22',
+    title: 'Anatomy of Non-Compliance, #4: Deferred Accountability',
+    content: `
+When deadlines are systematically ignored, transparency becomes accidental.
+
+This latest report on the Judiciary explores how various ways of missing deadlines set by the Joint Rules can cascade into other failure types. Bills are routinely acted upon late, stalled forever, or delayed repeatedly. Predictability is nigh impossible for everyday citizens when action is only ever decided on opaque internal timelines.
+
+[Read the report here (PDF)](/documents/noncompliance_anatomy_4.pdf)`,
+    type: 'insight'
   }
 ]
 
