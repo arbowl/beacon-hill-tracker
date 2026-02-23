@@ -300,7 +300,7 @@ Today's report studies the Joint Committee on Economic Development and Emerging 
   {
     id: 19,
     date: '2026-02-22',
-    title: 'Anatomy of Non-Compliance, #4: Deferred Accountability',
+    title: 'Anatomy of Non-Compliance, #4: Justice Delayed',
     content: `
 When deadlines are systematically ignored, transparency becomes accidental.
 
