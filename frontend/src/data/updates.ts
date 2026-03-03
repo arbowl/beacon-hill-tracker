@@ -310,7 +310,7 @@ This latest report on the Judiciary explores how various ways of missing deadlin
     type: 'insight'
   },
   {
-    id: 19,
+    id: 20,
     date: '2026-03-03',
     title: 'Brief Interruption in Daily Updates',
     content: `The computer I use to run the Tracker is currently experiencing some hardware issues, which is causing a brief interruption in daily updates. I'm working on resolving the issue as quickly as possible, but in the meantime, there may be a delay in the usual daily data refresh.
