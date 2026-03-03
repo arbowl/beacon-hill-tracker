@@ -308,6 +308,15 @@ This latest report on the Judiciary explores how various ways of missing deadlin
 
 [Read the report here (PDF)](/documents/noncompliance_anatomy_4.pdf)`,
     type: 'insight'
+  },
+  {
+    id: 19,
+    date: '2026-03-03',
+    title: 'Brief Interruption in Daily Updates',
+    content: `The computer I use to run the Tracker is currently experiencing some hardware issues, which is causing a brief interruption in daily updates. I'm working on resolving the issue as quickly as possible, but in the meantime, there may be a delay in the usual daily data refresh.
+
+I'll post an update here once the issue is resolved and daily updates are back on track.`,
+    type: 'alert'
   }
 ]
 
