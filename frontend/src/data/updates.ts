@@ -317,6 +317,13 @@ This latest report on the Judiciary explores how various ways of missing deadlin
 
 I'll post an update here once the issue is resolved and daily updates are back on track.`,
     type: 'alert'
+  },
+  {
+    id: 21,
+    date: '2026-03-06',
+    title: 'Daily Updates Resumed',
+    content: `The hardware issue that caused the interruption in daily updates has been resolved, and the Tracker is back to its regular update schedule. Daily data refreshes will now occur as usual, providing up-to-date information on legislative compliance.`,
+    type: 'alert'
   }
 ]
 
