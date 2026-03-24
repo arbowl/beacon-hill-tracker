@@ -1,0 +1,512 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Committee Voting Patterns in the Massachusetts Legislature</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Libre+Baskerville:ital,wght@0,400;0,700;1,400&family=Source+Sans+3:wght@400;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --ink: #1a1a1a;
+      --paper: #faf8f5;
+      --accent: #8b2332;
+      --muted: #6b6b6b;
+      --rule: #d4d0c8;
+      --dem-blue: #2166ac;
+      --rep-red: #b2182b;
+      --highlight: #fff3cd;
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Source Sans 3', system-ui, sans-serif;
+      background: var(--paper);
+      color: var(--ink);
+      line-height: 1.7;
+      font-size: 18px;
+    }
+
+    .container {
+      max-width: 720px;
+      margin: 0 auto;
+      padding: 2rem 1.5rem 4rem;
+    }
+
+    header {
+      text-align: center;
+      padding: 3rem 0 2.5rem;
+      border-bottom: 3px double var(--rule);
+      margin-bottom: 2.5rem;
+    }
+
+    .kicker {
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 0.15em;
+      color: var(--accent);
+      font-weight: 600;
+      margin-bottom: 0.75rem;
+    }
+
+    h1 {
+      font-family: 'Libre Baskerville', Georgia, serif;
+      font-size: clamp(2rem, 5vw, 2.75rem);
+      font-weight: 700;
+      line-height: 1.2;
+      margin-bottom: 1rem;
+      letter-spacing: -0.02em;
+    }
+
+    .subtitle {
+      font-size: 1.25rem;
+      color: var(--muted);
+      font-style: italic;
+      font-family: 'Libre Baskerville', Georgia, serif;
+    }
+
+    .byline {
+      margin-top: 1.5rem;
+      font-size: 0.9rem;
+      color: var(--muted);
+    }
+
+    .lede {
+      font-size: 1.35rem;
+      line-height: 1.6;
+      margin-bottom: 2rem;
+      font-family: 'Libre Baskerville', Georgia, serif;
+    }
+
+    p {
+      margin-bottom: 1.25rem;
+    }
+
+    h2 {
+      font-family: 'Libre Baskerville', Georgia, serif;
+      font-size: 1.5rem;
+      margin: 2.5rem 0 1rem;
+      padding-top: 1.5rem;
+      border-top: 1px solid var(--rule);
+    }
+
+    .big-number-section {
+      background: linear-gradient(135deg, var(--ink) 0%, #2d2d2d 100%);
+      color: white;
+      padding: 2.5rem 2rem;
+      margin: 2rem -1.5rem;
+      text-align: center;
+    }
+
+    .big-number {
+      font-size: 4rem;
+      font-weight: 700;
+      line-height: 1;
+      margin-bottom: 0.5rem;
+    }
+
+    .big-label {
+      font-size: 1rem;
+      opacity: 0.9;
+      max-width: 500px;
+      margin: 0 auto;
+    }
+
+    .big-number-caption {
+      margin-top: 1.5rem;
+      font-size: 0.95rem;
+      opacity: 0.85;
+      max-width: 400px;
+      margin-left: auto;
+      margin-right: auto;
+    }
+
+    .comparison-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 1.5rem 0;
+      font-size: 0.95rem;
+    }
+
+    .comparison-table th {
+      text-align: left;
+      font-weight: 600;
+      padding: 0.75rem 0.5rem;
+      border-bottom: 2px solid var(--ink);
+      font-size: 0.8rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .comparison-table td {
+      padding: 0.6rem 0.5rem;
+      border-bottom: 1px solid var(--rule);
+    }
+
+    .comparison-table tr:last-child td {
+      border-bottom: none;
+    }
+
+    .comparison-table .num {
+      text-align: right;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .comparison-table .highlight-row {
+      background: var(--highlight);
+      font-weight: 600;
+    }
+
+    .callout {
+      background: white;
+      border-left: 4px solid var(--accent);
+      padding: 1.25rem 1.5rem;
+      margin: 2rem 0;
+      font-size: 1.1rem;
+      font-style: italic;
+      font-family: 'Libre Baskerville', Georgia, serif;
+    }
+
+    .methodology-box {
+      background: #f0ece4;
+      padding: 1.5rem;
+      margin: 2rem 0;
+      border-radius: 4px;
+      font-size: 0.9rem;
+    }
+
+    .methodology-box h3 {
+      font-size: 0.8rem;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      margin-bottom: 0.75rem;
+      color: var(--muted);
+    }
+
+    .methodology-box p {
+      margin-bottom: 0.75rem;
+    }
+
+    .methodology-box p:last-child {
+      margin-bottom: 0;
+    }
+
+    .bar-chart {
+      margin: 1.5rem 0;
+    }
+
+    .bar-row {
+      display: flex;
+      align-items: center;
+      margin-bottom: 0.75rem;
+    }
+
+    .bar-label {
+      width: 180px;
+      font-size: 0.85rem;
+      font-weight: 600;
+    }
+
+    .bar-track {
+      flex: 1;
+      height: 28px;
+      background: #e8e4dc;
+      border-radius: 4px;
+      overflow: hidden;
+      position: relative;
+    }
+
+    .bar-fill {
+      height: 100%;
+      border-radius: 4px 0 0 4px;
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      padding-right: 8px;
+      font-size: 0.8rem;
+      font-weight: 600;
+      color: white;
+      min-width: 40px;
+      background: var(--accent);
+    }
+
+    .context-section {
+      background: white;
+      padding: 2rem;
+      margin: 2.5rem -1.5rem;
+      border-top: 1px solid var(--rule);
+      border-bottom: 1px solid var(--rule);
+    }
+
+    .context-section h2 {
+      border: none;
+      padding-top: 0;
+      margin-top: 0;
+    }
+
+    .stat-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 1rem;
+      margin: 1.5rem 0;
+    }
+
+    .stat-item {
+      text-align: center;
+      padding: 1rem 0.5rem;
+      background: var(--paper);
+      border-radius: 4px;
+    }
+
+    .stat-value {
+      font-size: 1.75rem;
+      font-weight: 700;
+      color: var(--accent);
+      line-height: 1.2;
+    }
+
+    .stat-label {
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--muted);
+      margin-top: 0.25rem;
+    }
+
+    footer {
+      margin-top: 3rem;
+      padding-top: 2rem;
+      border-top: 1px solid var(--rule);
+      font-size: 0.85rem;
+      color: var(--muted);
+    }
+
+    footer p {
+      margin-bottom: 0.5rem;
+    }
+
+    @media (max-width: 600px) {
+      .stat-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .bar-label {
+        width: 120px;
+        font-size: 0.8rem;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <div class="kicker">Massachusetts Legislative Analysis</div>
+      <h1>Member Voting Patterns in Committee</h1>
+      <p class="subtitle">How often do legislators vote independently?</p>
+      <p class="byline">Analysis of 20,471 committee votes • 194th General Court through February 2026</p>
+    </header>
+
+    <p class="lede">
+      When Massachusetts legislative committees take recorded votes, members vote with their 
+      committee chair's recommendation 87% of the time. But beneath that aggregate figure 
+      lies substantial variation by chamber and party.
+    </p>
+
+    <div class="big-number-section">
+      <div class="big-number">87%</div>
+      <div class="big-label">
+        of all committee member votes align with the chair's motion
+      </div>
+      <p class="big-number-caption">
+        Based on 20,471 individual member votes across Joint Committees in the 194th General Court
+      </p>
+    </div>
+
+    <p>
+      This analysis examines how Massachusetts legislators vote in committee—specifically, 
+      whether members exercise independent judgment or typically defer to committee leadership. 
+      The data reveals consistent patterns across chambers and parties.
+    </p>
+
+    <h2>Voting Independence by Chamber and Party</h2>
+
+    <p>
+      Across all recorded committee votes, most members vote in favor of the chair's motion. 
+      However, dissent rates—defined as voting Adverse (Nay) or Reserve Rights (Present)—vary 
+      considerably:
+    </p>
+
+    <div class="bar-chart">
+      <div class="bar-row">
+        <span class="bar-label">Senate Republicans</span>
+        <div class="bar-track">
+          <div class="bar-fill" style="width: 47.9%;">47.9%</div>
+        </div>
+      </div>
+      <div class="bar-row">
+        <span class="bar-label">House Republicans</span>
+        <div class="bar-track">
+          <div class="bar-fill" style="width: 15.1%;">15.1%</div>
+        </div>
+      </div>
+      <div class="bar-row">
+        <span class="bar-label">Senate Democrats</span>
+        <div class="bar-track">
+          <div class="bar-fill" style="width: 3.2%;">3.2%</div>
+        </div>
+      </div>
+      <div class="bar-row">
+        <span class="bar-label">House Democrats</span>
+        <div class="bar-track">
+          <div class="bar-fill" style="width: 0.3%;">0.3%</div>
+        </div>
+      </div>
+    </div>
+
+    <p>
+      Senate Republicans dissent on nearly half of all votes, while House Democrats dissent 
+      on fewer than one in 200. Members in the minority party are substantially more likely 
+      to vote against their committee chair's recommendation than those in the majority.
+    </p>
+
+    <div class="callout">
+      Reserve Rights votes—a procedural way to signal disagreement without casting a formal 
+      Nay—account for 43% of all Senate Republican votes, compared to less than 2% for Senate 
+      Democrats.
+    </div>
+
+    <h2>Favorable Reports vs. Study Orders</h2>
+
+    <p>
+      When committees send bills to "study"—effectively ending their consideration—members 
+      are more likely to dissent than when reporting bills favorably. This pattern holds 
+      across all groups:
+    </p>
+
+    <table class="comparison-table">
+      <thead>
+        <tr>
+          <th>Chamber & Party</th>
+          <th class="num">Favorable Bills</th>
+          <th class="num">Study Orders</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr class="highlight-row">
+          <td>Senate Republicans</td>
+          <td class="num">34.4%</td>
+          <td class="num">70.5%</td>
+        </tr>
+        <tr>
+          <td>House Republicans</td>
+          <td class="num">14.7%</td>
+          <td class="num">19.5%</td>
+        </tr>
+        <tr>
+          <td>Senate Democrats</td>
+          <td class="num">2.9%</td>
+          <td class="num">3.7%</td>
+        </tr>
+        <tr>
+          <td>House Democrats</td>
+          <td class="num">0.2%</td>
+          <td class="num">0.8%</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <p>
+      Members are roughly twice as likely to dissent when bills are sent to study. For Senate 
+      Republicans, the dissent rate on study orders reaches 70.5%—more than double their rate 
+      on favorable reports.
+    </p>
+
+    <div class="context-section">
+      <h2>Transparency Context</h2>
+
+      <p>
+        These voting patterns exist within a broader transparency landscape. Additional analysis 
+        of committee reporting reveals:
+      </p>
+
+      <div class="stat-grid">
+        <div class="stat-item">
+          <div class="stat-value">28.8%</div>
+          <div class="stat-label">Committee actions lacking posted votes</div>
+        </div>
+        <div class="stat-item">
+          <div class="stat-value">2×</div>
+          <div class="stat-label">Study orders vs. favorable reports without votes</div>
+        </div>
+        <div class="stat-item">
+          <div class="stat-value">20,471</div>
+          <div class="stat-label">Individual votes analyzed</div>
+        </div>
+      </div>
+
+      <p>
+        Among Joint Committees, 28.8% of report-out actions have no posted vote record. 
+        Bills sent to study were less likely to have recorded votes (59%) than bills reported 
+        favorably (78%), suggesting committees are less inclined to create public voting records 
+        when the outcome is negative.
+      </p>
+
+      <p>
+        This vote analysis covers only bills where committees did post votes—representing 
+        71.2% of all committee report-out actions in the 194th General Court through February 2026.
+      </p>
+    </div>
+
+    <h2>What This Means</h2>
+
+    <p>
+      The 87% overall alignment rate indicates that committee votes typically reflect consensus 
+      rather than contested deliberation. However, this aggregate figure masks significant 
+      variation:
+    </p>
+
+    <p>
+      Majority-party members (Democrats in both chambers) vote with their chairs more than 96% 
+      of the time. Minority-party members show substantially more independence, particularly 
+      in the Senate where Republicans dissent on nearly half of all votes.
+    </p>
+
+    <p>
+      The increased dissent on study orders—bills being effectively killed—suggests members 
+      are more willing to register disagreement when bills are being buried than when they're 
+      advancing.
+    </p>
+
+    <div class="methodology-box">
+      <h3>Methodology</h3>
+      <p>
+        Analysis covers 20,471 individual member votes on bills with terminal committee outcomes 
+        (favorable report or study order) in Joint Committees of the 194th General Court, based 
+        on vote documents posted to malegislature.gov through February 20, 2026.
+      </p>
+      <p>
+        Committee chairs are excluded from all calculations. Party affiliations reflect member 
+        data from October 2025. Parse artifacts (garbled text from PDF documents, representing 
+        2.6% of raw records) were identified and excluded. Voice votes and unanimous consent 
+        actions leave no individual record and are not captured in this analysis.
+      </p>
+      <p>
+        "Dissent" includes both Adverse (Nay) votes and Reserve Rights (Present) votes. 
+        "Favorable" refers to Yea votes supporting the chair's motion. No Action votes (5.3% 
+        of total) are counted separately.
+      </p>
+    </div>
+
+    <footer>
+      <p><strong>Data source:</strong> Beacon Hill Compliance Tracker, February 20, 2026 snapshot</p>
+      <p><strong>Contact:</strong> info@beaconhilltracker.org | Full methodology at beaconhilltracker.org</p>
+    </footer>
+  </div>
+</body>
+</html>
