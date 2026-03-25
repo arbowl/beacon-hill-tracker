@@ -331,7 +331,7 @@ I'll post an update here once the issue is resolved and daily updates are back o
     title: 'Chair Independence Analysis: 20k votes, 87% alignment',
     content: `In this analysis, I examined over 20,000 recorded individual legislator votes in committees across the 194th General Court to assess legislators' independence from party leadership. By comparing each chair's votes to the majority position of their party, I found that, on average, chairs aligned with their party's majority position 87% of the time. This suggests a high level of party cohesion among committee chairs, with only a small percentage of votes deviating from the party line.
 
-[Read the full analysis here (PDF)](/documents/chair_independence_analysis.html)`,
+[Read the full analysis here (HTML)](/documents/chair_independence_analysis.html)`,
     type: 'insight',
   }
 ]
