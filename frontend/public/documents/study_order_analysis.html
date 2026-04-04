@@ -1,0 +1,733 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Running Out the Clock: Study Orders Filed After Deadline in the Massachusetts Legislature</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Libre+Baskerville:ital,wght@0,400;0,700;1,400&family=Source+Sans+3:wght@400;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --ink: #1a1a1a;
+      --paper: #faf8f5;
+      --accent: #8b2332;
+      --muted: #6b6b6b;
+      --rule: #d4d0c8;
+      --highlight: #fff3cd;
+      --late-dark: #5c1a24;
+      --late-mid: #8b2332;
+      --late-light: #c0616e;
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Source Sans 3', system-ui, sans-serif;
+      background: var(--paper);
+      color: var(--ink);
+      line-height: 1.7;
+      font-size: 18px;
+    }
+
+    .container {
+      max-width: 720px;
+      margin: 0 auto;
+      padding: 2rem 1.5rem 4rem;
+    }
+
+    header {
+      text-align: center;
+      padding: 3rem 0 2.5rem;
+      border-bottom: 3px double var(--rule);
+      margin-bottom: 2.5rem;
+    }
+
+    .kicker {
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 0.15em;
+      color: var(--accent);
+      font-weight: 600;
+      margin-bottom: 0.75rem;
+    }
+
+    h1 {
+      font-family: 'Libre Baskerville', Georgia, serif;
+      font-size: clamp(1.9rem, 5vw, 2.6rem);
+      font-weight: 700;
+      line-height: 1.2;
+      margin-bottom: 1rem;
+      letter-spacing: -0.02em;
+    }
+
+    .subtitle {
+      font-size: 1.2rem;
+      color: var(--muted);
+      font-style: italic;
+      font-family: 'Libre Baskerville', Georgia, serif;
+    }
+
+    .byline {
+      margin-top: 1.5rem;
+      font-size: 0.9rem;
+      color: var(--muted);
+    }
+
+    .lede {
+      font-size: 1.3rem;
+      line-height: 1.6;
+      margin-bottom: 2rem;
+      font-family: 'Libre Baskerville', Georgia, serif;
+    }
+
+    p {
+      margin-bottom: 1.25rem;
+    }
+
+    h2 {
+      font-family: 'Libre Baskerville', Georgia, serif;
+      font-size: 1.5rem;
+      margin: 2.5rem 0 1rem;
+      padding-top: 1.5rem;
+      border-top: 1px solid var(--rule);
+    }
+
+    h2:first-of-type {
+      margin-top: 0;
+    }
+
+    .big-number-section {
+      background: linear-gradient(135deg, var(--ink) 0%, #2d2d2d 100%);
+      color: white;
+      padding: 2.5rem 2rem;
+      margin: 2rem -1.5rem;
+      text-align: center;
+    }
+
+    .big-number {
+      font-size: 4.5rem;
+      font-weight: 700;
+      line-height: 1;
+      margin-bottom: 0.5rem;
+    }
+
+    .big-label {
+      font-size: 1.1rem;
+      opacity: 0.9;
+      max-width: 500px;
+      margin: 0 auto;
+    }
+
+    .big-number-caption {
+      margin-top: 1.25rem;
+      font-size: 0.9rem;
+      opacity: 0.75;
+      max-width: 440px;
+      margin-left: auto;
+      margin-right: auto;
+    }
+
+    .stat-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 1rem;
+      margin: 1.5rem 0;
+    }
+
+    .stat-item {
+      text-align: center;
+      padding: 1.25rem 0.5rem;
+      background: white;
+      border-radius: 4px;
+      border: 1px solid var(--rule);
+    }
+
+    .stat-value {
+      font-size: 1.9rem;
+      font-weight: 700;
+      color: var(--accent);
+      line-height: 1.1;
+    }
+
+    .stat-label {
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--muted);
+      margin-top: 0.4rem;
+    }
+
+    .callout {
+      background: white;
+      border-left: 4px solid var(--accent);
+      padding: 1.25rem 1.5rem;
+      margin: 2rem 0;
+      font-size: 1.1rem;
+      font-style: italic;
+      font-family: 'Libre Baskerville', Georgia, serif;
+    }
+
+    /* Bar chart */
+    .bar-chart {
+      margin: 1.5rem 0;
+    }
+
+    .bar-row {
+      display: flex;
+      align-items: center;
+      margin-bottom: 0.85rem;
+      gap: 0.75rem;
+    }
+
+    .bar-label {
+      width: 220px;
+      flex-shrink: 0;
+      font-size: 0.85rem;
+      font-weight: 600;
+      line-height: 1.3;
+    }
+
+    .bar-label .committee-id {
+      display: block;
+      font-weight: 400;
+      color: var(--muted);
+      font-size: 0.78rem;
+    }
+
+    .bar-track {
+      flex: 1;
+      height: 30px;
+      background: #e8e4dc;
+      border-radius: 3px;
+      overflow: hidden;
+      position: relative;
+    }
+
+    .bar-fill {
+      height: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      padding-right: 10px;
+      font-size: 0.82rem;
+      font-weight: 700;
+      color: white;
+      background: var(--accent);
+      min-width: 44px;
+    }
+
+    /* Monthly surge chart */
+    .monthly-chart {
+      margin: 1.5rem 0;
+    }
+
+    .monthly-row {
+      display: flex;
+      align-items: center;
+      margin-bottom: 0.65rem;
+      gap: 0.75rem;
+    }
+
+    .month-label {
+      width: 80px;
+      flex-shrink: 0;
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: var(--ink);
+    }
+
+    .monthly-track {
+      flex: 1;
+      height: 28px;
+      background: #e8e4dc;
+      border-radius: 3px;
+      overflow: hidden;
+    }
+
+    .monthly-fill {
+      height: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      padding-right: 10px;
+      font-size: 0.82rem;
+      font-weight: 700;
+      color: white;
+      background: var(--late-mid);
+      min-width: 36px;
+    }
+
+    .monthly-fill.surge {
+      background: var(--late-dark);
+    }
+
+    .monthly-fill.partial {
+      background: var(--late-light);
+    }
+
+    .month-note {
+      font-size: 0.78rem;
+      color: var(--muted);
+      font-style: italic;
+      flex-shrink: 0;
+      width: 70px;
+    }
+
+    /* Full breakdown table */
+    .comparison-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 1.5rem 0;
+      font-size: 0.9rem;
+    }
+
+    .comparison-table th {
+      text-align: left;
+      font-weight: 600;
+      padding: 0.75rem 0.5rem;
+      border-bottom: 2px solid var(--ink);
+      font-size: 0.78rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .comparison-table td {
+      padding: 0.55rem 0.5rem;
+      border-bottom: 1px solid var(--rule);
+      vertical-align: top;
+    }
+
+    .comparison-table tr:last-child td {
+      border-bottom: none;
+    }
+
+    .comparison-table .num {
+      text-align: right;
+      font-variant-numeric: tabular-nums;
+      font-size: 0.88rem;
+    }
+
+    .comparison-table .highlight-row td {
+      background: var(--highlight);
+      font-weight: 600;
+    }
+
+    .context-section {
+      background: white;
+      padding: 2rem;
+      margin: 2.5rem -1.5rem;
+      border-top: 1px solid var(--rule);
+      border-bottom: 1px solid var(--rule);
+    }
+
+    .context-section h2 {
+      border: none;
+      padding-top: 0;
+      margin-top: 0;
+    }
+
+    .methodology-box {
+      background: #f0ece4;
+      padding: 1.5rem;
+      margin: 2rem 0;
+      border-radius: 4px;
+      font-size: 0.88rem;
+      line-height: 1.65;
+    }
+
+    .methodology-box h3 {
+      font-size: 0.78rem;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      margin-bottom: 1rem;
+      color: var(--muted);
+    }
+
+    .methodology-box p {
+      margin-bottom: 0.85rem;
+    }
+
+    .methodology-box p:last-child {
+      margin-bottom: 0;
+    }
+
+    .methodology-box ul {
+      padding-left: 1.4rem;
+      margin-bottom: 0.85rem;
+    }
+
+    .methodology-box li {
+      margin-bottom: 0.4rem;
+    }
+
+    .caveat-label {
+      font-size: 0.72rem;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      font-weight: 700;
+      color: var(--accent);
+      margin-bottom: 0.25rem;
+    }
+
+    footer {
+      margin-top: 3rem;
+      padding-top: 2rem;
+      border-top: 1px solid var(--rule);
+      font-size: 0.85rem;
+      color: var(--muted);
+    }
+
+    footer p {
+      margin-bottom: 0.5rem;
+    }
+
+    .as-of-banner {
+      background: var(--highlight);
+      border: 1px solid #e6c84a;
+      padding: 0.75rem 1rem;
+      border-radius: 3px;
+      font-size: 0.88rem;
+      margin-bottom: 2rem;
+      color: #5a4a00;
+    }
+
+    @media (max-width: 600px) {
+      .stat-grid {
+        grid-template-columns: 1fr 1fr;
+      }
+      .bar-label {
+        width: 140px;
+        font-size: 0.8rem;
+      }
+      .month-note {
+        display: none;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+
+    <header>
+      <div class="kicker">Massachusetts Legislative Analysis · 194th General Court</div>
+      <h1>Running Out the Clock</h1>
+      <p class="subtitle">How 29 legislative committees sent 2,442 bills to study after missing their statutory deadlines</p>
+      <p class="byline">By Drew Bowler, Beacon Hill Compliance Tracker &nbsp;·&nbsp; Data through April 4, 2026</p>
+    </header>
+
+    <p class="lede">
+      When a Massachusetts legislative committee misses its deadline to act on a bill, the bill dies quietly. Days or even weeks later, it reappears on the legislative record with a single line: <em>"Accompanied a study order,"</em> effectively terminating its legislative progress for the session. An analysis of the 194th General Court finds this pattern — filing study orders well after the deadline has passed — occurred on 2,442 bills across 29 Joint Committees.
+    </p>
+
+    <div class="big-number-section">
+      <div class="big-number">2,442</div>
+      <div class="big-label">bills sent to study after their committee's reporting deadline had already passed</div>
+      <p class="big-number-caption">
+        Joint Committees of the 194th General Court (2025–2026) &nbsp;·&nbsp; Data through April 4, 2026
+      </p>
+    </div>
+
+    <p>
+      Under Joint Rule 10 and House Rule 27, every Joint Committee in the Massachusetts Legislature is required to make a final report — either reporting a bill favorably or sending it to study — within a set window after the bill is heard. Filing a study order after that window has closed does not cure the violation; it simply documents the outcome of a process that had already run past its deadline per the Legislature's own rules.
+    </p>
+
+    <div class="stat-grid">
+      <div class="stat-item">
+        <div class="stat-value">29</div>
+        <div class="stat-label">of 31 Joint Committees with late filings</div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-value">110</div>
+        <div class="stat-label">average days past deadline</div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-value">47%</div>
+        <div class="stat-label">of all late filings occurred in March 2026 alone</div>
+      </div>
+    </div>
+
+    <h2>What Is a Study Order?</h2>
+
+    <p>
+      In Massachusetts, when a committee declines to advance a bill, it files a "study order" — a formal resolution directing that the bill be set aside for further study, effectively ending its legislative progress for the session. Study orders are a normal and legitimate legislative tool when used within the allotted time window.
+    </p>
+
+    <p>
+      The problem documented here is timing. Each study order carries a date — the date the committee voted to file it. This analysis compares that date against each bill's computed deadline. When the study order is filed after the deadline, the committee has already violated the reporting requirement, regardless of the outcome it ultimately chose.
+    </p>
+
+    <div class="callout">
+      "All joint committees … shall make final report on all matters referred to and heard by them by the deadline determined by rule of the branch where the matter was filed."
+      <br><br>
+      — Massachusetts Joint Rule 10
+    </div>
+
+    <h2>The Top Five Committees</h2>
+
+    <p>
+      Five Joint Committees account for more than half of all late study orders — 1,301 bills, or 53% of the total. The Joint Committee on the Judiciary alone accounts for more than one in five.
+    </p>
+
+    <div class="bar-chart">
+      <div class="bar-row">
+        <span class="bar-label">
+          Judiciary
+          <span class="committee-id">Joint Committee on the Judiciary</span>
+        </span>
+        <div class="bar-track">
+          <div class="bar-fill" style="width: 100%;">513</div>
+        </div>
+      </div>
+      <div class="bar-row">
+        <span class="bar-label">
+          Financial Services
+          <span class="committee-id">Joint Committee on Financial Services</span>
+        </span>
+        <div class="bar-track">
+          <div class="bar-fill" style="width: 42.3%;">217</div>
+        </div>
+      </div>
+      <div class="bar-row">
+        <span class="bar-label">
+          Public Health
+          <span class="committee-id">Joint Committee on Public Health</span>
+        </span>
+        <div class="bar-track">
+          <div class="bar-fill" style="width: 37.2%;">191</div>
+        </div>
+      </div>
+      <div class="bar-row">
+        <span class="bar-label">
+          Revenue
+          <span class="committee-id">Joint Committee on Revenue</span>
+        </span>
+        <div class="bar-track">
+          <div class="bar-fill" style="width: 37.2%;">191</div>
+        </div>
+      </div>
+      <div class="bar-row">
+        <span class="bar-label">
+          Public Service
+          <span class="committee-id">Joint Committee on Public Service</span>
+        </span>
+        <div class="bar-track">
+          <div class="bar-fill" style="width: 36.8%;">189</div>
+        </div>
+      </div>
+    </div>
+
+    <p>
+      The table below shows all five committees, with the average and maximum number of days each committee's study orders were filed past the individual bill deadlines.
+    </p>
+
+    <table class="comparison-table">
+      <thead>
+        <tr>
+          <th>Committee</th>
+          <th class="num">Bills</th>
+          <th class="num">Avg Days Late</th>
+          <th class="num">Max Days Late</th>
+          <th class="num">First Study Order</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr class="highlight-row">
+          <td>Judiciary</td>
+          <td class="num">513</td>
+          <td class="num">135</td>
+          <td class="num">292</td>
+          <td class="num">Dec 18, 2025</td>
+        </tr>
+        <tr>
+          <td>Financial Services</td>
+          <td class="num">217</td>
+          <td class="num">74</td>
+          <td class="num">184</td>
+          <td class="num">Nov 10, 2025</td>
+        </tr>
+        <tr>
+          <td>Public Health</td>
+          <td class="num">191</td>
+          <td class="num">126</td>
+          <td class="num">288</td>
+          <td class="num">Dec 4, 2025</td>
+        </tr>
+        <tr>
+          <td>Revenue</td>
+          <td class="num">191</td>
+          <td class="num">138</td>
+          <td class="num">213</td>
+          <td class="num">Nov 10, 2025</td>
+        </tr>
+        <tr>
+          <td>Public Service</td>
+          <td class="num">189</td>
+          <td class="num">125</td>
+          <td class="num">269</td>
+          <td class="num">Dec 4, 2025</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <h2>The March Surge</h2>
+
+    <p>
+      House Rule 27 sets an absolute outer limit for Joint Committee reporting: the third Wednesday of March in the second annual session — March 18, 2026 for the 194th General Court. As that date approached, committees filed late study orders en masse. Nearly half of all late-filed study orders in this analysis were recorded in March 2026 alone.
+    </p>
+
+    <div class="monthly-chart">
+      <div class="monthly-row">
+        <span class="month-label">Oct 2025</span>
+        <div class="monthly-track">
+          <div class="monthly-fill" style="width: 0.5%; min-width: 28px;">2</div>
+        </div>
+        <span class="month-note"></span>
+      </div>
+      <div class="monthly-row">
+        <span class="month-label">Nov 2025</span>
+        <div class="monthly-track">
+          <div class="monthly-fill" style="width: 9.1%;">105</div>
+        </div>
+        <span class="month-note"></span>
+      </div>
+      <div class="monthly-row">
+        <span class="month-label">Dec 2025</span>
+        <div class="monthly-track">
+          <div class="monthly-fill" style="width: 45.9%;">530</div>
+        </div>
+        <span class="month-note"></span>
+      </div>
+      <div class="monthly-row">
+        <span class="month-label">Jan 2026</span>
+        <div class="monthly-track">
+          <div class="monthly-fill" style="width: 18.5%;">214</div>
+        </div>
+        <span class="month-note"></span>
+      </div>
+      <div class="monthly-row">
+        <span class="month-label">Feb 2026</span>
+        <div class="monthly-track">
+          <div class="monthly-fill" style="width: 25.7%;">297</div>
+        </div>
+        <span class="month-note"></span>
+      </div>
+      <div class="monthly-row">
+        <span class="month-label">Mar 2026</span>
+        <div class="monthly-track">
+          <div class="monthly-fill surge" style="width: 100%;">1,154</div>
+        </div>
+        <span class="month-note">HR 27 deadline</span>
+      </div>
+      <div class="monthly-row">
+        <span class="month-label">Apr 2026</span>
+        <div class="monthly-track">
+          <div class="monthly-fill partial" style="width: 12.1%;">140</div>
+        </div>
+        <span class="month-note">partial month*</span>
+      </div>
+    </div>
+
+    <p style="font-size: 0.85rem; color: var(--muted); margin-top: -0.5rem;">
+      * Data through April 4, 2026. The 140 April filings were recorded after the March 18 absolute deadline under House Rule 27 and were filed by the Joint Committees on Revenue (62), Election Laws (53), Consumer Protection and Professional Licensure (12), and several others.
+    </p>
+
+    <div class="callout">
+      Even as the absolute deadline of March 18, 2026 passed, 140 additional study orders were filed in the first four days of April — by committees required to have completed their work weeks earlier per the Legislature's rules.
+    </div>
+
+    <div class="context-section">
+      <h2>The Broader Picture</h2>
+
+      <p>
+        The 2,442 bills in this analysis represent a subset of the 7,287 total bills tracked across Joint Committees in the 194th General Court. Of those, 2,583 bills received a study order of any kind during the session. That means approximately <strong>94.5% of all study orders filed during this session were filed after the applicable deadline had passed.</strong>
+      </p>
+
+      <p>
+        Two Joint Committees — the Committee on Bonding, Capital Expenditures and State Assets and the Committee on Rules — did not produce any late-filed study orders in the tracked dataset.
+      </p>
+
+      <div class="stat-grid">
+        <div class="stat-item">
+          <div class="stat-value">1,723</div>
+          <div class="stat-label">House bills affected</div>
+        </div>
+        <div class="stat-item">
+          <div class="stat-value">719</div>
+          <div class="stat-label">Senate bills affected</div>
+        </div>
+        <div class="stat-item">
+          <div class="stat-value">140</div>
+          <div class="stat-label">bills filed after the March 18 HR 27 absolute deadline</div>
+        </div>
+      </div>
+    </div>
+
+    <h2>The Rules Framework</h2>
+
+    <p>
+      Two rules govern reporting deadlines for Joint Committees in the Massachusetts Legislature:
+    </p>
+
+    <p>
+      <strong>Joint Rule 10</strong> requires all Joint Committees to make final reports on matters referred to and heard by them "by the deadline determined by rule of the branch where the matter was filed." Where no branch rule sets a specific deadline, committees must report by the first Wednesday in December of the first annual session for bills heard before October 1, or within 60 days for bills heard on or after October 1.
+    </p>
+
+    <p>
+      <strong>House Rule 27</strong> provides the more detailed framework applicable to Joint Committees. The House chair of each Joint Committee must file a final report within 60 days of when a matter is heard. An additional 30 days may be granted by the House chair, for a maximum of 90 days. No matter may be held beyond the third Wednesday in March of the second annual session — for the 194th General Court, that date was <strong>March 18, 2026</strong>. House Rule 27 states explicitly that "a committee shall not make final report after" that date.
+    </p>
+
+    <p>
+      A bill's "effective deadline" in this analysis reflects the 60-day window from its hearing date, extended to 90 days where a valid extension was on file, and bounded by any applicable absolute session deadline.
+    </p>
+
+    <div class="methodology-box">
+      <h3>Methodology</h3>
+
+      <p>
+        This analysis is based on publicly available records from the Massachusetts Legislature's official website, malegislature.gov. For each Joint Committee active in the 194th General Court, the tracker collected bill hearing records, bill status pages, and the legislative action history posted for each individual bill.
+      </p>
+
+      <p>
+        <strong>Identifying the deadline.</strong> Each bill's reporting deadline was computed from the date the bill was formally heard by its committee. Under House Rule 27, a committee has 60 days from the hearing date to make final report; this window may be extended by the House chair to a maximum of 90 days. Where a formal extension order was posted to the Legislature's website, the 90-day window was used. In all cases, the deadline was capped at the session's absolute final date under the applicable chamber rule. The resulting figure — the latest date by which a committee was required to act — is referred to here as the "effective deadline."
+      </p>
+
+      <p>
+        <strong>Identifying study orders.</strong> Massachusetts legislative bill pages include a timestamped action history. When a committee sends a bill to study, the phrase "Accompanied a study order" appears in that history, along with the bill number of the study order itself and the date the action was recorded. This text is consistent across all committees and sessions.
+      </p>
+
+      <p>
+        <strong>The comparison.</strong> A bill is included in this analysis if and only if (a) a study order action appears on its legislative record, and (b) the date of that study order is later than the bill's effective deadline. Bills where the study order was filed on or before the deadline are not included, even if the committee was late on other grounds.
+      </p>
+
+      <p>
+        <strong>Scope.</strong> The analysis covers Joint Committees of the 194th General Court (2025–2026). House-only and Senate-only committees operate under different rules and are not included. Data was collected through April 4, 2026; because filing activity was still ongoing on that date, the total of 2,442 bills should be understood as a floor, not a final count.
+      </p>
+
+      <div class="caveat-label">Assumptions &amp; Limitations</div>
+      <ul>
+        <li><strong>Hearing date as the clock start.</strong> This analysis uses the date a bill was formally heard as the start of the 60-day window. If a bill was heard but the hearing record was not posted to the website, or was posted with an incorrect date, the computed deadline may be off. All hearing dates are sourced directly from the Legislature's own published records.</li>
+        <li><strong>Extension orders.</strong> Extensions are applied only where a formal extension order was posted and accessible on the Legislature's website. Informal or unposted extensions are not reflected in the effective deadline, which may cause some bills to appear late when a valid extension was granted but not publicly documented.</li>
+        <li><strong>Senate rules.</strong> Joint Rule 10 instructs committees to report by the deadline "determined by rule of the branch where the matter was filed." Senate rules were not independently applied bill-by-bill in this analysis; House Rule 27 deadlines were used as the governing standard for all Joint Committee bills. To the extent Senate bills are governed by a different or more permissive deadline under Senate rules, some bills attributed here to late filings may fall within the applicable Senate deadline. This affects 719 Senate bills in the dataset.</li>
+        <li><strong>Definition of "late."</strong> This analysis uses a strict interpretation: any study order filed after the effective deadline is counted, including cases where the committee was only a day or two past the window. Some such cases may reflect administrative or scheduling technicalities rather than deliberate delay. The two committees with average delays of one to two days (Telecommunications, Utilities and Energy, and Health Care Financing) are included in aggregate totals but are not featured among the top five.</li>
+        <li><strong>Session scope.</strong> The 194th General Court convened in January 2025. Bills referred before the 194th General Court, or carried over from prior sessions, are not included.</li>
+      </ul>
+
+      <p>
+        The full dataset underlying this analysis, including individual bill IDs, committee assignments, hearing dates, effective deadlines, and study order dates, is maintained by the Beacon Hill Compliance Tracker and is available upon request.
+      </p>
+    </div>
+
+    <footer>
+      <p><strong>Data source:</strong> Beacon Hill Compliance Tracker, April 4, 2026 snapshot</p>
+      <p><strong>Legal citations:</strong> Massachusetts Joint Rule 10; Massachusetts House Rule 27 — both adopted June 26, 2025 for the 194th General Court</p>
+      <p><strong>Contact:</strong> info@beaconhilltracker.org &nbsp;·&nbsp; beaconhilltracker.org</p>
+    </footer>
+
+  </div>
+</body>
+</html>
