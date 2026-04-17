@@ -337,7 +337,7 @@ I'll post an update here once the issue is resolved and daily updates are back o
   {
     id: 23,
     date: '2026-04-17',
-    title: 'Reform Rules Forum Slide Deck',
+    title: 'Rules Reform Forum Slide Deck',
     content: `Today, I presented the Tracker's findings and insights at the [PDM Rules Reform Forum](https://www.progressivedemsofmass.org/forums/). The presentation covered key compliance trends, committee performance profiles, and the implications for legislative transparency reform. The slide deck is now available for download.
     
 You can find it [here (PDF)](/documents/assessing_joint_committee_rules_reform.pdf).`,
