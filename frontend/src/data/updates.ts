@@ -342,6 +342,20 @@ I'll post an update here once the issue is resolved and daily updates are back o
     
 You can find it [here (PDF)](/documents/assessing_joint_committee_rules_reform.pdf).`,
     type: 'announcement',
+  },
+  {
+    id: 24,
+    date: '2026-04-22',
+    title: 'Bill Search Improvements',
+    content: `Thanks to feedback from users, I made some minor improvements to the bill search filter to make it easier to find specific bills.
+
+- Bills will render whether you include the period in the bill ID or not (e.g. "H.1234" vs. "H1234").
+- The search is now case-insensitive, so you can type "An Act to..." or "an act to..." to find bills you're looking for (or "aN aCt To..." ... but why would you?).
+- I added a short delay to the search input to prevent it from firing too rapidly as you type, which should make it more responsive and less likely to cause performance issues on slower devices.
+
+This change is a result of [feedback](/contact) from users, so if you have any suggestions for improvements or features you'd like to see, please don't hesitate to reach out! This project improves when users reach out to tell me how to better serve their use cases.
+`,
+    type: `update`,
   }
 ]
 
