@@ -356,6 +356,19 @@ You can find it [here (PDF)](/documents/assessing_joint_committee_rules_reform.p
 This change is a result of [feedback](/contact) from users, so if you have any suggestions for improvements or features you'd like to see, please don't hesitate to reach out! This project improves when users reach out to tell me how to better serve their use cases.
 `,
     type: `update`,
+  },
+  {
+    id: 25,
+    date: '2026-05-07',
+    title: 'How Often Do Bills Time Out?',
+    content: `As seen on [the Boston Globe this week](https://www.bostonglobe.com/2026/05/05/metro/legislature-transparency-loophole-committee-votes/), over 700 bills at the time of [this snapshot](/documents/hr27_timeout_analysis.html) -- and over 800 as of today -- have "timed out" under the House Rules, meaning they were not reported out of committee within 90 days of their hearing, and as such, were sent to study without a recorded vote. This is a significant transparency gap, as it means that for these bills, there is no public record of whether they were approved or rejected by the committee, and they effectively die without any formal resolution.
+    
+This analysis was completed by analyzing the full corpus of bill data to find unique instances of bills with the telltale _"Accompanied a study order, see Hxxxx (under House Rule 27)"_ text in their history, then confirming they had no recorded vote discovered by the Tracker, and manually spot-checking dozens of instances for human-in-the-loop verification.
+    
+The findings of this report show that circumventions of the intent of the new Joint Rules are systemic and widespread, and that the House Rules's "time out" provision is being used as a de facto backdoor to avoid reporting votes on bills that are not being actively advanced. This creates a significant transparency gap for constituents trying to follow the progress of legislation, as there is no public record of committee action on these bills, and they effectively die without any formal resolution.
+
+[Read the full analysis here (HTML)](/documents/hr27_timeout_analysis.html)`,
+    type: 'insight',
   }
 ]
 
