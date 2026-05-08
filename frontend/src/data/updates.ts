@@ -369,6 +369,19 @@ The findings of this report show that circumventions of the intent of the new Jo
 
 [Read the full analysis here (HTML)](/documents/hr27_timeout_analysis.html)`,
     type: 'insight',
+  },
+  {
+    id: 26,
+    date: '2026-05-08',
+    title: 'Complete Methodology Report Released',
+    content: `Today, [I released a comprehensive report](https://github.com/arbowl/beacon-hill-compliance-tracker/blob/main/METHODOLOGY.md) detailing the methodology behind the Tracker's data collection, processing, and analysis. This report covers the algorithms used to detect hearings, report-outs, vote postings, and other key events in the legislative process, as well as the rules applied to determine compliance with transparency requirements.
+
+The report has two main parts: a high-level plain-English description of how the tool works, as well as an auditable technical deep-dive into the specific algorithms used (and why).
+
+The goal of this report is to provide full transparency into how the Tracker operates, so that users can understand the basis for its findings and have confidence in its accuracy. It also serves as a resource for anyone interested in building similar tools or analyzing legislative data.
+
+[Read the full methodology report here (Markdown)](https://github.com/arbowl/beacon-hill-compliance-tracker/blob/main/METHODOLOGY.md)`,
+    type: 'announcement',
   }
 ]
 
