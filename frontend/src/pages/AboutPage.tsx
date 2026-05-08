@@ -90,6 +90,8 @@ const AboutPage = () => {
               for legislative data, learning and going faster as it creates committee "profiles".
               Locations include bill pages, tabs and tables, committee pages, hearing pages, and
               official calendars. Formats include HTML, PDF, DOCX, and Excel.
+
+              <b>Full methodology [here](https://github.com/arbowl/beacon-hill-compliance-tracker/blob/main/METHODOLOGY.md).</b>
             </p>
             <div className="bg-base-200 p-3 rounded-lg">
               <p className="text-sm text-base-content/70">
