@@ -91,7 +91,7 @@ const UpdatesPage: React.FC = () => {
       <div className="text-center">
         <h1 className="text-4xl font-bold mb-4">Updates</h1>
         <p className="text-xl text-base-content/70">
-          Status updates, site alerts, and project musings
+          This page contains a mix of operational updates, methodology notes, and analytical reports drawing on Tracker data. The Tracker itself measures procedural compliance; interpretive content where it exists is explicitly denotated as such and is separate from what the Tracker measures.
         </p>
       </div>
 
