@@ -365,7 +365,9 @@ This change is a result of [feedback](/contact) from users, so if you have any s
     
 This analysis was completed by analyzing the full corpus of bill data to find unique instances of bills with the telltale _"Accompanied a study order, see Hxxxx (under House Rule 27)"_ text in their history, then confirming they had no recorded vote discovered by the Tracker, and manually spot-checking dozens of instances for human-in-the-loop verification.
     
-The findings of this report show that circumventions of the intent of the new Joint Rules are systemic and widespread, and that the House Rules's "time out" provision is being used as a de facto backdoor to avoid reporting votes on bills that are not being actively advanced. This creates a significant transparency gap for constituents trying to follow the progress of legislation, as there is no public record of committee action on these bills, and they effectively die without any formal resolution.
+The findings of this report show that the House Rules' 'time out' provision is producing a systemic effect: bills that are not actively advanced are sent to study without a recorded vote, bypassing the transparency goals of the new Joint Rules. In practice, the provision functions as an alternative path that allows bills to die without public documentation of committee members' positions — the same outcome the Joint Rules were designed to prevent.
+
+_Edited May 14, 2026: Revised language to align the findings of the Tracker more closely with the content of the report._
 
 [Read the full analysis here (HTML)](/documents/hr27_timeout_analysis.html)`,
     type: 'insight',
