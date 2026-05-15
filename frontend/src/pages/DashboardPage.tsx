@@ -882,7 +882,7 @@ const DashboardPage: React.FC = () => {
               <div className="stat-title">Total Bills</div>
               <div className="stat-value text-success">{contextualStats.total_bills}</div>
               <div className="stat-desc">
-                {filters.committees && filters.committees.length > 0 ? 'In selected committees' : 'Under review'}
+                {filters.committees && filters.committees.length > 0 ? 'In selected committees' : 'Actions Processed'}
               </div>
             </div>
             
@@ -896,7 +896,7 @@ const DashboardPage: React.FC = () => {
                 {contextualStats.overall_compliance_rate}%
               </div>
               <div className="stat-desc">
-                {filters.committees && filters.committees.length > 0 ? 'Committee performance' : 'Overall performance'}
+                {filters.committees && filters.committees.length > 0 ? 'Committee performance' : 'Detected Compliance Rate'}
               </div>
             </div>
             
