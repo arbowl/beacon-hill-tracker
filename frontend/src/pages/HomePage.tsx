@@ -171,7 +171,7 @@ const HomePage: React.FC = () => {
                 }`}>
                   {stats.overall_compliance_rate || 0}%
                 </div>
-                <div className="text-base-content/70">Compliance Rate</div>
+                <div className="text-base-content/70">Measured Compliance Rate</div>
               </div>
             </div>
             
@@ -180,7 +180,7 @@ const HomePage: React.FC = () => {
                 <div className="text-3xl font-bold text-error mb-2">
                   {stats.non_compliant_bills || 0}
                 </div>
-                <div className="text-base-content/70">Rule Violations Found</div>
+                <div className="text-base-content/70">Possible Violations Found</div>
               </div>
             </div>
           </>
