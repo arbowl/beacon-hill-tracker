@@ -247,7 +247,7 @@ const HomePage: React.FC = () => {
               Automated data collection from official sources ensures accuracy and ongoing transparency tracking.
             </p>
             <div className="card-actions justify-end mt-4">
-              <Link to="/about" className="btn btn-info btn-sm">
+              <Link to="https://github.com/arbowl/beacon-hill-compliance-tracker/blob/main/METHODOLOGY.md" className="btn btn-info btn-sm">
                 Learn More
               </Link>
             </div>
