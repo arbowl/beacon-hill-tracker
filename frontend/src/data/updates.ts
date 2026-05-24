@@ -342,6 +342,48 @@ I'll post an update here once the issue is resolved and daily updates are back o
     
 You can find it [here (PDF)](/documents/assessing_joint_committee_rules_reform.pdf).`,
     type: 'announcement',
+  },
+  {
+    id: 24,
+    date: '2026-04-22',
+    title: 'Bill Search Improvements',
+    content: `Thanks to feedback from users, I made some minor improvements to the bill search filter to make it easier to find specific bills.
+
+- Bills will render whether you include the period in the bill ID or not (e.g. "H.1234" vs. "H1234").
+- The search is now case-insensitive, so you can type "An Act to..." or "an act to..." to find bills you're looking for (or "aN aCt To..." ... but why would you?).
+- I added a short delay to the search input to prevent it from firing too rapidly as you type, which should make it more responsive and less likely to cause performance issues on slower devices.
+
+This change is a result of [feedback](/contact) from users, so if you have any suggestions for improvements or features you'd like to see, please don't hesitate to reach out! This project improves when users reach out to tell me how to better serve their use cases.
+`,
+    type: `update`,
+  },
+  {
+    id: 25,
+    date: '2026-05-07',
+    title: 'How Often Do Bills Time Out?',
+    content: `As seen on [the Boston Globe this week](https://www.bostonglobe.com/2026/05/05/metro/legislature-transparency-loophole-committee-votes/), over 700 bills at the time of [this snapshot](/documents/hr27_timeout_analysis.html) -- and over 800 as of today -- have "timed out" under the House Rules, meaning they were not reported out of committee within 90 days of their hearing, and as such, were sent to study without a recorded vote. This is a significant transparency gap, as it means that for these bills, there is no public record of whether they were approved or rejected by the committee, and they effectively die without any formal resolution.
+    
+This analysis was completed by analyzing the full corpus of bill data to find unique instances of bills with the telltale _"Accompanied a study order, see Hxxxx (under House Rule 27)"_ text in their history, then confirming they had no recorded vote discovered by the Tracker, and manually spot-checking dozens of instances for human-in-the-loop verification.
+    
+The findings of this report show that the House Rules' 'time out' provision is producing a systemic effect: bills that are not actively advanced are sent to study without a recorded vote, bypassing the transparency goals of the new Joint Rules. In practice, the provision functions as an alternative path that allows bills to die without public documentation of committee members' positions — the same outcome the Joint Rules were designed to prevent.
+
+_Edited May 14, 2026: Revised language to align the findings of the Tracker more closely with the content of the report._
+
+[Read the full analysis here (HTML)](/documents/hr27_timeout_analysis.html)`,
+    type: 'insight',
+  },
+  {
+    id: 26,
+    date: '2026-05-08',
+    title: 'Complete Methodology Report Released',
+    content: `Today, [I released a comprehensive report](https://github.com/arbowl/beacon-hill-compliance-tracker/blob/main/METHODOLOGY.md) detailing the methodology behind the Tracker's data collection, processing, and analysis. This report covers the algorithms used to detect hearings, report-outs, vote postings, and other key events in the legislative process, as well as the rules applied to determine compliance with transparency requirements.
+
+The report has two main parts: a high-level plain-English description of how the tool works, as well as an auditable technical deep-dive into the specific algorithms used (and why).
+
+The goal of this report is to provide full transparency into how the Tracker operates, so that users can understand the basis for its findings and have confidence in its accuracy. It also serves as a resource for anyone interested in building similar tools or analyzing legislative data.
+
+[Read the full methodology report here (Markdown)](https://github.com/arbowl/beacon-hill-compliance-tracker/blob/main/METHODOLOGY.md)`,
+    type: 'announcement',
   }
 ]
 

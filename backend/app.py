@@ -714,8 +714,8 @@ def create_app():
                         where_params.extend(state_list)
 
                 if search_term:
-                    where_clauses.append(f"(b.bill_id LIKE {placeholder} OR b.bill_title LIKE {placeholder})")
-                    where_params.extend([f'%{search_term}%', f'%{search_term}%'])
+                    where_clauses.append(f"(LOWER(b.bill_id) LIKE {placeholder} OR LOWER(b.bill_title) LIKE {placeholder})")
+                    where_params.extend([f'%{search_term.lower().replace(".", "")}%', f'%{search_term.lower().replace(".", "")}%'])
 
                 where_clause = " AND " + " AND ".join(where_clauses) if where_clauses else ""
 
@@ -843,8 +843,8 @@ def create_app():
                         where_params.extend(state_list)
 
                 if search_term:
-                    where_clauses.append(f"(b.bill_id LIKE {placeholder} OR b.bill_title LIKE {placeholder})")
-                    where_params.extend([f'%{search_term}%', f'%{search_term}%'])
+                    where_clauses.append(f"(LOWER(b.bill_id) LIKE {placeholder} OR LOWER(b.bill_title) LIKE {placeholder})")
+                    where_params.extend([f'%{search_term.lower().replace(".", "")}%', f'%{search_term.lower().replace(".", "")}%'])
 
                 # Only get non-compliant bills for violation analysis (applied after dedup)
                 non_compliant_filter = " AND LOWER(state) = 'non-compliant'"
@@ -1052,8 +1052,8 @@ def create_app():
                         where_params.extend(state_list)
 
                 if search_term:
-                    where_clauses.append(f"(bill_id LIKE {placeholder} OR bill_title LIKE {placeholder})")
-                    where_params.extend([f'%{search_term}%', f'%{search_term}%'])
+                    where_clauses.append(f"(LOWER(bill_id) LIKE {placeholder} OR LOWER(bill_title) LIKE {placeholder})")
+                    where_params.extend([f'%{search_term.lower().replace(".", "")}%', f'%{search_term.lower().replace(".", "")}%'])
 
                 where_clause = " AND " + " AND ".join(where_clauses) if where_clauses else ""
                 

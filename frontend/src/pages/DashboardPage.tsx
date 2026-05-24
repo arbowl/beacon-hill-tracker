@@ -882,12 +882,12 @@ const DashboardPage: React.FC = () => {
               <div className="stat-title">Total Bills</div>
               <div className="stat-value text-success">{contextualStats.total_bills}</div>
               <div className="stat-desc">
-                {filters.committees && filters.committees.length > 0 ? 'In selected committees' : 'Under review'}
+                {filters.committees && filters.committees.length > 0 ? 'In selected committees' : 'Actions Processed'}
               </div>
             </div>
             
             <div className="stat bg-base-100 shadow-md">
-              <div className="stat-title">Compliance Rate</div>
+              <div className="stat-title">Measured Compliance Rate</div>
               <div className={`stat-value ${
                 contextualStats.overall_compliance_rate >= 80 ? 'text-success' :
                 contextualStats.overall_compliance_rate >= 60 ? 'text-warning' :
@@ -896,14 +896,14 @@ const DashboardPage: React.FC = () => {
                 {contextualStats.overall_compliance_rate}%
               </div>
               <div className="stat-desc">
-                {filters.committees && filters.committees.length > 0 ? 'Committee performance' : 'Overall performance'}
+                {filters.committees && filters.committees.length > 0 ? 'Committee performance' : 'Detected Compliance Rate'}
               </div>
             </div>
             
             <div className="stat bg-base-100 shadow-md">
               <div className="stat-title">Non-Compliant</div>
               <div className="stat-value text-error">{contextualStats.non_compliant_bills}</div>
-              <div className="stat-desc">Need attention</div>
+              <div className="stat-desc">Possible Violations Found</div>
             </div>
           </div>
         </div>

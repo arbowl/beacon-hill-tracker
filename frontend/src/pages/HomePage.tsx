@@ -158,7 +158,7 @@ const HomePage: React.FC = () => {
                 <div className="text-3xl font-bold text-success mb-2">
                   {stats.total_bills || 0}
                 </div>
-                <div className="text-base-content/70">Bills Analyzed</div>
+                <div className="text-base-content/70">Committee Actions Tracked</div>
               </div>
             </div>
             
@@ -171,7 +171,7 @@ const HomePage: React.FC = () => {
                 }`}>
                   {stats.overall_compliance_rate || 0}%
                 </div>
-                <div className="text-base-content/70">Compliance Rate</div>
+                <div className="text-base-content/70">Measured Compliance Rate</div>
               </div>
             </div>
             
@@ -180,7 +180,7 @@ const HomePage: React.FC = () => {
                 <div className="text-3xl font-bold text-error mb-2">
                   {stats.non_compliant_bills || 0}
                 </div>
-                <div className="text-base-content/70">Non-Compliant Bills</div>
+                <div className="text-base-content/70">Possible Violations Found</div>
               </div>
             </div>
           </>
@@ -247,7 +247,7 @@ const HomePage: React.FC = () => {
               Automated data collection from official sources ensures accuracy and ongoing transparency tracking.
             </p>
             <div className="card-actions justify-end mt-4">
-              <Link to="/about" className="btn btn-info btn-sm">
+              <Link to="https://github.com/arbowl/beacon-hill-compliance-tracker/blob/main/METHODOLOGY.md" className="btn btn-info btn-sm">
                 Learn More
               </Link>
             </div>
