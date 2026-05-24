@@ -220,65 +220,26 @@ def _save_stats_to_cache(stats, data_timestamp):
         logger.error(f"Error saving stats to cache: {str(e)}", exc_info=True)
 
 def _get_cached_stats():
-    """Get stats from cache (database or memory) with validation"""
-    # First check in-memory cache
+    """Get stats from cache (memory first, then database).
+
+    The in-memory cache is explicitly invalidated on every ingest via
+    _invalidate_stats_cache(), so there is no need to hit the DB to
+    re-validate it on every request.
+    """
     global _stats_cache
-    if _stats_cache['data'] and _stats_cache['data_timestamp']:
-        # Validate in-memory cache is still valid
-        current_max_timestamp = _get_max_generated_at()
-        if current_max_timestamp:
-            # Compare timestamps
-            cache_timestamp = _stats_cache['data_timestamp']
-            if isinstance(cache_timestamp, str):
-                # Parse string timestamp for comparison
-                try:
-                    from dateutil.parser import parse as parse_date
-                    cache_timestamp = parse_date(cache_timestamp)
-                except Exception:
-                    pass
-            
-            if hasattr(current_max_timestamp, 'isoformat') and hasattr(cache_timestamp, 'isoformat'):
-                if current_max_timestamp <= cache_timestamp:
-                    # Cache is valid
-                    return _stats_cache['data']
-            elif str(current_max_timestamp) <= str(cache_timestamp):
-                # String comparison fallback
-                return _stats_cache['data']
-    
-    # Check database cache
+    if _stats_cache['data'] is not None:
+        return _stats_cache['data']
+
+    # Cold start (first request or restart): populate from DB cache.
     cached_stats = _get_cached_stats_from_db()
     if cached_stats:
-        current_max_timestamp = _get_max_generated_at()
-        if current_max_timestamp:
-            cache_data_timestamp = cached_stats['data_timestamp']
-            
-            # Compare timestamps (handle both datetime objects and strings)
-            if isinstance(cache_data_timestamp, str):
-                try:
-                    from dateutil.parser import parse as parse_date
-                    cache_data_timestamp = parse_date(cache_data_timestamp)
-                except Exception:
-                    pass
-            
-            if hasattr(current_max_timestamp, 'isoformat') and hasattr(cache_data_timestamp, 'isoformat'):
-                if current_max_timestamp <= cache_data_timestamp:
-                    # Update in-memory cache
-                    _stats_cache = {
-                        'data': cached_stats,
-                        'data_timestamp': cache_data_timestamp,
-                        'cache_timestamp': cached_stats.get('cache_generated_at')
-                    }
-                    return cached_stats
-            elif str(current_max_timestamp) <= str(cache_data_timestamp):
-                # String comparison fallback
-                _stats_cache = {
-                    'data': cached_stats,
-                    'data_timestamp': cache_data_timestamp,
-                    'cache_timestamp': cached_stats.get('cache_generated_at')
-                }
-                return cached_stats
-    
-    # Cache miss or invalid - calculate fresh
+        _stats_cache = {
+            'data': cached_stats,
+            'data_timestamp': cached_stats.get('data_timestamp'),
+            'cache_timestamp': cached_stats.get('cache_generated_at')
+        }
+        return cached_stats
+
     return None
 
 def _invalidate_stats_cache():
@@ -2129,37 +2090,32 @@ def import_cache_data(cache_data):
             # Import bills
             if 'bill_parsers' in cache_data:
                 logger.info(f"Importing {len(cache_data['bill_parsers'])} bills")
+                bills_tuples = []
                 for bill_id, bill_data in cache_data['bill_parsers'].items():
-                    # Insert basic bill info
                     title = bill_data.get('title', {})
-                    if db_type == 'postgresql':
-                        # PostgreSQL: Use INSERT ... ON CONFLICT ... DO UPDATE
-                        cursor.execute(f'''
-                            INSERT INTO bills (bill_id, bill_title, bill_url, updated_at)
-                            VALUES ({placeholder}, {placeholder}, {placeholder}, {placeholder})
-                            ON CONFLICT (bill_id) DO UPDATE SET
-                                bill_title = EXCLUDED.bill_title,
-                                bill_url = EXCLUDED.bill_url,
-                                updated_at = EXCLUDED.updated_at
-                        ''',
-                        (
-                            bill_id,
-                            title.get('value') if isinstance(title, dict) else title,
-                            bill_data.get('bill_url'),
-                            title.get('updated_at') if isinstance(title, dict) else datetime.utcnow().isoformat() + 'Z'
-                        ))
-                    else:
-                        # SQLite: Use INSERT OR REPLACE
-                        cursor.execute(
-                            'INSERT OR REPLACE INTO bills '
-                            '(bill_id, bill_title, bill_url, updated_at) '
-                            'VALUES (?, ?, ?, ?)',
-                            (
-                                bill_id,
-                                title.get('value') if isinstance(title, dict) else title,
-                                bill_data.get('bill_url'),
-                                title.get('updated_at') if isinstance(title, dict) else datetime.utcnow().isoformat() + 'Z'
-                            ))
+                    bills_tuples.append((
+                        bill_id,
+                        title.get('value') if isinstance(title, dict) else title,
+                        bill_data.get('bill_url'),
+                        title.get('updated_at') if isinstance(title, dict) else datetime.utcnow().isoformat() + 'Z'
+                    ))
+
+                if db_type == 'postgresql':
+                    from psycopg2.extras import execute_values
+                    execute_values(cursor, '''
+                        INSERT INTO bills (bill_id, bill_title, bill_url, updated_at)
+                        VALUES %s
+                        ON CONFLICT (bill_id) DO UPDATE SET
+                            bill_title = EXCLUDED.bill_title,
+                            bill_url = EXCLUDED.bill_url,
+                            updated_at = EXCLUDED.updated_at
+                    ''', bills_tuples)
+                else:
+                    cursor.executemany(
+                        'INSERT OR REPLACE INTO bills (bill_id, bill_title, bill_url, updated_at) '
+                        'VALUES (?, ?, ?, ?)',
+                        bills_tuples
+                    )
 
             conn.commit()  # Explicit commit
             logger.info("Cache data import completed successfully")
@@ -2532,112 +2488,82 @@ def import_compliance_report(committee_id, bills_data, diff_report=None, analysi
             else:
                 logger.info(f"Committee {committee_id} exists")
             
-            imported_count = 0
-            
-            for bill in bills_data:
-                logger.debug(f"Importing bill: {bill.get('bill_id')}")
-                # Upsert bill basic info
-                if db_type == 'postgresql':
-                    # PostgreSQL: Use INSERT ... ON CONFLICT ... DO UPDATE
-                    cursor.execute(f'''
-                        INSERT INTO bills (bill_id, bill_title, bill_url, updated_at)
-                        VALUES ({placeholder}, {placeholder}, {placeholder}, {placeholder})
-                        ON CONFLICT (bill_id) DO UPDATE SET
-                            bill_title = EXCLUDED.bill_title,
-                            bill_url = EXCLUDED.bill_url,
-                            updated_at = EXCLUDED.updated_at
-                    ''',
-                    (
-                        bill.get('bill_id'),
-                        bill.get('bill_title'),
-                        bill.get('bill_url'),
-                        datetime.utcnow().isoformat() + 'Z'
-                    ))
-                else:
-                    # SQLite: Use INSERT OR REPLACE
-                    cursor.execute(
-                        'INSERT OR REPLACE INTO bills '
-                        '(bill_id, bill_title, bill_url, updated_at) '
-                        'VALUES (?, ?, ?, ?)',
-                        (
-                            bill.get('bill_id'),
-                            bill.get('bill_title'),
-                            bill.get('bill_url'),
-                            datetime.utcnow().isoformat() + 'Z'
-                        ))
+            generated_at = datetime.utcnow().isoformat() + 'Z'
+            bills_tuples = [
+                (
+                    bill.get('bill_id'),
+                    bill.get('bill_title'),
+                    bill.get('bill_url'),
+                    generated_at,
+                )
+                for bill in bills_data
+            ]
+            compliance_tuples = [
+                (
+                    committee_id,
+                    bill.get('bill_id'),
+                    bill.get('hearing_date'),
+                    bill.get('deadline_60'),
+                    bill.get('effective_deadline'),
+                    bill.get('extension_order_url'),
+                    bill.get('extension_date'),
+                    1 if bill.get('reported_out') else 0,
+                    bill.get('reported_out_date'),
+                    1 if bill.get('summary_present') else 0,
+                    bill.get('summary_url'),
+                    1 if bill.get('votes_present') else 0,
+                    bill.get('votes_url'),
+                    bill.get('state', 'unknown'),
+                    bill.get('reason', ''),
+                    bill.get('notice_status'),
+                    bill.get('notice_gap_days'),
+                    bill.get('announcement_date'),
+                    bill.get('scheduled_hearing_date'),
+                    generated_at,
+                )
+                for bill in bills_data
+            ]
 
-                # Insert compliance record
-                if db_type == 'postgresql':
-                    cursor.execute(f'''
-                        INSERT INTO bill_compliance (
-                            committee_id, bill_id, hearing_date, deadline_60, 
-                            effective_deadline, extension_order_url, extension_date, 
-                            reported_out, reported_out_date, summary_present, summary_url, 
-                            votes_present, votes_url, state, reason, 
-                            notice_status, notice_gap_days, announcement_date, 
-                            scheduled_hearing_date, generated_at
-                        ) VALUES (
-                            {placeholder}, {placeholder}, {placeholder}, {placeholder}, {placeholder}, 
-                            {placeholder}, {placeholder}, {placeholder}, {placeholder}, {placeholder}, 
-                            {placeholder}, {placeholder}, {placeholder}, {placeholder}, {placeholder}, 
-                            {placeholder}, {placeholder}, {placeholder}, {placeholder}, {placeholder}
-                        )
-                    ''',
-                    (
-                        committee_id,
-                        bill.get('bill_id'),
-                        bill.get('hearing_date'),
-                        bill.get('deadline_60'),
-                        bill.get('effective_deadline'),
-                        bill.get('extension_order_url'),
-                        bill.get('extension_date'),
-                        1 if bill.get('reported_out') else 0,
-                        bill.get('reported_out_date'),
-                        1 if bill.get('summary_present') else 0,
-                        bill.get('summary_url'),
-                        1 if bill.get('votes_present') else 0,
-                        bill.get('votes_url'),
-                        bill.get('state', 'unknown'),
-                        bill.get('reason', ''),
-                        bill.get('notice_status'),
-                        bill.get('notice_gap_days'),
-                        bill.get('announcement_date'),
-                        bill.get('scheduled_hearing_date'),
-                        datetime.utcnow().isoformat() + 'Z'
-                    ))
-                else:
-                    cursor.execute(
-                        'INSERT INTO bill_compliance ('
-                        'committee_id, bill_id, hearing_date, deadline_60, '
-                        'effective_deadline, extension_order_url, extension_date, '
-                        'reported_out, reported_out_date, summary_present, summary_url, '
-                        'votes_present, votes_url, state, reason, '
-                        'notice_status, notice_gap_days, announcement_date, '
-                        'scheduled_hearing_date, generated_at) '
-                        'VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
-                        (
-                            committee_id,
-                            bill.get('bill_id'),
-                            bill.get('hearing_date'),
-                            bill.get('deadline_60'),
-                            bill.get('effective_deadline'),
-                            bill.get('extension_order_url'),
-                            bill.get('extension_date'),
-                            1 if bill.get('reported_out') else 0,
-                            bill.get('reported_out_date'),
-                            1 if bill.get('summary_present') else 0,
-                            bill.get('summary_url'),
-                            1 if bill.get('votes_present') else 0,
-                            bill.get('votes_url'),
-                            bill.get('state', 'unknown'),
-                            bill.get('reason', ''),
-                            bill.get('notice_status'),
-                            bill.get('notice_gap_days'),
-                            bill.get('announcement_date'),
-                            bill.get('scheduled_hearing_date'),
-                            datetime.utcnow().isoformat() + 'Z'
-                        ))
-                imported_count += 1
+            if db_type == 'postgresql':
+                from psycopg2.extras import execute_values
+                execute_values(cursor, '''
+                    INSERT INTO bills (bill_id, bill_title, bill_url, updated_at)
+                    VALUES %s
+                    ON CONFLICT (bill_id) DO UPDATE SET
+                        bill_title = EXCLUDED.bill_title,
+                        bill_url = EXCLUDED.bill_url,
+                        updated_at = EXCLUDED.updated_at
+                ''', bills_tuples)
+                execute_values(cursor, '''
+                    INSERT INTO bill_compliance (
+                        committee_id, bill_id, hearing_date, deadline_60,
+                        effective_deadline, extension_order_url, extension_date,
+                        reported_out, reported_out_date, summary_present, summary_url,
+                        votes_present, votes_url, state, reason,
+                        notice_status, notice_gap_days, announcement_date,
+                        scheduled_hearing_date, generated_at
+                    ) VALUES %s
+                ''', compliance_tuples)
+            else:
+                cursor.executemany(
+                    'INSERT OR REPLACE INTO bills (bill_id, bill_title, bill_url, updated_at) '
+                    'VALUES (?, ?, ?, ?)',
+                    bills_tuples
+                )
+                cursor.executemany(
+                    'INSERT INTO bill_compliance ('
+                    'committee_id, bill_id, hearing_date, deadline_60, '
+                    'effective_deadline, extension_order_url, extension_date, '
+                    'reported_out, reported_out_date, summary_present, summary_url, '
+                    'votes_present, votes_url, state, reason, '
+                    'notice_status, notice_gap_days, announcement_date, '
+                    'scheduled_hearing_date, generated_at) '
+                    'VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+                    compliance_tuples
+                )
+
+            imported_count = len(bills_data)
+            logger.info(f"Batch inserted {imported_count} bills and compliance records")
 
             # Calculate and store diff_reports metadata
             # CRITICAL: Use client's diff_report if provided - it matches the analysis

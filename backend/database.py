@@ -8,13 +8,29 @@ import sqlite3
 from contextlib import contextmanager
 from pathlib import Path
 
+_db_type = None
+_pg_pool = None
+
 
 def get_database_type():
     """Determine database type from DATABASE_URL environment variable"""
-    db_url = os.getenv('DATABASE_URL', 'sqlite:///compliance_tracker.db')
-    if db_url.startswith('postgres'):
-        return 'postgresql'
-    return 'sqlite'
+    global _db_type
+    if _db_type is None:
+        db_url = os.getenv('DATABASE_URL', 'sqlite:///compliance_tracker.db')
+        _db_type = 'postgresql' if db_url.startswith('postgres') else 'sqlite'
+    return _db_type
+
+
+def _get_pg_pool():
+    """Lazily initialise a thread-safe PostgreSQL connection pool."""
+    global _pg_pool
+    if _pg_pool is None:
+        import psycopg2.pool
+        db_url = os.getenv('DATABASE_URL', '')
+        if db_url.startswith('postgres://'):
+            db_url = db_url.replace('postgres://', 'postgresql://', 1)
+        _pg_pool = psycopg2.pool.ThreadedConnectionPool(1, 10, db_url)
+    return _pg_pool
 
 
 @contextmanager
@@ -22,7 +38,7 @@ def get_db_connection():
     """
     Context manager for database connections.
     Automatically uses PostgreSQL or SQLite based on DATABASE_URL.
-    
+
     Usage:
         with get_db_connection() as conn:
             cursor = conn.cursor()
@@ -31,19 +47,10 @@ def get_db_connection():
     """
     db_url = os.getenv('DATABASE_URL', 'sqlite:///compliance_tracker.db')
     db_type = get_database_type()
-    
+
     if db_type == 'postgresql':
-        import psycopg2
-        import psycopg2.extras
-        
-        # Render provides postgres://, but psycopg2 needs postgresql://
-        if db_url.startswith('postgres://'):
-            db_url = db_url.replace('postgres://', 'postgresql://', 1)
-        
-        # Connect with dictionary cursor for easy column access
-        conn = psycopg2.connect(db_url)
-        # Note: psycopg2 doesn't have row_factory, handle in queries if needed
-        
+        pool = _get_pg_pool()
+        conn = pool.getconn()
         try:
             yield conn
             conn.commit()
@@ -51,7 +58,7 @@ def get_db_connection():
             conn.rollback()
             raise
         finally:
-            conn.close()
+            pool.putconn(conn)
     else:
         # SQLite for local development
         # Extract path from sqlite:///path
