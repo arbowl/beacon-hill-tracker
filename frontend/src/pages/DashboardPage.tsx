@@ -1286,8 +1286,8 @@ const DashboardPage: React.FC = () => {
                           <div className="line-clamp-2 text-sm leading-tight">
                             {bill.bill_title}
                           </div>
-                          <div className="text-xs font-medium text-primary/70 mt-1 group-hover:text-primary transition-colors duration-200 flex items-center gap-1">
-                            View details →
+                          <div className="text-xs font-semibold text-primary underline underline-offset-2 mt-1 flex items-center gap-0.5 group-hover:brightness-125 transition-all duration-150">
+                            View details <span className="inline-block group-hover:translate-x-0.5 transition-transform duration-150">→</span>
                           </div>
                         </div>
                       </td>
