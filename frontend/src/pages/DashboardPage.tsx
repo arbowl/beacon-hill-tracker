@@ -1275,8 +1275,8 @@ const DashboardPage: React.FC = () => {
                         <div className="font-mono font-bold">{bill.bill_id}</div>
                       </td>
                       <td>
-                        <div 
-                          className="cursor-pointer hover:text-primary transition-colors duration-200"
+                        <div
+                          className="group cursor-pointer hover:text-primary transition-colors duration-200"
                           title={bill.bill_title}
                           onClick={() => {
                             setSelectedBill(bill)
@@ -1286,8 +1286,8 @@ const DashboardPage: React.FC = () => {
                           <div className="line-clamp-2 text-sm leading-tight">
                             {bill.bill_title}
                           </div>
-                          <div className="text-xs text-base-content/50 mt-1">
-                            Click to view details
+                          <div className="text-xs font-medium text-primary/70 mt-1 group-hover:text-primary transition-colors duration-200 flex items-center gap-1">
+                            View details →
                           </div>
                         </div>
                       </td>
